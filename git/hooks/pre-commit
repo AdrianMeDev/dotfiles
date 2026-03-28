@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+if command -v shfmt >/dev/null 2>&1; then
+  find . -type f -name '*.sh' -print0 | xargs -0 -r shfmt -w
+fi
+
+if command -v shellcheck >/dev/null 2>&1; then
+  find . -type f -name '*.sh' -print0 | xargs -0 -r shellcheck
+fi
