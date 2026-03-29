@@ -27,6 +27,14 @@ config.window_padding = {
 }
 
 config.keys = {
+    {
+    key = 'p',
+    mods = 'CTRL|SHIFT',
+    action = act.SpawnCommandInNewTab {
+        domain = { DomainName = 'local' },
+        args = { 'pwsh.exe', '-NoLogo' },
+    },
+    },
   -- Simpler tab switching than the default Ctrl+Shift+Number
   { key = '1', mods = 'CTRL', action = act.ActivateTab(0) },
   { key = '2', mods = 'CTRL', action = act.ActivateTab(1) },
