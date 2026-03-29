@@ -1,0 +1,218 @@
+[
+    {
+        "key": "ctrl+x ctrl+o",
+        "command": "editor.action.triggerSuggest",
+        "when": "editorTextFocus"
+    },
+    {
+        "key": "ctrl+x ctrl+a",
+        "command": "inlineChat.start",
+        "when": "editorTextFocus"
+    },
+    {
+        "key": "ctrl+x ctrl+c",
+        "command": "editor.action.inlineSuggest.trigger",
+        "when": "editorTextFocus"
+    },
+    {
+        "key": "ctrl+[",
+        "command": "editor.fold",
+        "when": "editorTextFocus && foldingEnabled"
+    },
+    {
+        "key": "ctrl+]",
+        "command": "editor.unfold",
+        "when": "editorTextFocus && foldingEnabled"
+    },
+    {
+        "key": "ctrl+alt+[",
+        "command": "editor.foldAll",
+        "when": "editorTextFocus && foldingEnabled"
+    },
+    {
+        "key": "ctrl+alt+]",
+        "command": "editor.unfoldAll",
+        "when": "editorTextFocus && foldingEnabled"
+    },
+    {
+        "key": "ctrl+j",
+        "command": "selectNextSuggestion",
+        "when": "suggestWidgetVisible"
+    },
+    {
+        "key": "ctrl+k",
+        "command": "selectPrevSuggestion",
+        "when": "suggestWidgetVisible"
+    },
+    {
+        "key": "ctrl+j",
+        "command": "workbench.action.quickOpenSelectNext",
+        "when": "inQuickOpen"
+    },
+    {
+        "key": "ctrl+k",
+        "command": "workbench.action.quickOpenSelectPrevious",
+        "when": "inQuickOpen"
+    },
+    {
+        "key": "ctrl+j",
+        "command": "list.focusDown",
+        "when": "listFocus && !inputFocus"
+    },
+    {
+        "key": "ctrl+k",
+        "command": "list.focusUp",
+        "when": "listFocus && !inputFocus"
+    },
+    // globale Workspace-Shortcuts
+    {
+        "key": "shift+left",
+        "command": "-cursorColumnSelectLeft",
+        "when": "editorColumnSelection && textInputFocus"
+    },
+    {
+        "key": "shift+left",
+        "command": "-cursorLeftSelect",
+        "when": "textInputFocus && vim.mode != 'Visual'"
+    },
+    {
+        "key": "shift+left",
+        "command": "workbench.action.moveEditorLeftInGroup",
+        "when": "vim.mode == 'Normal'"
+    },
+    {
+        "key": "shift+right",
+        "command": "-cursorColumnSelectRight",
+        "when": "editorColumnSelection && textInputFocus"
+    },
+    {
+        "key": "shift+right",
+        "command": "-cursorRightSelect",
+        "when": "textInputFocus && vim.mode != 'Visual'"
+    },
+    {
+        "key": "shift+right",
+        "command": "workbench.action.moveEditorRightInGroup",
+        "when": "vim.mode == 'Normal'"
+    },
+    {
+        "key": "alt+s",
+        "command": "workbench.action.openSettingsJson"
+    },
+    {
+        "key": "alt+k",
+        "command": "workbench.action.openGlobalKeybindingsFile"
+    },
+    {
+        "key": "alt+e",
+        "command": "workbench.view.explorer"
+    },
+    {
+        "key": "alt+g",
+        "command": "workbench.view.scm"
+    },
+    {
+        "key": "alt+j",
+        "command": "workbench.action.terminal.toggleTerminal"
+    },
+    {
+        "key": "alt+a",
+        "command": "workbench.action.chat.openagent"
+    },
+    {
+        "key": "alt+h",
+        "command": "workbench.action.toggleAuxiliaryBar"
+    },
+    {
+        "key": "alt+c",
+        "command": "editor.action.copyLinesDownAction",
+        "when": "editorTextFocus && !editorReadonly"
+    },
+    {
+        "key": "alt+l",
+        "command": "workbench.action.toggleSidebarVisibility"
+    },
+    // zurück in den Editor
+    {
+        "key": "esc",
+        "command": "workbench.action.focusActiveEditorGroup",
+        "when": "sideBarFocus || auxiliaryBarFocus || (panelFocus && !terminalFocus)"
+    },
+    // Navigation außerhalb des Editors
+    {
+        "key": "ctrl+w h",
+        "command": "workbench.action.focusLeftGroup",
+        "when": "terminalFocus || panelFocus || sideBarFocus || auxiliaryBarFocus"
+    },
+    {
+        "key": "ctrl+w j",
+        "command": "workbench.action.focusBelowGroup",
+        "when": "terminalFocus || panelFocus || sideBarFocus || auxiliaryBarFocus"
+    },
+    {
+        "key": "ctrl+w k",
+        "command": "workbench.action.focusAboveGroup",
+        "when": "terminalFocus || panelFocus || sideBarFocus || auxiliaryBarFocus"
+    },
+    {
+        "key": "ctrl+w l",
+        "command": "workbench.action.focusRightGroup",
+        "when": "terminalFocus || panelFocus || sideBarFocus || auxiliaryBarFocus"
+    },
+    {
+        "key": "alt+f a",
+        "command": "vscode-harpoon.addEditor"
+    },
+    {
+        "key": "alt+f o",
+        "command": "vscode-harpoon.editorQuickPick"
+    },
+    {
+        "key": "alt+f e",
+        "command": "vscode-harpoon.editEditors"
+    },
+    {
+        "key": "alt+f p",
+        "command": "vscode-harpoon.gotoPreviousHarpoonEditor"
+    },
+    {
+        "key": "alt+f 1",
+        "command": "vscode-harpoon.gotoEditor1"
+    },
+    {
+        "key": "alt+f 2",
+        "command": "vscode-harpoon.gotoEditor2"
+    },
+    {
+        "key": "alt+f 3",
+        "command": "vscode-harpoon.gotoEditor3"
+    },
+    {
+        "key": "alt+f 4",
+        "command": "vscode-harpoon.gotoEditor4"
+    },
+    {
+        "key": "alt+f 5",
+        "command": "vscode-harpoon.gotoEditor5"
+    },
+    {
+        "key": "alt+f 6",
+        "command": "vscode-harpoon.gotoEditor6"
+    },
+    {
+        "key": "alt+p p",
+        "command": "projectManager.listProjects"
+    },
+    {
+        "key": "alt+p a",
+        "command": "projectManager.saveProject"
+    },
+    {
+        "key": "alt+p e",
+        "command": "projectManager.editProjects"
+    },
+    {
+        "key": "alt+p n",
+        "command": "projectManager.listProjectsNewWindow"
+    }
+]

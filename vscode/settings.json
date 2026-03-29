@@ -1,0 +1,744 @@
+{
+    // --- Optik / Layout ---
+    "workbench.iconTheme": "vscode-icons",
+    "workbench.sideBar.location": "right",
+    "workbench.editor.showTabs": "multiple",
+    "editor.minimap.enabled": false,
+    "editor.stickyScroll.enabled": false,
+    "explorer.compactFolders": false,
+    "vim.enableNeovim": false,
+    "editor.lineNumbers": "on",
+    "editor.folding": true, // vorher false -> kollidiert mit deinen Fold-Keybindings
+    "editor.cursorSmoothCaretAnimation": "on",
+    "editor.cursorSurroundingLines": 10,
+    "editor.glyphMargin": false,
+    "workbench.statusBar.visible": false,
+    "workbench.activityBar.location": "top",
+    "editor.scrollbar.horizontal": "hidden",
+    "editor.multiCursorModifier": "ctrlCmd",
+    "keyboard.dispatch": "keyCode",
+    "zenMode.centerLayout": false,
+    // --- AI ---
+    "editor.inlineSuggest.enabled": false,
+    "github.copilot.nextEditSuggestions.enabled": false,
+    // --- Vim ---
+    "vim.useCtrlKeys": true,
+    "vim.leader": " ",
+    "vim.easymotion": true,
+    "vim.surround": true,
+    "vim.smartRelativeLine": true,
+    "vim.highlightedyank.enable": true,
+    "vim.highlightedyank.color": "#a9dc7660",
+    "vim.highlightedyank.duration": 250,
+    "vim.handleKeys": {
+        "<C-x>": false,
+        "<C-j>": false,
+        "<C-[>": false,
+        "<C-]>": false,
+        "<C-e>": false
+    },
+    "vim.useSystemClipboard": true,
+    "vim.normalModeKeyBindings": [
+        {
+            "before": [
+                "s"
+            ],
+            "after": [
+                "<leader>",
+                "<leader>",
+                "s"
+            ]
+        }
+    ],
+    "vim.normalModeKeyBindingsNonRecursive": [
+        // Falls du VSCode-Redo statt Vim-Redo willst:
+        {
+            "before": [
+                "u"
+            ],
+            "commands": [
+                "undo"
+            ]
+        },
+        {
+            "before": [
+                "U"
+            ],
+            "commands": [
+                "redo"
+            ]
+        },
+        // { "before": ["<C-r>"], "commands": ["redo"] },
+        {
+            "before": [
+                "<C-w>",
+                "h"
+            ],
+            "commands": [
+                "workbench.action.focusLeftGroup"
+            ]
+        },
+        {
+            "before": [
+                "<C-w>",
+                "j"
+            ],
+            "commands": [
+                "workbench.action.focusBelowGroup"
+            ]
+        },
+        {
+            "before": [
+                "<C-w>",
+                "k"
+            ],
+            "commands": [
+                "workbench.action.focusAboveGroup"
+            ]
+        },
+        {
+            "before": [
+                "<C-w>",
+                "l"
+            ],
+            "commands": [
+                "workbench.action.focusRightGroup"
+            ]
+        },
+        {
+            "before": [
+                "<C-w>",
+                "v"
+            ],
+            "commands": [
+                "workbench.action.splitEditorRight"
+            ]
+        },
+        {
+            "before": [
+                "<C-w>",
+                "s"
+            ],
+            "commands": [
+                "workbench.action.splitEditorDown"
+            ]
+        },
+        {
+            "before": [
+                "<C-w>",
+                "q"
+            ],
+            "commands": [
+                "workbench.action.closeActiveEditor"
+            ]
+        },
+        {
+            "before": [
+                "<C-w>",
+                "H"
+            ],
+            "commands": [
+                "workbench.action.moveEditorToLeftGroup"
+            ]
+        },
+        {
+            "before": [
+                "<C-w>",
+                "J"
+            ],
+            "commands": [
+                "workbench.action.moveEditorToBelowGroup"
+            ]
+        },
+        {
+            "before": [
+                "<C-w>",
+                "K"
+            ],
+            "commands": [
+                "workbench.action.moveEditorToAboveGroup"
+            ]
+        },
+        {
+            "before": [
+                "<C-w>",
+                "L"
+            ],
+            "commands": [
+                "workbench.action.moveEditorToRightGroup"
+            ]
+        },
+        {
+            "before": [
+                "<leader>",
+                "/"
+            ],
+            "commands": [
+                "editor.action.commentLine"
+            ]
+        },
+        {
+            "before": [
+                "<leader>",
+                "c"
+            ],
+            "commands": [
+                "editor.action.addCommentLine"
+            ]
+        },
+        {
+            "before": [
+                "<leader>",
+                "u"
+            ],
+            "commands": [
+                "editor.action.removeCommentLine"
+            ]
+        },
+        {
+            "before": [
+                "<leader>",
+                "A"
+            ],
+            "commands": [
+                "editor.action.blockComment"
+            ]
+        },
+        {
+            "before": [
+                "g",
+                "p",
+                "d"
+            ],
+            "commands": [
+                "editor.action.peekDefinition"
+            ]
+        },
+        {
+            "before": [
+                "g",
+                "h"
+            ],
+            "commands": [
+                "editor.action.showDefinitionPreviewHover"
+            ]
+        },
+        {
+            "before": [
+                "g",
+                "i"
+            ],
+            "commands": [
+                "editor.action.goToImplementation"
+            ]
+        },
+        {
+            "before": [
+                "g",
+                "p",
+                "i"
+            ],
+            "commands": [
+                "editor.action.peekImplementation"
+            ]
+        },
+        {
+            "before": [
+                "g",
+                "q"
+            ],
+            "commands": [
+                "editor.action.quickFix"
+            ]
+        },
+        {
+            "before": [
+                "g",
+                "r"
+            ],
+            "commands": [
+                "editor.action.referenceSearch.trigger"
+            ]
+        },
+        {
+            "before": [
+                "g",
+                "t"
+            ],
+            "commands": [
+                "editor.action.goToTypeDefinition"
+            ]
+        },
+        {
+            "before": [
+                "g",
+                "p",
+                "t"
+            ],
+            "commands": [
+                "editor.action.peekTypeDefinition"
+            ]
+        },
+        {
+            "before": [
+                "g",
+                "B"
+            ],
+            "commands": [
+                "workbench.action.navigateBack"
+            ]
+        },
+        {
+            "before": [
+                "g",
+                "N"
+            ],
+            "commands": [
+                "workbench.action.navigateForward"
+            ]
+        },
+        {
+            "before": [
+                "H"
+            ], // Focus previous tab at the left
+            "commands": [
+                "workbench.action.previousEditor"
+            ]
+        },
+        {
+            "before": [
+                "L"
+            ], // Focus next tab at the right
+            "commands": [
+                "workbench.action.nextEditor"
+            ]
+        },
+        {
+            "before": [
+                "Q"
+            ], // Close current tab
+            "after": [
+                "<C-w>",
+                "q"
+            ]
+        },
+        {
+            "before": [
+                "U"
+            ],
+            "after": [
+                "<C-r>"
+            ]
+        },
+        {
+            "before": [
+                "g",
+                "n"
+            ],
+            "commands": [
+                "editor.action.selectHighlights"
+            ]
+        },
+        {
+            "before": [
+                "<leader>",
+                "f"
+            ],
+            "commands": [
+                "editor.action.formatDocument"
+            ]
+        },
+        {
+            "before": [
+                "<leader>",
+                "s"
+            ],
+            "commands": [
+                "workbench.action.quickOpen"
+            ]
+        },
+        {
+            "before": [
+                "<leader>",
+                "S"
+            ],
+            "commands": [
+                "workbench.action.findInFiles"
+            ]
+        },
+        {
+            "before": [
+                "<leader>",
+                "i"
+            ],
+            "commands": [
+                "editor.action.organizeImports"
+            ]
+        },
+        {
+            "before": [
+                "<leader>",
+                "p"
+            ],
+            "commands": [
+                "workbench.action.showCommands"
+            ]
+        },
+        {
+            "before": [
+                "<leader>",
+                "e"
+            ],
+            "commands": [
+                "workbench.view.explorer"
+            ]
+        },
+        {
+            "before": [
+                "<leader>",
+                "g"
+            ],
+            "commands": [
+                "workbench.view.scm"
+            ]
+        },
+        {
+            "before": [
+                "<leader>",
+                "o"
+            ],
+            "commands": [
+                "outline.focus"
+            ]
+        },
+        {
+            "before": [
+                "<leader>",
+                "t"
+            ],
+            "commands": [
+                "workbench.action.terminal.toggleTerminal"
+            ]
+        },
+        {
+            "before": [
+                "<leader>",
+                "T"
+            ],
+            "commands": [
+                "workbench.action.terminal.new"
+            ]
+        },
+        {
+            "before": [
+                "<leader>",
+                "b"
+            ],
+            "commands": [
+                "workbench.action.toggleSidebarVisibility"
+            ]
+        },
+        {
+            "before": [
+                "<leader>",
+                "B"
+            ],
+            "commands": [
+                "workbench.action.toggleAuxiliaryBar"
+            ]
+        },
+        {
+            "before": [
+                "<leader>",
+                "h"
+            ],
+            "commands": [
+                "workbench.action.focusLeftGroup"
+            ]
+        },
+        {
+            "before": [
+                "<leader>",
+                "j"
+            ],
+            "commands": [
+                "workbench.action.focusBelowGroup"
+            ]
+        },
+        {
+            "before": [
+                "<leader>",
+                "k"
+            ],
+            "commands": [
+                "workbench.action.focusAboveGroup"
+            ]
+        },
+        {
+            "before": [
+                "<leader>",
+                "l"
+            ],
+            "commands": [
+                "workbench.action.focusRightGroup"
+            ]
+        },
+        {
+            "before": [
+                "<leader>",
+                "z"
+            ],
+            "commands": [
+                "workbench.action.toggleZenMode"
+            ]
+        },
+        {
+            "before": [
+                "<leader>",
+                "c",
+                "l"
+            ],
+            "commands": [
+                "workbench.action.toggleCenteredLayout"
+            ]
+        },
+        {
+            "before": [
+                "<leader>",
+                "\\"
+            ],
+            "commands": [
+                "workbench.files.action.collapseExplorerFolders"
+            ]
+        },
+        {
+            "before": [
+                "<leader>",
+                "w"
+            ],
+            "commands": [
+                "workbench.action.closeActiveEditor"
+            ]
+        },
+        {
+            "before": [
+                "<leader>",
+                "q",
+                "a"
+            ],
+            "commands": [
+                "workbench.action.closeAllEditors"
+            ]
+        },
+        {
+            "before": [
+                "<leader>",
+                "a"
+            ],
+            "commands": [
+                "workbench.action.chat.openagent"
+            ]
+        },
+        // empfehlenswerte Ergänzungen für keyboard-only
+        {
+            "before": [
+                "<leader>",
+                "r"
+            ],
+            "commands": [
+                "editor.action.rename"
+            ]
+        },
+        {
+            "before": [
+                "<leader>",
+                "."
+            ],
+            "commands": [
+                "editor.action.quickFix"
+            ]
+        },
+        {
+            "before": [
+                "<leader>",
+                "d"
+            ],
+            "commands": [
+                "editor.action.revealDefinition"
+            ]
+        },
+        {
+            "before": [
+                "<leader>",
+                "R"
+            ],
+            "commands": [
+                "editor.action.goToReferences"
+            ]
+        },
+        // harpoon und project manager
+        {
+            "before": [
+                "<leader>",
+                "h",
+                "a"
+            ],
+            "commands": [
+                "vscode-harpoon.addEditor"
+            ]
+        },
+        {
+            "before": [
+                "<leader>",
+                "h",
+                "o"
+            ],
+            "commands": [
+                "vscode-harpoon.editorQuickPick"
+            ]
+        },
+        {
+            "before": [
+                "<leader>",
+                "h",
+                "e"
+            ],
+            "commands": [
+                "vscode-harpoon.editEditors"
+            ]
+        },
+        {
+            "before": [
+                "<leader>",
+                "h",
+                "p"
+            ],
+            "commands": [
+                "vscode-harpoon.gotoPreviousHarpoonEditor"
+            ]
+        },
+        {
+            "before": [
+                "<leader>",
+                "1"
+            ],
+            "commands": [
+                "vscode-harpoon.gotoEditor1"
+            ]
+        },
+        {
+            "before": [
+                "<leader>",
+                "2"
+            ],
+            "commands": [
+                "vscode-harpoon.gotoEditor2"
+            ]
+        },
+        {
+            "before": [
+                "<leader>",
+                "3"
+            ],
+            "commands": [
+                "vscode-harpoon.gotoEditor3"
+            ]
+        },
+        {
+            "before": [
+                "<leader>",
+                "4"
+            ],
+            "commands": [
+                "vscode-harpoon.gotoEditor4"
+            ]
+        },
+        {
+            "before": [
+                "<leader>",
+                "5"
+            ],
+            "commands": [
+                "vscode-harpoon.gotoEditor5"
+            ]
+        },
+        {
+            "before": [
+                "<leader>",
+                "6"
+            ],
+            "commands": [
+                "vscode-harpoon.gotoEditor6"
+            ]
+        },
+        {
+            "before": [
+                "<leader>",
+                "P"
+            ],
+            "commands": [
+                "projectManager.listProjects"
+            ]
+        },
+        {
+            "before": [
+                "<leader>",
+                "P",
+                "A"
+            ],
+            "commands": [
+                "projectManager.saveProject"
+            ]
+        },
+        {
+            "before": [
+                "<leader>",
+                "P",
+                "E"
+            ],
+            "commands": [
+                "projectManager.editProjects"
+            ]
+        },
+        {
+            "before": [
+                "<leader>",
+                "P",
+                "N"
+            ],
+            "commands": [
+                "projectManager.listProjectsNewWindow"
+            ]
+        }
+    ],
+    "vim.visualModeKeyBindingsNonRecursive": [
+        [
+            {
+                "before": [
+                    "<leader>",
+                    "/"
+                ],
+                "commands": [
+                    "editor.action.commentLine"
+                ]
+            },
+            {
+                "before": [
+                    "<leader>",
+                    "A"
+                ],
+                "commands": [
+                    "editor.action.blockComment"
+                ]
+            }
+        ]
+    ],
+    "chat.viewSessions.orientation": "stacked",
+    "git.autofetch": true,
+    "editor.fontFamily": "'ZedMono NF'",
+    "terminal.integrated.fontFamily": "'ZedMono NF'",
+    "editor.fontSize": 15,
+    "git.suggestSmartCommit": false,
+    "window.autoDetectColorScheme": true,
+    "vsicons.dontShowNewVersionMessage": true
+}
