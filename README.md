@@ -79,7 +79,7 @@ Wiederholungen erzeugen keine doppelten Links oder Shell-Initialisierungen. DNF 
 Systempakete; bereits vorhandene externe Werkzeuge werden nicht automatisch neu installiert.
 Node/Python-Major-Versionen, Fedora-Pakete, LSPs und einige Upstream-Installer sind nicht auf
 exakte Patchstände festgelegt: Das Setup ist wiederholbar, aber kein bitidentisches Systemabbild.
-Neovims bestehende Plugin-Lockdatei wird übernommen; Plugin-Updates bewusst prüfen und committen.
+Neovims Plugin-Versionen stehen in `nvim-pack-lock.json`; Plugin-Updates bewusst prüfen und committen.
 
 ## Git und private Einstellungen
 
@@ -171,13 +171,72 @@ Tasks starten nur manuell und erwarten passende Projektdateien/Abhängigkeiten i
 In Monorepos `.zed/tasks.json` mit passendem `cwd` im Projekt anlegen.
 Claude wird nicht automatisch gestartet; vorhandene Agent-Keybindings bleiben für manuelle Nutzung.
 
-**Neovim:** bestehendes Kickstart mit `vim.pack` und Lockdatei, Neovim >= 0.12 erforderlich.
-Mason installiert Lua-, Angular-/TypeScript-, HTML-, ESLint-, Python- und OmniSharp-Sprachserver
-sowie StyLua/Ruff beim ersten Start. Dafür sind Internet, Node und .NET erforderlich.
-Lua/Python werden beim Speichern formatiert; JS/TS erhalten keine zusätzliche globale Prettier-Regel.
-Neu: `Space e` Zeilendiagnose, `Space w` speichern, `Space t t` Terminal,
-`Space g f` ESLint-Fixes. Bestehende Kickstart-Suchbindings bleiben erhalten.
-Prüfen: `:checkhealth`, `:Mason`, `:checkhealth vim.lsp`; projektkompatible Angular-Abhängigkeiten installieren.
+**Neovim:** eigenständige, deutsch kommentierte
+[`init.lua`](nvim/.config/nvim/init.lua), konzeptionell an
+[nvim-lite](https://github.com/radleylewis/nvim-lite) angelehnt, mit Zed-nahen Kürzeln und Farben.
+Sieben Plugins über `vim.pack`: fzf-lua, nvim-tree, Which-Key, nvim-lspconfig,
+Mason, mason-lspconfig und nvim-treesitter. Completion, Statuszeile und Formatierung sind nativ.
+Neovim >= 0.12, Git, fzf, ripgrep und fd werden vorausgesetzt. Für Parser kommen C-Compiler
+und die native tree-sitter CLI hinzu; das Development-Modul installiert Letztere.
+
+Beim ersten Start lädt `vim.pack` die Plugins nach Bestätigung. Mason installiert die acht
+eingerichteten Sprachserver, Treesitter die aufgeführten Parser. Dafür werden Internet,
+Node/npm, Python/uv und .NET benötigt. `:Mason` zeigt Fortschritt und Installationsfehler;
+bei Fehlern dort erneut installieren. Nach abgeschlossener Installation funktioniert der Start offline.
+Angular-Projekte benötigen passende TypeScript-/Angular-Abhängigkeiten in `node_modules`,
+JS/TS-Projekte eine eigene ESLint-Installation und -Konfiguration. C# verwendet weiterhin
+OmniSharp (Zed verwendet Roslyn); Lua erhält Unterstützung beim Bearbeiten der Config.
+
+Beim Speichern sowie mit `Space c f` gilt: JS/TS nur ESLint-Fixes, Python zuerst
+Ruff-Importsortierung und dann Ruff-Formatierung, HTML und C# ihr jeweiliger LSP,
+Lua der Lua-LSP. Kein Prettier. Jede LSP-Anfrage wartet höchstens zwei Sekunden;
+fehlende Server verhindern das Speichern nicht. Beim Speichern werden außerdem nachgestellte
+Leerzeichen entfernt und ein abschließender Zeilenumbruch gesetzt (auch in Markdown).
+Binärdateien und spezielle Buffer sind davon ausgenommen. Python/C# verwenden vier,
+JS/TS/HTML/Lua zwei Leerzeichen; Projekt-/Dateityp-Einstellungen können das anpassen.
+
+| Neovim-Kürzel | Aktion |
+| --- | --- |
+| `Space Space`, `Space f f` | Dateien suchen |
+| `Space f g`, `Space /` | Text im aktuellen Arbeitsverzeichnis suchen |
+| `Space f s`, `Space f o` | Projekt-/Dateisymbole |
+| `Space e`, `Space f e` | Explorer umschalten / aktuelle Datei zeigen |
+| `Space b b`, `b n`, `b p`, `b d` | Vorherige Datei / nächster / vorheriger / Buffer schließen |
+| `Space f b` | Offene Buffer auswählen |
+| `Space c a`, `c r`, `c f`, `c u` | Code-Action / Umbenennen / Formatieren / Verwendungen |
+| `gd`, `K` | Definition / LSP-Dokumentation |
+| `Space x x`, `Space x f` | Bekannte Diagnosen / Diagnosen der aktuellen Datei |
+| `Space x n`, `x p`, `x i` | Nächste / vorherige / Inline-Diagnosen umschalten |
+| `Space s h/j/k/l` | Split links/unten/oben/rechts |
+| `Space t t`, `Space t n` | Letztes Terminal umschalten / neues Terminal |
+| `Esc Esc` im Terminal | Terminal-Normalmodus |
+| `Ctrl-w h/j/k/l`, `Ctrl-w q` | Fenster wechseln / schließen, auch aus dem Terminal |
+| `Space u n`, `Space u i` | Relative Zeilennummern / Inlay-Hints umschalten |
+| `Space w`, `Space p` | Speichern / Befehle suchen |
+| `Ctrl-Space`, `Ctrl-n/p`, `Ctrl-y` im Insert-Modus | Completion anfordern / wählen / übernehmen |
+
+Bei verkürzten Tabellenangaben gehört `Space` jeweils dazu. Which-Key zeigt nach 300 ms
+die verfügbaren Folgetasten. Suche arbeitet ab `:pwd`; Neovim im Projektverzeichnis starten
+oder `:cd PFAD` verwenden. Diagnosen enthalten nur die von Sprachservern bereits gemeldeten
+Befunde. Zed-spezifische Agent-, Task-, Dock- und Git-Panel-Funktionen sind nicht nachgebaut.
+`Space e` öffnet jetzt den Explorer und `Space Space` die Dateisuche; die alten Kickstart-
+Suchkürzel unter `Space s` entfallen zugunsten der Zed-Splits.
+
+Zum Erweitern direkt in der `init.lua`:
+
+- **Plugin:** URL zur Liste in Abschnitt 2 hinzufügen und darunter dessen `setup {}` aufrufen.
+- **Sprache:** etwa `gopls = {}` in `servers` ergänzen. Mason installiert und aktiviert den
+  Server. Für Formatierung zusätzlich `go = 'gopls'` in `formatters` und für Syntaxfarben
+  `'go'` in `parsers` aufnehmen.
+- **Taste:** etwa `map('n', '<leader>fh', fzf.help_tags, { desc = 'Hilfe suchen' })` ergänzen.
+
+Plugin-Updates bewusst mit `:lua vim.pack.update()` anstoßen, die Vorschau prüfen und mit
+`:write` übernehmen; anschließend `:TSUpdate` ausführen und die geänderte
+`nvim-pack-lock.json` prüfen/committen. Sprachserver werden über `:Mason` separat verwaltet
+und sind nicht durch die Plugin-Lockdatei festgelegt. Prüfen: `:checkhealth`,
+`:checkhealth vim.lsp`, `:Mason`. Alte Plugin-Downloads und Mason-Pakete werden beim Umbau
+nicht gelöscht. Die entfernten Kickstart-Dateien werden nicht mehr geladen; die neuen
+Dateien erreichen bestehende Stow-Dateilinks direkt.
 
 **WezTerm:** bestehende Tab-/Split-Bindings bleiben, `Ctrl-Shift-x` öffnet Copy-Mode,
 `Ctrl-Shift-Space` Quick Select. Die PowerShell-Taste existiert nur unter Windows.
@@ -219,7 +278,7 @@ Fehlende optionale Prüfwerkzeuge werden als `SKIP` ausgewiesen. Mit vorhandenem
 auch den rekursiven Node-Versionswechsel; mit tmux dessen Konfiguration auf einem separaten Socket.
 `DOTFILES_WEZTERM_BINARY` kann auf ein entpacktes AppImage zeigen, um die Keymap ohne Fenster zu laden.
 `DOTFILES_NVIM_PLUGINS` kann auf vorhandene vertrauenswürdige Neovim-Plugin-Quellen (`opt/`) zeigen:
-Der Offline-Start prüft dann die Plugin-Konfiguration mit abgeschalteten Downloads und Builds.
+Der Offline-Test prüft dann Plugin-Konfiguration, Explorer, LSP-Aktivierung und Speichern/Formatter-Zuständigkeit mit abgeschalteten Downloads und Builds sowie simulierten LSP-Antworten. Der Cache muss die sieben aktuellen Plugins enthalten.
 
 Eine vollständige Fedora-Installation und grafische Editor-/Clipboard-Tests müssen auf dem Zielsystem
 erfolgen. Die lokale Prüfung auf CachyOS ersetzt keine Fedora-VM-Abnahme.
