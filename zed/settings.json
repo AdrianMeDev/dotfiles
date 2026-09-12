@@ -1,0 +1,191 @@
+{
+  // ============================================================
+  // VIM / NEOVIM FEEL
+  // ============================================================
+
+  "cli_default_open_behavior": "existing_window",
+  "theme": "Neovim custom",
+  "vim_mode": true,
+
+  "which_key": {
+    "enabled": true,
+    "delay_ms": 300
+  },
+
+
+  // VS Code Keymap bleibt als Fallback für Bereiche,
+  // die nicht vom Vim Mode abgedeckt werden.
+  "base_keymap": "VSCode",
+
+  "relative_line_numbers": "enabled",
+  "cursor_blink": false,
+
+  // Möglichst wenig UI, weil wir alles per Tastatur bedienen.
+  "scrollbar": {
+    "show": "never",
+  },
+
+  "minimap": {
+    "show": "never",
+  },
+
+  "tab_bar": {
+    "show": true,
+    "show_nav_history_buttons": false,
+    "show_tab_bar_buttons": false,
+  },
+
+  "toolbar": {
+    "breadcrumbs": false,
+    "quick_actions": false,
+    "selections_menu": false,
+    "agent_review": false,
+    "code_actions": false,
+  },
+
+  // ============================================================
+  // EXTENSIONS
+  // ============================================================
+
+  "auto_install_extensions": {
+    "angular": true,
+    "html": true,
+  },
+
+  // ============================================================
+  // AI AUTOCOMPLETE / EDIT PREDICTIONS VIA OLLAMA
+  // ============================================================
+
+  "edit_predictions": {
+    "provider": "zed",
+  },
+
+  // ============================================================
+  // CLAUDE CODE
+  // ============================================================
+
+  "agent": {
+    // Jeder neue Terminal Thread startet automatisch Claude Code.
+    "terminal_init_command": "claude",
+  },
+
+  // ============================================================
+  // LANGUAGE SERVER CONFIG
+  // ============================================================
+
+  "lsp": {
+    "eslint": {
+      "settings": {
+        // Wichtig bei Angular-Monorepos / verschachtelten Projekten
+        "workingDirectory": {
+          "mode": "auto",
+        },
+      },
+    },
+
+    "angular": {
+      "initialization_options": {
+        // Falls du größere Angular-Projekte hast.
+        "max_ts_server_memory": 8192,
+      },
+    },
+  },
+
+  // ============================================================
+  // LANGUAGES
+  // ============================================================
+
+  "languages": {
+    // ----------------------------------------------------------
+    // Angular / TypeScript
+    // ----------------------------------------------------------
+
+    "TypeScript": {
+      // Angular Language Service
+      // + TypeScript LSP
+      // + ESLint
+      "language_servers": ["angular", "vtsls", "eslint"],
+
+      // Kein Prettier.
+      "prettier": {
+        "allowed": false,
+      },
+
+      // ESLint soll der einzige Formatter sein.
+      // formatter [] verhindert, dass danach Prettier/vtsls nochmal
+      // über die Datei läuft.
+      "formatter": [],
+
+      "format_on_save": "on",
+
+      "code_actions_on_format": {
+        "source.fixAll.eslint": true,
+      },
+
+      "tab_size": 2,
+    },
+
+    // ----------------------------------------------------------
+    // JavaScript
+    // ----------------------------------------------------------
+
+    "JavaScript": {
+      "language_servers": ["vtsls", "eslint"],
+
+      "prettier": {
+        "allowed": false,
+      },
+
+      "formatter": [],
+
+      "format_on_save": "on",
+
+      "code_actions_on_format": {
+        "source.fixAll.eslint": true,
+      },
+
+      "tab_size": 2,
+    },
+
+    // ----------------------------------------------------------
+    // Angular Templates
+    // ----------------------------------------------------------
+
+    "HTML": {
+      "language_servers": ["angular", "vscode-html-language-server"],
+
+      // Ich würde Templates vom HTML-LSP formatieren lassen.
+      // ESLint bleibt für TS verantwortlich.
+      "formatter": "language_server",
+
+      "format_on_save": "on",
+
+      "tab_size": 2,
+    },
+
+    // ----------------------------------------------------------
+    // Django / Python
+    // ----------------------------------------------------------
+
+    "Python": {
+      // Explizit nur basedpyright + Ruff.
+      "language_servers": ["basedpyright", "ruff"],
+
+      "format_on_save": "on",
+
+      // Ruff = Formatter
+      "formatter": {
+        "language_server": {
+          "name": "ruff",
+        },
+      },
+
+      // Ruff = Import Sorter
+      "code_actions_on_format": {
+        "source.organizeImports.ruff": true,
+      },
+
+      "tab_size": 4,
+    },
+  },
+}

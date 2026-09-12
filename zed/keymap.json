@@ -1,0 +1,317 @@
+[
+  // ============================================================
+  // LAZYVIM-ARTIGER LEADER
+  //
+  // <leader> = Space
+  //
+  // Nur im Vim Normal Mode.
+  // Im Insert Mode bleibt Space natürlich ein Leerzeichen.
+  // ============================================================
+
+  {
+    "context": "VimControl && !menu && vim_mode == normal",
+    "bindings": {
+      // ========================================================
+      // <leader><leader>
+      // Find Files / Telescope find_files
+      // ========================================================
+
+      "space space": "file_finder::Toggle",
+
+      // ========================================================
+      // FILES / SEARCH
+      //
+      // <leader>f...
+      // ========================================================
+
+      // Find files
+      "space f f": "file_finder::Toggle",
+
+      // Grep / Suche im gesamten Projekt
+      "space f g": "workspace::NewSearch",
+
+      // Symbole im gesamten Projekt
+      "space f s": "project_symbols::Toggle",
+
+      // Outline / Symbole der aktuellen Datei
+      "space f o": "outline::Toggle",
+
+      // Aktuelle Datei im File Tree anzeigen
+      "space f e": "pane::RevealInProjectPanel",
+
+      // --------------------------------------------------------
+      // LazyVim-artig:
+      // <leader>/ = grep im Projekt
+      // --------------------------------------------------------
+
+      "space /": "workspace::NewSearch",
+
+      // ========================================================
+      // FILE EXPLORER
+      //
+      // <leader>e
+      // ========================================================
+
+      "space e": "project_panel::Toggle",
+
+      // ========================================================
+      // BUFFERS
+      //
+      // <leader>b...
+      // ========================================================
+
+      // Zwischen aktuellem und vorherigem Buffer wechseln
+      "space b b": "pane::AlternateFile",
+
+      // Nächster Buffer
+      "space b n": "pane::ActivateNextItem",
+
+      // Vorheriger Buffer
+      "space b p": "pane::ActivatePreviousItem",
+
+      // Buffer löschen / schließen
+      "space b d": "pane::CloseActiveItem",
+
+      // Alle anderen Buffer schließen
+      "space b o": "pane::CloseOtherItems",
+
+      // Geschlossenen Buffer wieder öffnen
+      "space b r": "pane::ReopenClosedItem",
+
+      // ========================================================
+      // CODE / LSP
+      //
+      // <leader>c...
+      // ========================================================
+
+      // Code Action
+      "space c a": "editor::ToggleCodeActions",
+
+      // Rename Symbol
+      "space c r": "editor::Rename",
+
+      // Format Document
+      "space c f": "editor::Format",
+
+      // Find Usages / References
+      "space c u": "editor::FindAllReferences",
+
+      // Language Server neu starten
+      "space c l": "editor::RestartLanguageServer",
+
+      // ========================================================
+      // DIAGNOSTICS
+      //
+      // LazyVim benutzt <leader>x...
+      // ========================================================
+
+      // Alle Projekt-Diagnostics
+      "space x x": "diagnostics::Deploy",
+
+      // Diagnostics aktuelle Datei
+      "space x f": "diagnostics::DeployCurrentFile",
+
+      // Nächster Fehler / Warning
+      "space x n": "editor::GoToDiagnostic",
+
+      // Vorheriger Fehler / Warning
+      "space x p": "editor::GoToPreviousDiagnostic",
+
+      // Inline diagnostics an/aus
+      "space x i": "editor::ToggleInlineDiagnostics",
+
+      // ========================================================
+      // GIT
+      //
+      // <leader>g...
+      // ========================================================
+
+      // Git Panel
+      "space g g": "git_panel::Toggle",
+
+      // Inline Git Blame
+      "space g b": "editor::ToggleGitBlameInline",
+
+      // Diff für aktuellen Hunk / Selection
+      "space g d": "editor::ToggleSelectedDiffHunks",
+
+      // ========================================================
+      // TERMINAL
+      //
+      // <leader>t...
+      // ========================================================
+
+      // Bottom Terminal ein/aus
+      "space t t": "terminal_panel::Toggle",
+
+      // Neues Terminal
+      "space t n": "workspace::NewTerminal",
+
+      // Terminal Vi Mode
+      "space t v": "terminal::ToggleViMode",
+
+      // ========================================================
+      // JUMP / EASYMOTION / HOP
+      // ========================================================
+
+      "space j": "vim::HelixJumpToWord",
+
+      // ========================================================
+      // AI / CLAUDE
+      //
+      // <leader>a...
+      // ========================================================
+
+      // Zed Agent Panel ein/aus
+      "space a a": "agent::Toggle",
+
+      // Claude Code Terminal Thread starten
+      // benötigt:
+      //
+      // "agent": {
+      //   "terminal_init_command": "codex"
+      // }
+      //
+      "space a c": "agent::NewTerminalThread",
+
+      // Neuer Zed-Agent Thread
+      "space a n": "agent::NewThread",
+
+      // Edit Predictions / Ollama global ein/aus
+      "space a p": "workspace::ToggleEditPrediction",
+
+      // ========================================================
+      // SPLITS
+      //
+      // <leader>s...
+      // ========================================================
+
+      // Split rechts
+      "space s l": "pane::SplitRight",
+
+      // Split links
+      "space s h": "pane::SplitLeft",
+
+      // Split unten
+      "space s j": "pane::SplitDown",
+
+      // Split oben
+      "space s k": "pane::SplitUp",
+
+      // ========================================================
+      // UI
+      //
+      // <leader>u...
+      // ========================================================
+
+      // ALLE Docks ein/aus
+      "space u a": "workspace::ToggleAllDocks",
+
+      // ALLE Docks schließen
+      "space u c": "workspace::CloseAllDocks",
+
+      // Left Dock ein/aus
+      "space u h": "workspace::ToggleLeftDock",
+
+      // Bottom Dock ein/aus
+      "space u j": "workspace::ToggleBottomDock",
+
+      // Right Dock ein/aus
+      "space u l": "workspace::ToggleRightDock",
+
+      // Nur Editor maximieren
+      "space u z": "workspace::ToggleZoom",
+
+      // Inlay Hints
+      "space u i": "editor::ToggleInlayHints",
+
+      // Relative Line Numbers
+      "space u n": "editor::ToggleRelativeLineNumbers",
+
+      // ========================================================
+      // RUN / TASKS
+      //
+      // <leader>r...
+      // ========================================================
+
+      // Task auswählen/starten
+      "space r r": "task::Spawn",
+
+      // Letzten Task erneut ausführen
+      "space r l": "task::Rerun",
+
+      // ========================================================
+      // SAVE
+      // ========================================================
+
+      // aktuelle Datei speichern
+      "space w": "workspace::Save",
+
+      // ========================================================
+      // COMMAND PALETTE
+      // ========================================================
+
+      "space p": "command_palette::Toggle",
+    },
+  },
+
+  // ============================================================
+  // DOCK NAVIGATION
+  //
+  // Das ist der wichtige Teil für:
+  //
+  // Project Panel
+  // Terminal
+  // Git Panel
+  // Agent Panel
+  // Outline Panel
+  //
+  // Damit funktioniert Ctrl-w hjkl ähnlich wie NeoVim.
+  // ============================================================
+
+  {
+    "context": "Editor && vim_mode == insert",
+    "bindings": {
+      "ctrl-alt-p": "editor::ToggleEditPrediction"
+    }
+  },
+
+  {
+    "context": "Dock",
+    "bindings": {
+      // Fokus bewegen
+      "ctrl-w h": "workspace::ActivatePaneLeft",
+      "ctrl-w j": "workspace::ActivatePaneDown",
+      "ctrl-w k": "workspace::ActivatePaneUp",
+      "ctrl-w l": "workspace::ActivatePaneRight",
+
+      // --------------------------------------------------------
+      // DAS willst du für dein vorheriges Problem:
+      //
+      // Ctrl-w q im Terminal/FileTree/etc.
+      // → aktuellen Dock schließen
+      // --------------------------------------------------------
+
+      "ctrl-w q": "workspace::CloseActiveDock",
+
+      // Alternative, falls c für dich natürlicher ist
+      "ctrl-w c": "workspace::CloseActiveDock",
+    },
+  },
+
+  // ============================================================
+  // VISUAL MODE
+  // ============================================================
+
+  {
+    "context": "VimControl && !menu && vim_mode == visual",
+    "bindings": {
+      // Surround Selection
+      // Visual → S → z.B. (
+      "shift-s": "vim::PushAddSurrounds",
+
+      // Selection an Zed Agent übergeben
+      "space a s": "agent::AddSelectionToThread",
+    },
+  },
+]
