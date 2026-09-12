@@ -12,12 +12,11 @@ end
 
 -- If your distro is, for example, Ubuntu, uncomment the next line and adjust it.
 -- You can see the exact name with: wsl -l -v
-config.default_domain = 'WSL:FedoraLinux-43'
 
 config.hide_tab_bar_if_only_one_tab = true
 config.use_fancy_tab_bar = false
 config.tab_bar_at_bottom = true
-config.window_decorations = 'RESIZE'
+config.window_decorations = 'NONE'
 config.adjust_window_size_when_changing_font_size = false
 config.window_padding = {
   left = 0,
