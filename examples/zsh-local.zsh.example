@@ -1,0 +1,6 @@
+# Copy to ~/.config/zsh/local.zsh. Never commit credentials here.
+# export PROJECTS_DIR="$HOME/Development"
+# This file is also loaded by noninteractive tasks; guard interactive settings:
+# if [[ -o interactive ]]; then
+#   alias myproject='cd -- "$PROJECTS_DIR/myproject"'
+# fi

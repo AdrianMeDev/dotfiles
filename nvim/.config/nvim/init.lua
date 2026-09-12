@@ -289,7 +289,7 @@ local function terminal(new)
     vim.api.nvim_win_set_buf(0, terminal_buf)
   else
     vim.cmd 'botright 12new'
-    vim.cmd.terminal(vim.fn.executable 'fish' == 1 and 'fish' or vim.o.shell)
+    vim.cmd.terminal(vim.fn.executable 'zsh' == 1 and 'zsh' or vim.o.shell)
     terminal_buf = vim.api.nvim_get_current_buf()
     vim.bo.bufhidden = 'hide'
   end

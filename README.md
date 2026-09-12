@@ -2,7 +2,8 @@
 
 Persönliches Developer-Setup mit GNU Stow und einem modularen Bash-Installer.
 Die vorhandenen Vim-Keybindings und das reduzierte Terminal-Layout bleiben erhalten.
-Ziel ist **klassisches Fedora COSMIC mit DNF**, kein Atomic-/rpm-ostree-System.
+Ziel ist **Fedora Workstation/COSMIC mit DNF** oder eine Fedora-Distribution unter WSL2,
+kein Atomic-/rpm-ostree-System.
 Der Desktop selbst, Treiber und Monitor-/Theme-Einstellungen werden nicht umgestellt.
 
 ## Installation
@@ -28,6 +29,9 @@ Nach Prüfung der gemeldeten Pfade kannst du sie sichern und ersetzen lassen:
 
 `--dry-run` lädt nichts herunter, fragt keine Identität ab und schreibt keine Dateien.
 Auf CachyOS ist die vollständige Fedora-Vorschau erlaubt; die Systeminstallation wird abgelehnt.
+Fedora unter WSL2 wird unterstützt; der Installer benötigt dort kein systemd und DNF lässt den
+von Windows bereitgestellten Kernel beim Upgrade aus. Die grafische COSMIC-Desktopumgebung ist
+für WSL kein Installationsziel.
 Nur Dotfiles lassen sich auch auf anderen Linux-Systemen mit Bash, Python >= 3.11,
 Git und GNU Stow verlinken:
 
@@ -37,7 +41,7 @@ Git und GNU Stow verlinken:
 ```
 
 Es werden einzelne Dateien verlinkt, keine ganzen Config-Verzeichnisse.
-Damit landen nachträglich erzeugte Editor-Caches oder Fish-Variablen nicht automatisch im Repo.
+Damit landen nachträglich erzeugte Editor-Caches oder Shell-History nicht automatisch im Repo.
 Das Layout setzt `XDG_CONFIG_HOME` auf dem Standardpfad `~/.config` voraus.
 Fremde Verzeichnis-Symlinks müssen vorab manuell aufgelöst werden; der Installer folgt ihnen nicht.
 
@@ -45,7 +49,7 @@ Fremde Verzeichnis-Symlinks müssen vorab manuell aufgelöst werden; der Install
 
 | Modul | Inhalt |
 | --- | --- |
-| `system` | DNF-Update, Compiler/Build-Werkzeuge, Git/GitHub CLI, Stow, Fish, tmux, zoxide, direnv, fzf, ripgrep, fd, bat, jq, btop/htop, tree, ShellCheck, shfmt, Clipboard, Podman und Flatpak |
+| `system` | DNF-Update, Compiler/Build-Werkzeuge, Git/GitHub CLI, Stow, zsh, tmux, zoxide, direnv, fzf, ripgrep, fd, bat, jq, btop/htop, tree, ShellCheck, shfmt, Clipboard, Podman und Flatpak |
 | `development` | Starship, fnm + Node 24, tree-sitter CLI, mise, uv + Python 3.14, .NET SDK 10, Neovim >= 0.12, WezTerm und Zed |
 | `flatpak` | Flathub für den Benutzer; ausgewählte optionale Desktop-Apps |
 | `fonts` | JetBrains Mono Nerd Font 3.4.0 im Benutzerverzeichnis |
@@ -99,7 +103,7 @@ in die lokale Datei übernehmen. Der Installer übernimmt daraus automatisch nur
 | `~/.gitconfig-local` | Git-Identität und persönliche Overrides |
 | `~/.gitconfig-work.local` | Optionale Firmenidentität über `includeIf` |
 | `~/.ssh/config.local` | Eigene Hosts und Schlüsselpfade; `chmod 600` setzen |
-| `~/.config/fish/local.fish` | Maschinenspezifische Shell-Einstellungen |
+| `~/.config/zsh/local.zsh` | Maschinenspezifische Shell-Einstellungen |
 
 Neutrale Vorlagen stehen in `examples/`. Eine alte SSH-Konfiguration wird bei Konflikten
 gesichert; benötigte Hosts danach in `~/.ssh/config.local` übernehmen. Private Schlüssel
@@ -124,11 +128,11 @@ Ignore-Regeln schützen nicht vor `git add -f` oder bereits versionierten Geheim
 
 ## Shell und Runtimes
 
-Fish initialisiert fnm nach mise und wechselt Node anhand von `.node-version`/`.nvmrc`
+zsh initialisiert fnm nach mise und wechselt Node anhand von `.node-version`/`.nvmrc`
 auch in Unterverzeichnissen. mise aktiviert kein Node oder Python. uv wird ohne Shell-Hook
 verwendet; pyenv und der CachyOS-spezifische Shell-Loader sind entfernt.
 
-```fish
+```zsh
 fnm install 24
 fnm use 24
 uv init
@@ -158,9 +162,56 @@ installiert. Damit bleibt sie auch beim Wechsel der Node-Version verfügbar.
 | `uvr`, `uvs` | uv run und uv sync |
 | `..`, `...`, `ll` | Navigation und Dateiliste |
 
-fzf verwendet seine Fish-Standardbindings (u. a. Ctrl-r für History), zoxide bietet `z`/`zi`.
-Programme werden nur initialisiert, wenn sie installiert sind. Die Login-Shell wird nicht geändert.
-WezTerm startet Fish auf Linux, sofern verfügbar. Optional selbst umstellen: `chsh -s /usr/bin/fish`.
+Die modulare zsh-Konfiguration basiert auf [radleylewis/zsh](https://github.com/radleylewis/zsh)
+(MIT; Lizenz liegt im zsh-Paket). Der bestehende Starship-Prompt und die Kürzel bleiben erhalten;
+frühere Fish-Abkürzungen sind jetzt Aliase. zoxide bietet `z`/`zi`.
+Programme werden nur initialisiert, wenn sie installiert sind. Runtime-Pfade, mise und fnm stehen
+auch nichtinteraktiven Tasks zur Verfügung. Prompt, Plugins und Tasten werden nur interaktiv geladen.
+
+`~/.zshenv` setzt `ZDOTDIR` auf `~/.config/zsh`; eine Änderung an `/etc` ist nicht nötig.
+History (100.000 Einträge, zwischen Sitzungen geteilt) liegt unter `$XDG_STATE_HOME/zsh/history`,
+der Completion-Cache unter `$XDG_CACHE_HOME/zsh`. Nicht gesetzte XDG-Pfade erhalten ihre Standardwerte.
+Private Anpassungen gehören nach `~/.config/zsh/local.zsh` (Vorlage: `examples/zsh-local.zsh.example`).
+Sie werden zuletzt geladen, auch für nichtinteraktive Tasks; interaktive Befehle entsprechend schützen.
+
+Plugins werden ausschließlich auf ausdrücklichen Aufruf nach `$XDG_DATA_HOME/zsh/plugins` geladen:
+
+```zsh
+zplugin-install  # fehlende Plugins installieren; danach eine neue zsh öffnen
+zplugin-update   # vorhandene Plugins per git pull --ff-only aktualisieren
+```
+
+Verwendet werden `zsh-autosuggestions`, `zsh-history-substring-search`, `zsh-vi-mode` und
+`fast-syntax-highlighting`. Shell-Starts bleiben offline und funktionieren ohne diese Plugins.
+Die vom Highlighting benötigte Theme-Datei wird aus dem lokalen Plugin in den Cache kopiert.
+Fehlgeschlagene Downloads lassen sich mit `zplugin-install` wiederholen. Ein bereits vorhandenes,
+unvollständiges Plugin-Verzeichnis muss vorher manuell beiseitegeschoben werden.
+
+| Taste | Aktion |
+| --- | --- |
+| `Esc` / `i` | Vi-Normalmodus / Einfügemodus |
+| `Ctrl-R` | fzf-History-Suche |
+| `Ctrl-T` / `Ctrl-F` | Dateisuche mit / ohne versteckte Dateien |
+| `Ctrl-Links` / `Ctrl-Rechts` | Wortweise bewegen |
+| `↑` / `↓` | History-Teilstringsuche; ohne Plugin Präfixsuche |
+| `Ctrl-\` | Vorschläge ein-/ausschalten (mit Autosuggestions-Plugin) |
+
+fzf nutzt fd und bat, sofern vorhanden; ohne sie gibt es Dateisuche mit verfügbaren Ersatzwerkzeugen
+und ohne Vorschau. Eigene Bindings werden nach der Vi-Plugin-Initialisierung gesetzt.
+
+WezTerm (Linux), tmux, Zed und das Neovim-Terminal verwenden zsh. Die Login-Shell wird nicht geändert.
+Optional selbst umstellen: `chsh -s "$(command -v zsh)"`.
+
+### Bestehende Fish-Installation umstellen
+
+Zuerst zsh installieren (auf Fedora über das `system`-Modul), dann
+`./install.sh --only dotfiles --backup` ausführen und ein neues Terminal öffnen.
+Der Installer entfernt nach erfolgreicher Verlinkung ausschließlich bekannte alte Fish-Dateisymlinks,
+die auf diesen Checkout zeigen, auch wenn deren Quelldateien bereits entfernt wurden.
+Fremde Links, private Fish-Einstellungen, History und das installierte Fish-Paket bleiben erhalten.
+`local.fish` bei Bedarf manuell in `local.zsh` übersetzen; Fish-Syntax kann nicht direkt geladen werden.
+Vorhandene zsh-Konfigurationsdateien unter den neuen Stow-Zielen werden über den üblichen
+Konflikt-/Backup-Ablauf behandelt. `--dry-run` verändert auch bei der Migration keine Dateien.
 
 ## Editoren und Terminal
 
@@ -257,7 +308,7 @@ Zum Entfernen der Links im Repo ausführen:
 
 ```bash
 stow --dir "$PWD" --target "$HOME" --no-folding --delete \
-  nvim zed wezterm fish tmux starship git ssh mise
+  nvim zed wezterm zsh tmux starship git ssh mise
 ```
 
 Anschließend die benötigten Dateien aus dem gemeldeten Backup an ihre ursprünglichen Pfade
@@ -271,11 +322,15 @@ Aufruf wiederholen. Backups bleiben auch bei einem späteren Fehler verfügbar.
 bash scripts/check.sh
 ```
 
-Prüft Bash/ShellCheck, Fish, LuaJIT-Syntax, JSONC/TOML und den Secret-Scan. Python-Integrationstests
+Prüft Bash/ShellCheck, zsh, LuaJIT-Syntax, JSONC/TOML und den Secret-Scan. Python-Integrationstests
 verwenden temporäre Home-Verzeichnisse und prüfen echtes Stow, Backups, Wiederholungen,
 Symlink-Konflikte, Pfade mit Leerzeichen, Git-Abfrage und Paketmanager-Fehler.
 Fehlende optionale Prüfwerkzeuge werden als `SKIP` ausgewiesen. Mit vorhandenem fnm prüft die Suite
 auch den rekursiven Node-Versionswechsel; mit tmux dessen Konfiguration auf einem separaten Socket.
+zsh-Tests prüfen außerdem die Fish-Migration, Runtime-Reihenfolge, Sonderzeichen in Dateinamen,
+Tastenbelegung sowie Plugin-Installation und Updates mit lokalen Git-Repositories.
+`DOTFILES_ZSH_PLUGINS` kann auf einen Ordner mit den vier vorhandenen Plugin-Quellen zeigen:
+Dann wird zusätzlich deren echter Start mit gesperrten Download-Befehlen und Vi-Initialisierung geprüft.
 `DOTFILES_WEZTERM_BINARY` kann auf ein entpacktes AppImage zeigen, um die Keymap ohne Fenster zu laden.
 `DOTFILES_NVIM_PLUGINS` kann auf vorhandene vertrauenswürdige Neovim-Plugin-Quellen (`opt/`) zeigen:
 Der Offline-Test prüft dann Plugin-Konfiguration, Explorer, LSP-Aktivierung und Speichern/Formatter-Zuständigkeit mit abgeschalteten Downloads und Builds sowie simulierten LSP-Antworten. Der Cache muss die sieben aktuellen Plugins enthalten.

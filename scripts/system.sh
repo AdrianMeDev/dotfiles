@@ -1,6 +1,11 @@
 #!/usr/bin/env bash
 install_system() {
-    run sudo dnf upgrade --refresh -y
+    if is_wsl; then
+        log 'WSL erkannt: DNF lässt den Windows-seitig bereitgestellten Linux-Kernel aus.'
+        run sudo dnf upgrade --refresh -y '--exclude=kernel*'
+    else
+        run sudo dnf upgrade --refresh -y
+    fi
     if has_extra rpmfusion; then
         local release
         if ((DRY_RUN)); then release=FEDORA_VERSION; else release=$(rpm -E %fedora); fi

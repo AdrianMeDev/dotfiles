@@ -13,6 +13,21 @@ def packages(repo):
     return (repo / 'manifests/stow.txt').read_text().split()
 
 
+def remove_legacy_fish_links(repo, home):
+    """Remove only known leaf links belonging to this checkout, including dangling ones."""
+    legacy_files = ('config.fish', 'conf.d/fnm.fish', 'functions/croot.fish',
+                    'functions/fe.fish', 'functions/mkcd.fish', 'functions/tp.fish')
+    for name in legacy_files:
+        relative = Path('.config/fish') / name
+        target = home / relative
+        # Never traverse a foreign directory link, even when its leaf points here.
+        if any(p.is_symlink() for p in target.parents if p != home and home in p.parents):
+            continue
+        expected = repo / 'fish' / relative
+        if target.is_symlink() and Path(os.path.abspath(target.parent / os.readlink(target))) == expected:
+            target.unlink()
+
+
 def conflicts(repo, home):
     found = set()
     for package in packages(repo):
@@ -46,11 +61,17 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--check', action='store_true')
     parser.add_argument('--backup', action='store_true')
+    parser.add_argument('--remove-legacy-fish-links', action='store_true')
     args = parser.parse_args()
     repo = Path(__file__).resolve().parents[1]
     home = Path.home().resolve()
     if repo == home or home.is_relative_to(repo):
         raise ValueError('Home-Ziel darf nicht im Repository liegen.')
+    if args.remove_legacy_fish_links:
+        if args.check or args.backup:
+            raise ValueError('Legacy-Bereinigung muss separat nach dem Verlinken erfolgen.')
+        remove_legacy_fish_links(repo, home)
+        return
     for name in ('.gitconfig-local', '.ssh/config.local'):
         p = home / name
         if p.is_symlink() or (p.exists() and not p.is_file()):

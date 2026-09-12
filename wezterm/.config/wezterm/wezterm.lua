@@ -14,7 +14,7 @@ config.font = wezterm.font_with_fallback { 'JetBrainsMono Nerd Font', 'DejaVu Sa
 config.scrollback_lines = 10000
 config.audible_bell = 'Disabled'
 if wezterm.target_triple:find 'linux' then
-  local ok, shell = wezterm.run_child_process { 'sh', '-c', 'command -v fish' }
+  local ok, shell = wezterm.run_child_process { 'sh', '-c', 'command -v zsh' }
   if ok then config.default_prog = { shell:gsub('%s+$', ''), '-l' } end
 end
 

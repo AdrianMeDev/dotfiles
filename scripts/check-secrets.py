@@ -18,7 +18,7 @@ PATTERNS = {
 def scan_bytes(path, data):
     text = data.decode('utf-8', errors='replace')
     findings = [kind for kind, pattern in PATTERNS.items() if pattern.search(text)]
-    if path.name in {'.gitconfig-local', 'config.local', 'fish_variables', '.netrc', '.npmrc'} or path.name.startswith('id_'):
+    if path.name in {'.gitconfig-local', 'config.local', 'local.zsh', 'fish_variables', '.netrc', '.npmrc'} or path.name.startswith('id_'):
         findings.append('private filename')
     if path.name == '.env' or (path.name.startswith('.env.') and not path.name.endswith('.example')):
         findings.append('environment file')

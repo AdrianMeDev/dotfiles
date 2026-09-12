@@ -6,6 +6,7 @@
 *.local.*
 .gitconfig-local
 config.local
+local.zsh
 fish_variables
 id_*
 *.pem

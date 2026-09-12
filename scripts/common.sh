@@ -4,6 +4,10 @@ log() { printf '\n%s\n' "$*"; }
 die() { printf 'Fehler: %s\n' "$*" >&2; exit 1; }
 need() { command -v "$1" >/dev/null 2>&1 || die "Programm fehlt: $1. Zuerst --only system ausführen."; }
 has_extra() { [[ ",$EXTRAS," == *",$1,"* ]]; }
+is_wsl() {
+    [[ -n ${WSL_INTEROP:-}${WSL_DISTRO_NAME:-} ]] ||
+        { [[ -r /proc/sys/kernel/osrelease ]] && [[ $(< /proc/sys/kernel/osrelease) == *[Mm]icrosoft* || $(< /proc/sys/kernel/osrelease) == *[Ww][Ss][Ll]* ]]; }
+}
 run() {
     printf '  +'; printf ' %q' "$@"; printf '\n'
     if ((!DRY_RUN)); then "$@"; fi

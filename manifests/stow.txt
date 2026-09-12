@@ -1,7 +1,7 @@
 nvim
 zed
 wezterm
-fish
+zsh
 tmux
 starship
 git

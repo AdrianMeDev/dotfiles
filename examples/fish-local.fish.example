@@ -1,2 +1,0 @@
-# Copy to ~/.config/fish/local.fish. Never commit credentials here.
-# set -gx PROJECTS_DIR $HOME/Development

@@ -17,6 +17,7 @@ Extras (kommagetrennt): java, rust, rpmfusion, firefox, discord, spotify
 --only       Führt genau ein Modul aus; Voraussetzungen müssen installiert sein.
 --help       Zeigt diese Hilfe.
 Ohne --only werden alle Module ausgeführt. Git-Identität wird lokal abgefragt.
+Unter WSL2 Fedora ohne systemd-Abhängigkeit ausführbar; DNF aktualisiert dort nicht den WSL-Kernel.
 EOF
 }
 

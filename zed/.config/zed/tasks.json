@@ -4,7 +4,7 @@
     "command": "npm",
     "args": ["start"],
     "cwd": "$ZED_WORKTREE_ROOT",
-    "shell": { "program": "fish" },
+    "shell": { "program": "zsh" },
     "allow_concurrent_runs": false
   },
   {
@@ -12,28 +12,28 @@
     "command": "npm",
     "args": ["test"],
     "cwd": "$ZED_WORKTREE_ROOT",
-    "shell": { "program": "fish" }
+    "shell": { "program": "zsh" }
   },
   {
     "label": "Node: build",
     "command": "npm",
     "args": ["run", "build"],
     "cwd": "$ZED_WORKTREE_ROOT",
-    "shell": { "program": "fish" }
+    "shell": { "program": "zsh" }
   },
   {
     "label": "Python: pytest",
     "command": "uv",
     "args": ["run", "pytest"],
     "cwd": "$ZED_WORKTREE_ROOT",
-    "shell": { "program": "fish" }
+    "shell": { "program": "zsh" }
   },
   {
     "label": "Django: runserver (localhost)",
     "command": "uv",
     "args": ["run", "python", "manage.py", "runserver", "127.0.0.1:8000"],
     "cwd": "$ZED_WORKTREE_ROOT",
-    "shell": { "program": "fish" },
+    "shell": { "program": "zsh" },
     "allow_concurrent_runs": false
   },
   {

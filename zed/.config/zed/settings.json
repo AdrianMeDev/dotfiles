@@ -61,7 +61,7 @@
     "provider": "zed",
   },
 
-  "terminal": { "shell": { "program": "fish" } },
+  "terminal": { "shell": { "program": "zsh" } },
   "buffer_font_family": "JetBrainsMono Nerd Font",
   "ensure_final_newline_on_save": true,
   "remove_trailing_whitespace_on_save": true,

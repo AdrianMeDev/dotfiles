@@ -7,10 +7,10 @@ if command -v shellcheck >/dev/null 2>&1; then
 else
     printf 'SKIP: ShellCheck fehlt.\n'
 fi
-if command -v fish >/dev/null 2>&1; then
-    while IFS= read -r -d '' file; do fish --no-config -n "$file"; done < <(find fish -name '*.fish' -print0)
+if command -v zsh >/dev/null 2>&1; then
+    while IFS= read -r -d '' file; do zsh -f -n "$file"; done < <(find zsh -type f \( -name '*.zsh' -o -name '.zshenv' -o -name '.zshrc' \) -print0)
 else
-    printf 'SKIP: Fish fehlt.\n'
+    printf 'SKIP: zsh fehlt.\n'
 fi
 if command -v luajit >/dev/null 2>&1; then
     while IFS= read -r -d '' file; do

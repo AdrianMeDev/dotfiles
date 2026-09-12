@@ -15,7 +15,7 @@ btop
 htop
 tree
 tmux
-fish
+zsh
 stow
 zoxide
 direnv

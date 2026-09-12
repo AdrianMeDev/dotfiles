@@ -40,6 +40,7 @@ install_dotfiles() {
     if ((DRY_RUN)); then
         log 'Git-Identität lokal erfassen, ggf. Konflikte sichern und Stow-Pakete verlinken.'
         log "Stow-Ziel: $HOME (keine Verzeichnisfaltung)."
+        log 'Nach erfolgreicher Verlinkung eigene alte Fish-Dateilinks entfernen.'
         return
     fi
     capture_git_identity
@@ -51,6 +52,7 @@ install_dotfiles() {
     run stow --dir "$REPO_DIR" --target "$HOME" --no-folding --simulate "${packages[@]}"
     save_git_identity
     run stow --dir "$REPO_DIR" --target "$HOME" --no-folding "${packages[@]}"
+    python3 "$REPO_DIR/scripts/links.py" --remove-legacy-fish-links
     chmod 700 "$HOME/.ssh"
     log 'Dotfiles verlinkt. Private Overrides bleiben außerhalb des Repos.'
 }
