@@ -8,10 +8,15 @@ end
 
 -- Minimal outer-layer terminal config:
 -- - WezTerm handles tabs/workspaces
--- - tmux inside WSL handles project panes/processes
+-- - tmux handles project panes/processes
 
--- If your distro is, for example, Ubuntu, uncomment the next line and adjust it.
--- You can see the exact name with: wsl -l -v
+config.font = wezterm.font_with_fallback { 'JetBrainsMono Nerd Font', 'DejaVu Sans Mono' }
+config.scrollback_lines = 10000
+config.audible_bell = 'Disabled'
+if wezterm.target_triple:find 'linux' then
+  local ok, shell = wezterm.run_child_process { 'sh', '-c', 'command -v fish' }
+  if ok then config.default_prog = { shell:gsub('%s+$', ''), '-l' } end
+end
 
 config.hide_tab_bar_if_only_one_tab = true
 config.use_fancy_tab_bar = false
@@ -26,14 +31,6 @@ config.window_padding = {
 }
 
 config.keys = {
-    {
-    key = 'p',
-    mods = 'CTRL|SHIFT',
-    action = act.SpawnCommandInNewTab {
-        domain = { DomainName = 'local' },
-        args = { 'pwsh.exe', '-NoLogo' },
-    },
-    },
   -- Simpler tab switching than the default Ctrl+Shift+Number
   { key = '1', mods = 'CTRL', action = act.ActivateTab(0) },
   { key = '2', mods = 'CTRL', action = act.ActivateTab(1) },
@@ -73,5 +70,14 @@ config.keys = {
   { key = 'k', mods = 'CTRL|ALT', action = act.ActivatePaneDirection 'Up' },
   { key = 'l', mods = 'CTRL|ALT', action = act.ActivatePaneDirection 'Right' },
 }
+
+if wezterm.target_triple:find 'windows' then
+  table.insert(config.keys, {
+    key = 'p', mods = 'CTRL|SHIFT',
+    action = act.SpawnCommandInNewTab { args = { 'pwsh.exe', '-NoLogo' } },
+  })
+end
+table.insert(config.keys, { key = 'x', mods = 'CTRL|SHIFT', action = act.ActivateCopyMode })
+table.insert(config.keys, { key = 'Space', mods = 'CTRL|SHIFT', action = act.QuickSelect })
 
 return config

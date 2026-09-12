@@ -1,0 +1,27 @@
+[user]
+    useConfigOnly = true
+[init]
+    defaultBranch = main
+[core]
+    editor = nvim
+    excludesFile = ~/.config/git/ignore
+[fetch]
+    prune = true
+[pull]
+    ff = only
+[push]
+    default = simple
+[merge]
+    conflictStyle = zdiff3
+[diff]
+    algorithm = histogram
+    colorMoved = default
+[alias]
+    st = status --short --branch
+    lg = log --graph --oneline --decorate -30
+    last = log -1 --stat
+    staged = diff --staged
+    branches = branch --sort=-committerdate
+    unstage = restore --staged
+[include]
+    path = ~/.gitconfig-local

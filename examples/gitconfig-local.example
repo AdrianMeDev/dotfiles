@@ -1,0 +1,8 @@
+# Copy to ~/.gitconfig-local; keep this file outside the repository.
+[user]
+    name = Your Name
+    email = you@example.com
+
+# Optional: separate work identity, also stored outside the repository.
+#[includeIf "gitdir:~/Development/Work/"]
+#    path = ~/.gitconfig-work.local

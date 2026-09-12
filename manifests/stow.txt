@@ -1,0 +1,9 @@
+nvim
+zed
+wezterm
+fish
+tmux
+starship
+git
+ssh
+mise

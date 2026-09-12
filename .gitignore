@@ -1,0 +1,31 @@
+# Private local overrides and credentials
+.env
+.env.*
+!.env.example
+*.local
+*.local.*
+.gitconfig-local
+config.local
+fish_variables
+id_*
+*.pem
+*.key
+.netrc
+.npmrc
+credentials*
+secrets*
+!scripts/check-secrets.py
+# Runtime data, downloaded packages and editor state
+__pycache__/
+*.pyc
+*.log
+*.swp
+*.swo
+**/doc/tags
+.cache/
+.local/state/
+node_modules/
+.venv/
+backups/
+.DS_Store
+!examples/*.example

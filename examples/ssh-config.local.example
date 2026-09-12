@@ -1,0 +1,6 @@
+# Copy to ~/.ssh/config.local and chmod 600 the copy.
+Host github-personal
+    HostName github.com
+    User git
+    IdentityFile ~/.ssh/id_ed25519_personal
+    IdentitiesOnly yes

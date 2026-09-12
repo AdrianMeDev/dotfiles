@@ -169,7 +169,7 @@
       // benötigt:
       //
       // "agent": {
-      //   "terminal_init_command": "codex"
+      //   "terminal_init_command": "claude"
       // }
       //
       "space a c": "agent::NewTerminalThread",
@@ -177,7 +177,7 @@
       // Neuer Zed-Agent Thread
       "space a n": "agent::NewThread",
 
-      // Edit Predictions / Ollama global ein/aus
+      // Edit Predictions global ein/aus
       "space a p": "workspace::ToggleEditPrediction",
 
       // ========================================================

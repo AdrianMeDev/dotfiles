@@ -50,24 +50,21 @@
   "auto_install_extensions": {
     "angular": true,
     "html": true,
+    "csharp": true,
   },
 
   // ============================================================
-  // AI AUTOCOMPLETE / EDIT PREDICTIONS VIA OLLAMA
+  // EDIT PREDICTIONS (existing provider preference)
   // ============================================================
 
   "edit_predictions": {
     "provider": "zed",
   },
 
-  // ============================================================
-  // CLAUDE CODE
-  // ============================================================
-
-  "agent": {
-    // Jeder neue Terminal Thread startet automatisch Claude Code.
-    "terminal_init_command": "claude",
-  },
+  "terminal": { "shell": { "program": "fish" } },
+  "buffer_font_family": "JetBrainsMono Nerd Font",
+  "ensure_final_newline_on_save": true,
+  "remove_trailing_whitespace_on_save": true,
 
   // ============================================================
   // LANGUAGE SERVER CONFIG
@@ -96,6 +93,12 @@
   // ============================================================
 
   "languages": {
+    "CSharp": {
+      "language_servers": ["roslyn", "..."],
+      "format_on_save": "on",
+      "formatter": "language_server",
+      "tab_size": 4,
+    },
     // ----------------------------------------------------------
     // Angular / TypeScript
     // ----------------------------------------------------------

@@ -1,0 +1,4 @@
+# Extra-name Application-ID
+firefox org.mozilla.firefox
+discord com.discordapp.Discord
+spotify com.spotify.Client

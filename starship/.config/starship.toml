@@ -1,0 +1,32 @@
+add_newline = false
+format = "$directory$git_branch$git_status$nodejs$python$dotnet$java$rust$cmd_duration$line_break$character"
+
+[directory]
+truncation_length = 3
+truncate_to_repo = true
+
+[git_branch]
+symbol = "git:"
+
+[nodejs]
+symbol = "node "
+
+[python]
+symbol = "py "
+format = 'via [${symbol}${version}( \($virtualenv\))]($style) '
+
+[dotnet]
+symbol = ".NET "
+
+[java]
+symbol = "java "
+
+[rust]
+symbol = "rust "
+
+[cmd_duration]
+min_time = 2000
+
+[character]
+success_symbol = "[❯](bold green)"
+error_symbol = "[❯](bold red)"

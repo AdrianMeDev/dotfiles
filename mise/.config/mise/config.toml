@@ -1,0 +1,5 @@
+# Node belongs to fnm, Python to uv. No competing runtime activation.
+[settings]
+disable_tools = ["node", "python"]
+
+# Optional project runtime: mise use java@21 (writes the project's mise.toml).
