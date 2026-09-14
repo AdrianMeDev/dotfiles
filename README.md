@@ -6,6 +6,9 @@ Ziel ist **Fedora Workstation/COSMIC mit DNF** oder eine Fedora-Distribution unt
 kein Atomic-/rpm-ostree-System.
 Der Desktop selbst, Treiber und Monitor-/Theme-Einstellungen werden nicht umgestellt.
 
+Für **Windows 11 mit Fedora unter WSL2** gibt es ein separates
+[Windows-Setup mit WezTerm, Zed, GlazeWM und Zebar](windows/README.md).
+
 ## Installation
 
 Auf dem frisch installierten Fedora zuerst Git installieren, dieses Repository klonen

@@ -1,0 +1,120 @@
+general:
+  startup_commands: ['shell-exec powershell.exe -NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File "%USERPROFILE%/.glzr/glazewm/start-zebar.ps1"']
+  shutdown_commands: []
+  config_reload_commands: []
+  focus_follows_cursor: false
+  toggle_workspace_on_refocus: false
+  hide_method: cloak
+  show_all_in_taskbar: true
+  cursor_jump:
+    enabled: false
+    trigger: monitor_focus
+gaps:
+  scale_with_dpi: true
+  inner_gap: 6px
+  outer_gap: { top: 38px, right: 6px, bottom: 6px, left: 6px }
+window_effects:
+  focused_window:
+    border: { enabled: true, color: '#8dbcff' }
+  other_windows:
+    border: { enabled: false, color: '#333333' }
+window_behavior:
+  initial_state: tiling
+  state_defaults:
+    floating: { centered: true, shown_on_top: false }
+    fullscreen: { maximized: false, shown_on_top: false }
+workspaces:
+  - name: '1'
+  - name: '2'
+  - name: '3'
+  - name: '4'
+  - name: '5'
+  - name: '6'
+  - name: '7'
+  - name: '8'
+  - name: '9'
+window_rules:
+  - commands: ['ignore']
+    match:
+      - window_process: { equals: 'zebar' }
+  - commands: ['set-floating --centered']
+    match:
+      - window_class: { equals: '#32770' }
+binding_modes:
+  - name: resize
+    keybindings:
+      - commands: ['resize --width -2%']
+        bindings: ['h', 'left']
+      - commands: ['resize --width +2%']
+        bindings: ['l', 'right']
+      - commands: ['resize --height -2%']
+        bindings: ['k', 'up']
+      - commands: ['resize --height +2%']
+        bindings: ['j', 'down']
+      - commands: ['wm-disable-binding-mode --name resize']
+        bindings: ['escape', 'enter', 'lalt+r']
+keybindings:
+  - commands: ['focus --direction left']
+    bindings: ['lalt+h', 'lalt+left']
+  - commands: ['move --direction left']
+    bindings: ['lalt+shift+h', 'lalt+shift+left']
+  - commands: ['focus --direction down']
+    bindings: ['lalt+j', 'lalt+down']
+  - commands: ['move --direction down']
+    bindings: ['lalt+shift+j', 'lalt+shift+down']
+  - commands: ['focus --direction up']
+    bindings: ['lalt+k', 'lalt+up']
+  - commands: ['move --direction up']
+    bindings: ['lalt+shift+k', 'lalt+shift+up']
+  - commands: ['focus --direction right']
+    bindings: ['lalt+l', 'lalt+right']
+  - commands: ['move --direction right']
+    bindings: ['lalt+shift+l', 'lalt+shift+right']
+  - commands: ['focus --workspace 1']
+    bindings: ['lalt+1']
+  - commands: ['move --workspace 1']
+    bindings: ['lalt+shift+1']
+  - commands: ['focus --workspace 2']
+    bindings: ['lalt+2']
+  - commands: ['move --workspace 2']
+    bindings: ['lalt+shift+2']
+  - commands: ['focus --workspace 3']
+    bindings: ['lalt+3']
+  - commands: ['move --workspace 3']
+    bindings: ['lalt+shift+3']
+  - commands: ['focus --workspace 4']
+    bindings: ['lalt+4']
+  - commands: ['move --workspace 4']
+    bindings: ['lalt+shift+4']
+  - commands: ['focus --workspace 5']
+    bindings: ['lalt+5']
+  - commands: ['move --workspace 5']
+    bindings: ['lalt+shift+5']
+  - commands: ['focus --workspace 6']
+    bindings: ['lalt+6']
+  - commands: ['move --workspace 6']
+    bindings: ['lalt+shift+6']
+  - commands: ['focus --workspace 7']
+    bindings: ['lalt+7']
+  - commands: ['move --workspace 7']
+    bindings: ['lalt+shift+7']
+  - commands: ['focus --workspace 8']
+    bindings: ['lalt+8']
+  - commands: ['move --workspace 8']
+    bindings: ['lalt+shift+8']
+  - commands: ['focus --workspace 9']
+    bindings: ['lalt+9']
+  - commands: ['move --workspace 9']
+    bindings: ['lalt+shift+9']
+  - commands: ['shell-exec wezterm.exe']
+    bindings: ['lalt+enter']
+  - commands: ['wm-enable-binding-mode --name resize']
+    bindings: ['lalt+r']
+  - commands: ['toggle-fullscreen']
+    bindings: ['lalt+f']
+  - commands: ['toggle-floating --centered']
+    bindings: ['lalt+shift+space']
+  - commands: ['wm-reload-config']
+    bindings: ['lalt+shift+r']
+  - commands: ['wm-toggle-pause']
+    bindings: ['lalt+shift+p']

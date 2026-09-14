@@ -1,0 +1,11 @@
+:root { color-scheme: dark; font: 12px 'JetBrainsMono Nerd Font', monospace; color: #d4d4d4; background: #17191f; }
+* { box-sizing: border-box; }
+body { margin: 0; height: 32px; padding: 0 8px; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 10px; overflow: hidden; }
+nav, aside { display: flex; align-items: center; gap: 5px; min-width: 0; }
+aside { justify-content: flex-end; gap: 12px; white-space: nowrap; overflow: hidden; }
+button { font: inherit; color: #777d89; background: transparent; border: 0; border-bottom: 2px solid transparent; height: 28px; min-width: 23px; cursor: pointer; }
+button.occupied { color: #e2e5ec; border-bottom-color: #68788c; }
+button.displayed { background: #303847; }
+button.focused { color: #101318; background: #8dbcff; }
+button:hover, button:focus-visible { outline: 1px solid #8dbcff; }
+#status { color: #ffb4ab; }
