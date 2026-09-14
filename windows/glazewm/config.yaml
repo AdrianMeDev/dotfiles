@@ -37,6 +37,7 @@ window_rules:
   - commands: ['ignore']
     match:
       - window_process: { equals: 'zebar' }
+      - window_process: { equals: 'Flow.Launcher' }
   - commands: ['set-floating --centered']
     match:
       - window_class: { equals: '#32770' }
@@ -106,6 +107,8 @@ keybindings:
     bindings: ['lalt+9']
   - commands: ['move --workspace 9']
     bindings: ['lalt+shift+9']
+  - commands: ['close']
+    bindings: ['lalt+q']
   - commands: ['shell-exec wezterm.exe']
     bindings: ['lalt+enter']
   - commands: ['wm-enable-binding-mode --name resize']

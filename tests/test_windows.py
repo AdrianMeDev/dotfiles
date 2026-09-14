@@ -1,4 +1,7 @@
 """Portable checks for the WSL wrapper and optional PowerShell behavior suite."""
+from html.parser import HTMLParser
+from urllib.parse import urlsplit
+import re
 import json
 import os
 from pathlib import Path
@@ -45,6 +48,30 @@ class WindowsSetupTests(unittest.TestCase):
     def test_zebar_json(self):
         for name in ("settings.json", "zpack.json"):
             json.loads((ROOT / "windows/zebar" / name).read_text())
+
+    def test_zebar_local_resources_are_served(self):
+        directory = ROOT / "windows/zebar"
+        widget = json.loads((directory / "zpack.json").read_text())["widgets"][0]
+        resources = {widget["htmlPath"]}
+
+        class Resources(HTMLParser):
+            def handle_starttag(self, tag, attrs):
+                for name, value in attrs:
+                    if name in ("src", "href") and value:
+                        url = urlsplit(value)
+                        if not url.scheme and not url.netloc and url.path:
+                            resources.add(url.path)
+
+        Resources().feed((directory / widget["htmlPath"]).read_text())
+        for resource in resources:
+            self.assertTrue((directory / resource).is_file(), resource)
+            self.assertIn(resource, widget["includeFiles"])
+
+    def test_close_binding(self):
+        config = (ROOT / "windows/glazewm/config.yaml").read_text()
+        bindings = re.findall(r"- commands: \[(.*?)\]\s+bindings: \[(.*?)\]", config)
+        close = [command for command, keys in bindings if "'lalt+q'" in keys]
+        self.assertEqual(close, ["'close'"])
 
 
 if __name__ == "__main__":

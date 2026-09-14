@@ -10,6 +10,9 @@ function Throws([scriptblock]$Action, [string]$Pattern) {
     try { & $Action } catch { Assert ($_.Exception.Message -match $Pattern) "unexpected error: $_"; return }
     throw "FAIL: expected error matching $Pattern"
 }
+$realNativeResult = ${function:Invoke-NativeResult}
+$realReadRegistry = ${function:Read-FontRegistryValue}
+$realWriteRegistry = ${function:Write-FontRegistryPlan}
 $realNative = ${function:Invoke-Native}
 $realPrerequisites = ${function:Assert-WindowsPrerequisites}
 try {
@@ -52,6 +55,19 @@ try {
     Write-FilePlan $plan
     $second = @(Get-FilePlan $entries)
     Assert (@($second | Where-Object Action -ne 'Skip').Count -eq 0) 'repeat was not idempotent'
+    $flowPath = Join-Path $env:APPDATA 'FlowLauncher/Settings/Settings.json'
+    $flowSettings = Get-Content $flowPath -Raw | ConvertFrom-Json
+    Assert ($flowSettings.Hotkey -eq 'Alt + Space' -and $flowSettings.StartFlowLauncherOnSystemStartup) 'Flow defaults'
+    $flowSettings | Add-Member -NotePropertyName CustomSetting -NotePropertyValue 'preserve'
+    $flowSettings.Hotkey = 'Ctrl + Space'
+    $flowSettings.StartFlowLauncherOnSystemStartup = $false
+    [IO.File]::WriteAllText($flowPath, (ConvertTo-Json $flowSettings))
+    $flowEntry = Get-FlowConfigEntry -NoAutostart
+    $merged = [Text.Encoding]::UTF8.GetString($flowEntry.Bytes) | ConvertFrom-Json
+    Assert ($merged.CustomSetting -eq 'preserve' -and -not $merged.StartFlowLauncherOnSystemStartup) 'Flow preserves custom settings and NoAutostart'
+    Throws { Get-FilePlan @($flowEntry) } 'Dateikonflikt'
+    Write-FilePlan @(Get-FilePlan @((Get-FlowConfigEntry)) -Backup)
+    Assert ((Get-FilePlan @((Get-FlowConfigEntry))).Action -eq 'Skip') 'Flow repeat must preserve serialized settings'
     $target = $entries[0].Path
     [IO.File]::WriteAllText($target, 'custom')
     Throws { Get-FilePlan $entries } 'Dateikonflikt'
@@ -79,16 +95,66 @@ try {
             [IO.File]::WriteAllText((Join-Path $DestinationPath "JetBrainsMonoNerdFont-$style.ttf"), "font $style")
         }
     }
-    function Get-ItemPropertyValue { param($LiteralPath, $Name, $ErrorAction) return $null }
-    function New-Item { param($Path, [switch]$Force) Assert ($Path -like 'HKCU:*') 'unexpected registry path' }
-    function New-ItemProperty { param($LiteralPath, $Name, $Value, $PropertyType, [switch]$Force) }
+    function Read-FontRegistryValue { param($SubKey, $Name) return $null }
+    function Write-FontRegistryPlan { param($Plan, $SubKey, $BackupDirectory) $script:registryWrites++ }
+    $script:registryWrites = 0
+    $script:listedPackages = @()
+    function Invoke-NativeResult {
+        param($Program, $Arguments)
+        Assert ($Program -eq 'winget.exe') 'unexpected program'
+        $script:packageCalls++
+        $script:listedPackages += $Arguments[2]
+        return [pscustomobject]@{ Code = 0; Output = @('installed') }
+    }
     Install-WindowsDesktop $source
     Install-WindowsDesktop $source
-    Assert ($script:packageCalls -eq 10) 'full installation did not process packages'
+    Assert ($script:registryWrites -eq 2) 'steps after skipped packages did not run'
+    Assert (@($script:listedPackages | Where-Object { $_ -eq 'Flow-Launcher.Flow-Launcher' }).Count -eq 2) 'Flow package missing from repeated installation'
+    Assert ($script:packageCalls -eq 12) 'full installation did not process packages'
     [IO.File]::WriteAllText($target, 'conflict again')
     $before = $script:packageCalls
     Throws { Install-WindowsDesktop $source } 'Dateikonflikt'
     Assert ($script:packageCalls -eq $before) 'packages ran before conflict preflight'
+    # Inventory and installation result sequences, including races with other installers.
+    function Invoke-NativeResult {
+        param($Program, $Arguments)
+        $script:commands += ,$Arguments
+        Assert ($Arguments -contains '--exact' -and $Arguments -contains '--source') 'exact source missing'
+        if ($Arguments[0] -eq 'install') { Assert ($Arguments -contains '--no-upgrade') 'upgrade allowed' }
+        return [pscustomobject]@{ Code = $script:codes.Dequeue(); Output = @('diagnostic') }
+    }
+    foreach ($sequence in @(@(0), @(-1978335212, 0), @(-1978335212, -1978335189, 0), @(-1978335212, -1978335135, 0))) {
+        $script:codes = [Collections.Queue]::new()
+        foreach ($code in $sequence) { $script:codes.Enqueue($code) }
+        $script:commands = @()
+        Install-WingetPackage 'test.package'
+        Assert ($script:codes.Count -eq 0) 'missing package check'
+        Assert ($script:commands[0][0] -eq 'list') 'inventory must run first'
+    }
+    foreach ($sequence in @(@(7), @(-1978335212, 7), @(-1978335212, -1978335189, -1978335212), @(-1978335212, -1978335135, 7))) {
+        $script:codes = [Collections.Queue]::new()
+        foreach ($code in $sequence) { $script:codes.Enqueue($code) }
+        Throws { Install-WingetPackage 'test.package' } 'test.package.*Exit.*diagnostic'
+        Assert ($script:codes.Count -eq 0) 'unexpected command sequence'
+    }
+    $fontEntry = @([pscustomobject]@{ Path = 'JetBrainsMonoNerdFont-Regular.ttf' })
+    $script:oldFont = $null
+    function Read-FontRegistryValue { param($SubKey, $Name) return $script:oldFont }
+    Assert ((Get-FontRegistryPlan $fontEntry 'test').Action -eq 'Create') 'missing font value'
+    $script:oldFont = [pscustomobject]@{ Value = $fontEntry[0].Path; Kind = [Microsoft.Win32.RegistryValueKind]::String }
+    Assert ((Get-FontRegistryPlan $fontEntry 'test').Action -eq 'Skip') 'identical font value'
+    $script:oldFont.Value = ''
+    Throws { Get-FontRegistryPlan $fontEntry 'test' } 'Font-Registry-Konflikt'
+    Assert ((Get-FontRegistryPlan $fontEntry 'test' -Backup).Action -eq 'Replace') 'font backup conflict'
+    function Read-FontRegistryValue { param($SubKey, $Name) throw 'access denied' }
+    Throws { Get-FontRegistryPlan $fontEntry 'test' -Backup } 'access denied'
+    ${function:Read-FontRegistryValue} = $realReadRegistry
+    ${function:Write-FontRegistryPlan} = $realWriteRegistry
+    ${function:Invoke-Native} = $realNative
+    ${function:Invoke-NativeResult} = $realNativeResult
+    if ([Environment]::OSVersion.Platform -eq 'Win32NT') {
+        & "$PSScriptRoot/registry.Tests.ps1"
+    } else { Write-Host 'SKIP: Windows HKCU registry integration (requires Windows PowerShell 5.1 / 7)' }
     # Missing dependencies are rejected before distro/package calls.
     ${function:Assert-WindowsPrerequisites} = $realPrerequisites
     function Test-Windows11 { return $true }

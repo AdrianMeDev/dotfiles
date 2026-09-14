@@ -1,6 +1,6 @@
 # Functions are kept separate so tests can replace Windows boundaries without installing anything.
-function Invoke-Native {
-    param([string]$Program, [string[]]$Arguments, [int[]]$SuccessCodes = @(0))
+function Invoke-NativeResult {
+    param([string]$Program, [string[]]$Arguments)
     # Windows PowerShell 5.1 wraps native stderr in ErrorRecords. Judge success by exit code.
     $resolved = Get-Command $Program -CommandType Application -ErrorAction Stop
     $previousPreference = $ErrorActionPreference
@@ -10,8 +10,84 @@ function Invoke-Native {
         $output = & $resolved.Source @Arguments 2>&1
         $code = $LASTEXITCODE
     } finally { $ErrorActionPreference = $previousPreference }
+    return [pscustomobject]@{ Code = $code; Output = @($output) }
+}
+function Invoke-Native {
+    param([string]$Program, [string[]]$Arguments, [int[]]$SuccessCodes = @(0))
+    $result = Invoke-NativeResult $Program $Arguments
+    $code = $result.Code
+    $output = $result.Output
     if ($code -notin $SuccessCodes) { throw "$Program (Exit $code): $($output -join "`n")" }
     return $output
+}
+
+# HRESULTs from microsoft/winget-cli AppInstallerErrors.h (signed Int32).
+function Test-WingetPackage {
+    param([string]$Package)
+    $result = Invoke-NativeResult 'winget.exe' @('list', '--id', $Package, '--exact', '--source', 'winget', '--accept-source-agreements', '--disable-interactivity')
+    if ($result.Code -eq 0) { return $true }
+    if ($result.Code -eq -1978335212) { return $false } # NO_APPLICATIONS_FOUND
+    throw "Winget $Package Bestand (Exit $($result.Code)): $($result.Output -join "`n")"
+}
+function Install-WingetPackage {
+    param([string]$Package)
+    if (Test-WingetPackage $Package) { Write-Host "Skip: $Package"; return }
+    $result = Invoke-NativeResult 'winget.exe' @('install', '--exact', '--id', $Package, '--source', 'winget', '--no-upgrade', '--accept-package-agreements', '--accept-source-agreements', '--disable-interactivity')
+    if ($result.Code -eq 0) { $result.Output | Out-Host; return }
+    # UPDATE_NOT_APPLICABLE, PACKAGE_ALREADY_INSTALLED: only accept confirmed inventory.
+    if ($result.Code -in @(-1978335189, -1978335135)) {
+        try {
+            if (Test-WingetPackage $Package) { Write-Host "Skip: $Package (Bestand bestaetigt)"; return }
+        } catch {
+            throw "Winget $Package Installation (Exit $($result.Code)): $($result.Output -join "`n"); Nachpruefung: $_"
+        }
+    }
+    throw "Winget $Package Installation (Exit $($result.Code)): $($result.Output -join "`n")"
+}
+
+function Read-FontRegistryValue {
+    param([string]$SubKey, [string]$Name)
+    $key = [Microsoft.Win32.Registry]::CurrentUser.OpenSubKey($SubKey, $false)
+    try {
+        if ($null -eq $key -or $Name -notin $key.GetValueNames()) { return $null }
+        return [pscustomobject]@{
+            Value = $key.GetValue($Name, $null, [Microsoft.Win32.RegistryValueOptions]::DoNotExpandEnvironmentNames)
+            Kind = $key.GetValueKind($Name)
+        }
+    } finally { if ($null -ne $key) { $key.Dispose() } }
+}
+function Get-FontRegistryPlan {
+    param([object[]]$Entries, [string]$SubKey, [switch]$Backup)
+    foreach ($entry in $Entries) {
+        $style = [IO.Path]::GetFileNameWithoutExtension($entry.Path) -replace '^JetBrainsMonoNerdFont-', ''
+        $name = "JetBrainsMono Nerd Font $style (TrueType)"
+        $old = Read-FontRegistryValue $SubKey $name
+        $action = 'Create'
+        if ($null -ne $old) {
+            if ($old.Kind -eq [Microsoft.Win32.RegistryValueKind]::String -and $old.Value -ceq $entry.Path) { $action = 'Skip' }
+            elseif ($Backup) { $action = 'Replace' }
+            else { throw "Font-Registry-Konflikt: $name. -Backup verwenden." }
+        }
+        [pscustomobject]@{ Name = $name; Value = $entry.Path; Action = $action }
+    }
+}
+function Write-FontRegistryPlan {
+    param([object[]]$Plan, [string]$SubKey, [string]$BackupDirectory)
+    if (@($Plan | Where-Object Action -eq 'Replace').Count) {
+        [IO.Directory]::CreateDirectory($BackupDirectory) | Out-Null
+        $saved = Join-Path $BackupDirectory "Fonts.backup-$([guid]::NewGuid().ToString('N')).reg"
+        Invoke-Native 'reg.exe' @('export', "HKCU\$SubKey", $saved) | Out-Host
+        if (-not (Test-Path -LiteralPath $saved -PathType Leaf)) { throw "Registry-Backup fehlt: $saved" }
+        Write-Host "Registry-Backup: $saved"
+    }
+    if (-not @($Plan | Where-Object Action -ne 'Skip').Count) { return }
+    # CreateSubKey opens an existing key without replacing it or its other values.
+    $key = [Microsoft.Win32.Registry]::CurrentUser.CreateSubKey($SubKey)
+    try {
+        foreach ($entry in $Plan) {
+            if ($entry.Action -ne 'Skip') { $key.SetValue($entry.Name, $entry.Value, [Microsoft.Win32.RegistryValueKind]::String) }
+        }
+    } finally { if ($null -ne $key) { $key.Dispose() } }
 }
 
 function Test-Windows11 {
@@ -94,6 +170,30 @@ function Write-FilePlan {
         [IO.File]::WriteAllBytes($entry.Path, $entry.Bytes)
     }
 }
+# Flow settings: Flow-Launcher/Flow.Launcher, Flow.Launcher.Infrastructure/UserSettings/Settings.cs
+function Get-FlowConfigEntry {
+    param([switch]$NoAutostart)
+    $path = Join-Path $env:APPDATA 'FlowLauncher/Settings/Settings.json'
+    $settings = [pscustomobject]@{}
+    $exists = Test-Path -LiteralPath $path -PathType Leaf
+    if ($exists) {
+        $settings = Get-Content -LiteralPath $path -Raw -ErrorAction Stop | ConvertFrom-Json -ErrorAction Stop
+        if ($null -eq $settings -or $settings -isnot [pscustomobject]) { throw "Ungueltige Flow-Einstellungen: $path" }
+    }
+    $desired = @{ Hotkey = 'Alt + Space'; HideOnStartup = $true }
+    if (-not $NoAutostart) { $desired.StartFlowLauncherOnSystemStartup = $true }
+    $changed = -not $exists
+    foreach ($name in $desired.Keys) {
+        $property = $settings.PSObject.Properties[$name]
+        if ($null -eq $property -or $property.Value -cne $desired[$name]) {
+            $settings | Add-Member -NotePropertyName $name -NotePropertyValue $desired[$name] -Force
+            $changed = $true
+        }
+    }
+    if ($changed) { New-TextEntry $path (ConvertTo-Json -InputObject $settings -Depth 100) }
+    else { New-CopyEntry $path $path }
+}
+
 function Get-ConfigEntries {
     param([string]$SourceRoot, [string]$SelectedDistro, [switch]$NoAutostart)
     $repo = Split-Path -Parent $SourceRoot
@@ -125,6 +225,7 @@ function Get-ConfigEntries {
     foreach ($name in 'zpack.json', 'index.html', 'style.css', 'bar.mjs') {
         New-CopyEntry (Join-Path $zebar "dotfiles/$name") (Join-Path $SourceRoot "zebar/$name")
     }
+    Get-FlowConfigEntry -NoAutostart:$NoAutostart
     if (-not $NoAutostart) {
         $startup = Join-Path $env:APPDATA 'Microsoft/Windows/Start Menu/Programs/Startup/Dotfiles-GlazeWM.vbs'
         $launcher = Join-Path $glaze 'start-glazewm.ps1'
@@ -140,7 +241,7 @@ function Install-WindowsDesktop {
     Write-Host "WSL2: $selected"
     $entries = @(Get-ConfigEntries $SourceRoot $selected -NoAutostart:$NoAutostart)
     $plan = @(Get-FilePlan $entries -Backup:$Backup)
-    $packages = @('wez.wezterm', 'ZedIndustries.Zed', 'glzr-io.glazewm', 'glzr-io.zebar', 'Microsoft.PowerShell')
+    $packages = @('wez.wezterm', 'ZedIndustries.Zed', 'glzr-io.glazewm', 'glzr-io.zebar', 'Microsoft.PowerShell', 'Flow-Launcher.Flow-Launcher')
     if ($DryRun) {
         Write-FilePlan $plan -DryRun
         foreach ($package in $packages) { Write-Host "Winget (falls fehlend): $package" }
@@ -155,37 +256,31 @@ function Install-WindowsDesktop {
         Invoke-WebRequest 'https://github.com/ryanoasis/nerd-fonts/releases/download/v3.4.0/JetBrainsMono.zip' -OutFile $archive -UseBasicParsing
         Expand-Archive -LiteralPath $archive -DestinationPath (Join-Path $temp 'fonts')
         $fontEntries = @()
-        $fontRegistry = 'HKCU:\Software\Microsoft\Windows NT\CurrentVersion\Fonts'
-        $registryConflict = $false
+        $fontRegistry = 'Software\Microsoft\Windows NT\CurrentVersion\Fonts'
         foreach ($style in 'Regular', 'Bold', 'Italic', 'BoldItalic') {
             $name = "JetBrainsMonoNerdFont-$style.ttf"
             $target = Join-Path $env:LOCALAPPDATA "Microsoft/Windows/Fonts/$name"
             $fontEntries += New-CopyEntry $target (Join-Path $temp "fonts/$name")
-            $keyName = "JetBrainsMono Nerd Font $style (TrueType)"
-            $old = Get-ItemPropertyValue -LiteralPath $fontRegistry -Name $keyName -ErrorAction SilentlyContinue
-            if ($old -and $old -ne $target) {
-                if (-not $Backup) { throw "Font-Registry-Konflikt: $keyName. -Backup verwenden." }
-                $registryConflict = $true
-            }
         }
+        $registryPlan = @(Get-FontRegistryPlan $fontEntries $fontRegistry -Backup:$Backup)
         $fontPlan = @(Get-FilePlan $fontEntries -Backup:$Backup)
+        # Write Flow settings before winget: its installer may launch Flow immediately.
+        $flowPath = Join-Path $env:APPDATA 'FlowLauncher/Settings/Settings.json'
+        $flowPlan = @($plan | Where-Object Path -eq $flowPath)
+        if (@($flowPlan | Where-Object Action -ne 'Skip').Count -and
+            (Get-Process -Name 'Flow.Launcher' -ErrorAction SilentlyContinue)) {
+            throw 'Flow Launcher vor der Aktualisierung ueber das Tray-Menue beenden und erneut ausfuehren.'
+        }
+        Write-FilePlan $flowPlan
+        $plan = @($plan | Where-Object Path -ne $flowPath)
         # Every destination has now been checked before packages/configs/registry are changed.
         foreach ($package in $packages) {
-            Invoke-Native 'winget.exe' @('install', '--exact', '--id', $package, '--source', 'winget', '--no-upgrade', '--accept-package-agreements', '--accept-source-agreements', '--disable-interactivity') @(0, -1978335189) | Out-Host
+            Install-WingetPackage $package
         }
-        if ($registryConflict) {
-            $saved = Join-Path $env:LOCALAPPDATA "Microsoft/Windows/Fonts/Fonts.backup-$([guid]::NewGuid().ToString('N')).reg"
-            [IO.Directory]::CreateDirectory((Split-Path -Parent $saved)) | Out-Null
-            Invoke-Native 'reg.exe' @('export', 'HKCU\Software\Microsoft\Windows NT\CurrentVersion\Fonts', $saved) | Out-Host
-            Write-Host "Registry-Backup: $saved"
-        }
+        Write-FontRegistryPlan $registryPlan $fontRegistry (Join-Path $env:LOCALAPPDATA 'Microsoft/Windows/Fonts')
         Write-FilePlan $plan
         Write-FilePlan $fontPlan
-        New-Item -Path $fontRegistry -Force | Out-Null
-        foreach ($entry in $fontEntries) {
-            $style = [IO.Path]::GetFileNameWithoutExtension($entry.Path) -replace '^JetBrainsMonoNerdFont-', ''
-            New-ItemProperty -LiteralPath $fontRegistry -Name "JetBrainsMono Nerd Font $style (TrueType)" -Value $entry.Path -PropertyType String -Force | Out-Null
-        }
+        Write-Host 'Flow Launcher einmal im Startmenue starten; danach Alt+Leertaste. Autostart wird beim Flow-Start uebernommen.'
         Write-Host 'Fertig. Ab-/Anmelden aktiviert Fonts, neuen PATH und (falls eingerichtet) GlazeWM.'
     } finally {
         if (Test-Path -LiteralPath $temp) { Remove-Item -LiteralPath $temp -Recurse -Force }

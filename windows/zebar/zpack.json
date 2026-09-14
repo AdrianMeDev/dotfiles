@@ -3,7 +3,7 @@
   "name": "dotfiles",
   "version": "1.0.0",
   "widgets": [{
-    "name": "bar", "htmlPath": "index.html", "zOrder": "top_most",
+    "name": "bar", "includeFiles": ["index.html", "style.css", "bar.mjs"], "htmlPath": "index.html", "zOrder": "top_most",
     "shownInTaskbar": false, "focused": false, "resizable": false, "transparent": false,
     "presets": [{
       "name": "top", "anchor": "top_left", "offsetX": "0px", "offsetY": "0px",

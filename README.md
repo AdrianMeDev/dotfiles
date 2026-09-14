@@ -7,7 +7,7 @@ kein Atomic-/rpm-ostree-System.
 Der Desktop selbst, Treiber und Monitor-/Theme-Einstellungen werden nicht umgestellt.
 
 Für **Windows 11 mit Fedora unter WSL2** gibt es ein separates
-[Windows-Setup mit WezTerm, Zed, GlazeWM und Zebar](windows/README.md).
+[Windows-Setup mit WezTerm, Zed, GlazeWM, Zebar und Flow Launcher](windows/README.md).
 
 ## Installation
 
