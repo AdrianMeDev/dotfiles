@@ -34,7 +34,6 @@ opt.laststatus = 3
 opt.statusline = '%f %m%r%=%y  %l:%c  %p%%'
 opt.showtabline = 0 -- Buffer wechseln per Tastatur, keine zusätzliche Tab-Leiste.
 
--- Zeds „Neovim custom“ basiert auf diesen Neovim-Farben. Kein Theme-Plugin nötig.
 opt.background = 'dark'
 vim.cmd.colorscheme 'default'
 vim.api.nvim_set_hl(0, 'Normal', { fg = '#e0e2ea', bg = '#15171c' })
@@ -65,6 +64,7 @@ vim.pack.add {
   'https://github.com/ibhagwan/fzf-lua',
   'https://github.com/nvim-tree/nvim-tree.lua',
   'https://github.com/folke/which-key.nvim',
+  'https://github.com/folke/flash.nvim',
   'https://github.com/neovim/nvim-lspconfig',
   'https://github.com/mason-org/mason.nvim',
   'https://github.com/mason-org/mason-lspconfig.nvim',
@@ -73,9 +73,64 @@ vim.pack.add {
 
 require('fzf-lua').setup {
   'default-title',
-  defaults = { file_icons = false }, -- Keine zusätzliche Icon-Abhängigkeit.
+  defaults = { file_icons = false },    -- Keine zusätzliche Icon-Abhängigkeit.
 }
 require('fzf-lua').register_ui_select() -- Auch Code-Actions nutzen dieselbe Auswahl.
+local Flash = require 'flash'
+
+local function goto_word()
+  local function format(opts)
+    return {
+      { opts.match.label1, 'FlashMatch' },
+      { opts.match.label2, 'FlashLabel' },
+    }
+  end
+
+  Flash.jump {
+    search = {
+      mode = 'search',
+      multi_window = false,
+    },
+    label = {
+      after = false,
+      before = { 0, 0 },
+      uppercase = false,
+      format = format,
+    },
+    pattern = [[\<]],
+    action = function(match, state)
+      state:hide()
+
+      Flash.jump {
+        search = { max_length = 0 },
+        highlight = { matches = false },
+        label = { format = format },
+
+        matcher = function(win)
+          return vim.tbl_filter(function(m)
+            return m.label == match.label and m.win == win
+          end, state.results)
+        end,
+
+        labeler = function(matches)
+          for _, m in ipairs(matches) do
+            m.label = m.label2
+          end
+        end,
+      }
+    end,
+
+    labeler = function(matches, state)
+      local labels = state:labels()
+
+      for m, match in ipairs(matches) do
+        match.label1 = labels[math.floor((m - 1) / #labels) + 1]
+        match.label2 = labels[(m - 1) % #labels + 1]
+        match.label = match.label1
+      end
+    end,
+  }
+end
 require('nvim-tree').setup {
   view = { width = 30 },
   renderer = { icons = { show = { file = false, folder = false, git = false } } },
@@ -95,7 +150,8 @@ require('which-key').add {
 -- Parser liefern Syntaxfarben; LSP liefert Codeverständnis. Das ist unabhängig.
 -- Neue Sprache: Parsernamen ergänzen; :TSUpdate nach Plugin-Updates ausführen.
 local parsers =
-  { 'lua', 'vim', 'vimdoc', 'query', 'javascript', 'typescript', 'tsx', 'html', 'css', 'json', 'python', 'c_sharp', 'markdown', 'markdown_inline', 'bash' }
+{ 'lua', 'vim', 'vimdoc', 'query', 'javascript', 'typescript', 'tsx', 'html', 'css', 'json', 'python', 'c_sharp',
+  'markdown', 'markdown_inline', 'bash' }
 local function highlight(buf)
   if vim.api.nvim_buf_is_valid(buf) and vim.bo[buf].buftype == '' then
     -- Ohne fertigen Parser bleibt die eingebaute Syntaxhervorhebung aktiv.
@@ -151,7 +207,10 @@ vim.api.nvim_create_autocmd('LspAttach', {
   group = group,
   callback = function(event)
     local client = vim.lsp.get_client_by_id(event.data.client_id)
-    if client and client:supports_method 'textDocument/completion' then vim.lsp.completion.enable(true, client.id, event.buf, { autotrigger = true }) end
+    if client and client:supports_method 'textDocument/completion' then
+      vim.lsp.completion.enable(true, client.id,
+        event.buf, { autotrigger = true })
+    end
   end,
 })
 -- Native Completion: Ctrl-Space anfordern, Ctrl-n/p auswählen, Ctrl-y übernehmen.
@@ -247,6 +306,7 @@ map('n', '<leader>bd', '<cmd>bdelete<CR>', { desc = 'Buffer schließen' })
 map('n', '<leader>fb', fzf.buffers, { desc = 'Buffer auswählen' })
 map('n', '<leader>ca', vim.lsp.buf.code_action, { desc = 'Code-Action' })
 map('n', '<leader>cr', vim.lsp.buf.rename, { desc = 'Symbol umbenennen' })
+map('n', '<leader>j', goto_word, { desc = 'Zu Wort springen' })
 map('n', '<leader>cf', function() format_buffer(vim.api.nvim_get_current_buf()) end, { desc = 'Datei formatieren' })
 map('n', '<leader>cu', fzf.lsp_references, { desc = 'Verwendungen' })
 map('n', 'gd', vim.lsp.buf.definition, { desc = 'Zur Definition' })
@@ -265,7 +325,8 @@ map('n', '<leader>sl', '<cmd>rightbelow vsplit<CR>', { desc = 'Split rechts' })
 map('n', '<leader>sh', '<cmd>leftabove vsplit<CR>', { desc = 'Split links' })
 map('n', '<leader>sj', '<cmd>rightbelow split<CR>', { desc = 'Split unten' })
 map('n', '<leader>sk', '<cmd>leftabove split<CR>', { desc = 'Split oben' })
-map('n', '<leader>un', function() vim.wo.relativenumber = not vim.wo.relativenumber end, { desc = 'Relative Zeilennummern' })
+map('n', '<leader>un', function() vim.wo.relativenumber = not vim.wo.relativenumber end,
+  { desc = 'Relative Zeilennummern' })
 map(
   'n',
   '<leader>ui',
