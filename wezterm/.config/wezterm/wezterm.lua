@@ -18,6 +18,9 @@ if wezterm.target_triple:find 'linux' then
   if ok then config.default_prog = { shell:gsub('%s+$', ''), '-l' } end
 end
 
+config.color_scheme = 'Wez'
+config.window_background_opacity = 0.75
+config.text_background_opacity = 0.0
 config.hide_tab_bar_if_only_one_tab = true
 config.use_fancy_tab_bar = false
 config.tab_bar_at_bottom = true
