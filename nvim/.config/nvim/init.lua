@@ -35,11 +35,6 @@ opt.statusline = '%f %m%r%=%y  %l:%c  %p%%'
 opt.showtabline = 0 -- Buffer wechseln per Tastatur, keine zusätzliche Tab-Leiste.
 
 opt.background = 'dark'
-vim.cmd.colorscheme 'default'
-vim.api.nvim_set_hl(0, 'Normal', { fg = '#e0e2ea', bg = '#15171c' })
-vim.api.nvim_set_hl(0, 'NormalFloat', { fg = '#e0e2ea', bg = '#2c2e33' })
-vim.api.nvim_set_hl(0, 'Comment', { fg = '#9b9ea4' })
-vim.api.nvim_set_hl(0, 'CursorLine', { bg = '#2c2e33' })
 
 local group = vim.api.nvim_create_augroup('MeineConfig', { clear = true })
 vim.api.nvim_create_autocmd('FileType', {
@@ -61,6 +56,7 @@ vim.api.nvim_create_autocmd('TextYankPost', {
 -- Updates: :lua vim.pack.update()  (Änderungen prüfen und mit :write übernehmen)
 -- Danach nvim-pack-lock.json mit versionieren. Details: :help vim.pack
 vim.pack.add {
+  'https://github.com/folke/tokyonight.nvim',
   'https://github.com/ibhagwan/fzf-lua',
   'https://github.com/nvim-tree/nvim-tree.lua',
   'https://github.com/folke/which-key.nvim',
@@ -71,6 +67,8 @@ vim.pack.add {
   { src = 'https://github.com/nvim-treesitter/nvim-treesitter', version = 'main' },
 }
 
+require('tokyonight').setup { style = 'night', transparent = true }
+vim.cmd.colorscheme 'tokyonight-night'
 require('fzf-lua').setup {
   'default-title',
   defaults = { file_icons = false },    -- Keine zusätzliche Icon-Abhängigkeit.

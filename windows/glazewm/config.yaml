@@ -15,9 +15,9 @@ gaps:
   outer_gap: { top: 38px, right: 6px, bottom: 6px, left: 6px }
 window_effects:
   focused_window:
-    border: { enabled: true, color: '#8dbcff' }
+    border: { enabled: true, color: '#7aa2f7' }
   other_windows:
-    border: { enabled: false, color: '#333333' }
+    border: { enabled: false, color: '#414868' }
 window_behavior:
   initial_state: tiling
   state_defaults:

@@ -1,9 +1,8 @@
 # Windows 11 mit Fedora unter WSL2
 
 Dieses separate Setup installiert native Windows-Anwendungen: WezTerm, Zed,
-GlazeWM, Zebar, Flow Launcher und PowerShell 7 über Winget sowie JetBrains Mono Nerd Font v3.4.0
-(Regular, Bold, Italic, BoldItalic), dieselbe Font-Familie und Version wie im
-Fedora-Installer. Die Windows-Taskleiste bleibt erhalten. GlazeWM nähert COSMICs
+GlazeWM, Zebar, Flow Launcher und PowerShell 7 über Winget sowie Ioskeley Mono und
+Ioskeley Mono Term Nerd Font v2.1.0 mit allen Schnitten. Die Windows-Taskleiste bleibt erhalten. GlazeWM nähert COSMICs
 Tiling mit neun vordefinierten Workspaces an; es ersetzt keinen vollständigen Desktop.
 
 Für die Einrichtung ohne Setup- und Startskripte gibt es die separate
@@ -43,7 +42,7 @@ UNC-Pfade. Kein Laufwerkswechsel über `cmd.exe` ist erforderlich.
 Ein Dateikonflikt stoppt auch die Vorschau; zum Anzeigen geplanter Ersetzungen
 `-DryRun -Backup` verwenden. Identische Dateien werden übersprungen. Verzeichnisse
 an Dateizielen und Verknüpfungen in Zielpfaden werden abgelehnt. Die echte Installation
-lädt das Font-Archiv in ein temporäres Verzeichnis und prüft zusätzlich Font-Dateien
+lädt die Font-Archive in ein temporäres Verzeichnis und prüft zusätzlich Font-Dateien
 und Registry-Einträge, bevor sie Pakete oder Konfigurationen ändert. Die Vorschau
 kann diese heruntergeladenen Font-Inhalte noch nicht vergleichen.
 
@@ -73,7 +72,8 @@ ist daher nicht vorgesehen.
 | `%LOCALAPPDATA%\Microsoft\Windows\Fonts\` | Benutzer-Fonts; Registrierung unter `HKCU\Software\Microsoft\Windows NT\CurrentVersion\Fonts` |
 | Windows-Autostartordner | `Dotfiles-GlazeWM.vbs`, startet GlazeWM ohne Konsolenfenster |
 
-WezTerm verwendet die vorhandenen Farben, Transparenz, Schrift und Tastenkürzel.
+WezTerm verwendet Tokyo Night, die vorhandene Transparenz, Ioskeley Mono Term Nerd Font
+und die bestehenden Tastenkürzel. Zed nutzt Tokyo Night und die normale Ioskeley-Mono-Familie.
 Die [WSL-Domain](https://wezterm.org/config/lua/WslDomain.html) startet die gewählte
 Distribution mit ihrer Standard-Shell. `Ctrl+T` öffnet Tabs in der aktuellen Domain;
 in Fedora bleiben sie Fedora-Tabs. `Ctrl+Shift+P` öffnet lokale PowerShell 7.

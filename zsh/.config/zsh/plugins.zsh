@@ -1,6 +1,7 @@
 # Explicit installation only; startup never fetches plugins.
 # Adapted from radleylewis/zsh (MIT; see LICENSE).
 typeset -g ZPLUGINDIR="$XDG_DATA_HOME/zsh/plugins"
+typeset -g ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE='fg=#565f89'
 typeset -ga _dotfiles_zplugins=(
   zsh-users/zsh-autosuggestions
   zsh-users/zsh-history-substring-search
@@ -63,6 +64,19 @@ _dotfiles_zplugin_load() {
         fi
       fi
       source "$ZPLUGINDIR/${plugin:t}/${plugin:t}.plugin.zsh"
+      if [[ ${plugin:t} = fast-syntax-highlighting ]]; then
+        # Tokyo Night: apply a compact overlay without downloading another theme.
+        FAST_HIGHLIGHT_STYLES[defaultunknown-token]='fg=#f7768e,bold'
+        FAST_HIGHLIGHT_STYLES[defaultreserved-word]='fg=#bb9af7'
+        FAST_HIGHLIGHT_STYLES[defaultcommand]='fg=#7aa2f7'
+        FAST_HIGHLIGHT_STYLES[defaultbuiltin]='fg=#2ac3de'
+        FAST_HIGHLIGHT_STYLES[defaultfunction]='fg=#7dcfff'
+        FAST_HIGHLIGHT_STYLES[defaultpath]='fg=#73daca,underline'
+        FAST_HIGHLIGHT_STYLES[defaultsingle-quoted-argument]='fg=#9ece6a'
+        FAST_HIGHLIGHT_STYLES[defaultdouble-quoted-argument]='fg=#9ece6a'
+        FAST_HIGHLIGHT_STYLES[defaultcomment]='fg=#565f89'
+        FAST_HIGHLIGHT_STYLES[defaultvariable]='fg=#e0af68'
+      fi
     fi
   done
 }

@@ -10,7 +10,11 @@ end
 -- - WezTerm handles tabs/workspaces
 -- - tmux handles project panes/processes
 
-config.font = wezterm.font_with_fallback { 'JetBrainsMono Nerd Font', 'DejaVu Sans Mono' }
+config.font = wezterm.font_with_fallback {
+  'IoskeleyMonoTerm Nerd Font Mono',
+  'Ioskeley Mono',
+  'DejaVu Sans Mono',
+}
 config.scrollback_lines = 10000
 config.audible_bell = 'Disabled'
 if wezterm.target_triple:find 'linux' then
@@ -18,7 +22,7 @@ if wezterm.target_triple:find 'linux' then
   if ok then config.default_prog = { shell:gsub('%s+$', ''), '-l' } end
 end
 
-config.color_scheme = 'Wez'
+config.color_scheme = 'Tokyo Night'
 config.window_background_opacity = 0.75
 config.text_background_opacity = 0.0
 config.hide_tab_bar_if_only_one_tab = true

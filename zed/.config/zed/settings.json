@@ -3,8 +3,9 @@
   // VIM / NEOVIM FEEL
   // ============================================================
 
+  "icon_theme": "Zed (Default)",
   "cli_default_open_behavior": "existing_window",
-  "theme": "Neovim custom",
+  "theme": "Tokyo Night",
   "vim_mode": true,
 
   "which_key": {
@@ -12,6 +13,20 @@
     "delay_ms": 300
   },
 
+  "buffer_font_family": "Ioskeley Mono",
+  "buffer_font_size": 15,
+  "buffer_line_height": "comfortable",
+
+  "experimental.theme_overrides": {
+    "background.appearance": "blurred",
+    "background": "#00000080",
+    "editor.background": "#00000080",
+    "editor.gutter.background": "#00000080",
+    "tab_bar.background": "#00000080",
+    "panel.background": "#00000080",
+    "toolbar.background": "#00000080",
+    "terminal.background": "#00000080"
+  },
 
   // VS Code Keymap bleibt als Fallback für Bereiche,
   // die nicht vom Vim Mode abgedeckt werden.
@@ -61,8 +76,11 @@
     "provider": "zed",
   },
 
-  "terminal": { "shell": { "program": "zsh" } },
-  "buffer_font_family": "JetBrainsMono Nerd Font",
+  "terminal": {
+    "font_family": "IoskeleyMonoTerm Nerd Font Mono",
+    "line_height": "standard",
+    "shell": { "program": "zsh" },
+  },
   "ensure_final_newline_on_save": true,
   "remove_trailing_whitespace_on_save": true,
 

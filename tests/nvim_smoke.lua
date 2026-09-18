@@ -2,7 +2,7 @@
 -- Only trusted cached sources are loaded; no downloads, parser builds or LSP processes.
 local plugins = assert(os.getenv 'DOTFILES_NVIM_PLUGINS')
 local config = assert(os.getenv 'DOTFILES_NVIM_CONFIG')
-local names = { 'fzf-lua', 'nvim-tree.lua', 'which-key.nvim', 'nvim-lspconfig', 'mason.nvim', 'mason-lspconfig.nvim', 'nvim-treesitter' }
+local names = { 'tokyonight.nvim', 'fzf-lua', 'nvim-tree.lua', 'which-key.nvim', 'flash.nvim', 'nvim-lspconfig', 'mason.nvim', 'mason-lspconfig.nvim', 'nvim-treesitter' }
 for _, name in ipairs(names) do
   local path = vim.fs.joinpath(plugins, name)
   assert(vim.fn.isdirectory(path) == 1, 'Missing cached plugin: ' .. name)
@@ -32,6 +32,7 @@ end
 local function run()
   dofile(config)
   vim.wait(100)
+  assert(vim.g.colors_name == 'tokyonight-night', 'Tokyo Night colorscheme is not active')
   for _, name in ipairs(servers) do
     assert(vim.lsp.is_enabled(name), 'LSP not enabled: ' .. name)
     vim.lsp.enable(name, false) -- No real server processes during editing checks.

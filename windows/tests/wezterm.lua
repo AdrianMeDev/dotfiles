@@ -22,6 +22,9 @@ end
 local config = dofile(root .. '/windows/wezterm/wezterm.lua')
 assert(config.default_domain == 'WSL:Fedora Linux')
 assert(config.wsl_domains[1].distribution == 'Fedora Linux')
+assert(config.color_scheme == 'Tokyo Night')
+assert(config.font[1] == 'IoskeleyMonoTerm Nerd Font Mono')
+assert(config.font[2] == 'Ioskeley Mono')
 local found = {}
 for _, key in ipairs(config.keys) do
   if key.key == 't' and key.mods == 'CTRL' then

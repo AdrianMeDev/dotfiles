@@ -69,9 +69,16 @@ class WindowsSetupTests(unittest.TestCase):
 
     def test_close_binding(self):
         config = (ROOT / "windows/glazewm/config.yaml").read_text()
+        self.assertIn("color: '#7aa2f7'", config)
         bindings = re.findall(r"- commands: \[(.*?)\]\s+bindings: \[(.*?)\]", config)
         close = [command for command, keys in bindings if "'lalt+q'" in keys]
         self.assertEqual(close, ["'close'"])
+
+    def test_zebar_uses_tokyo_night_and_ioskeley(self):
+        styles = (ROOT / "windows/zebar/style.css").read_text()
+        self.assertIn("'IoskeleyMonoTerm Nerd Font Mono'", styles)
+        self.assertIn("background: #1a1b26", styles)
+        self.assertIn("background: #7aa2f7", styles)
 
 
 if __name__ == "__main__":

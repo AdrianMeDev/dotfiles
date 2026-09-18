@@ -92,20 +92,18 @@ Windows PowerShell 5.1 ersetzt PowerShell 7 nicht; beide dürfen parallel instal
 sein. Nach der Programminstallation ab- und anmelden, damit neue PATH-Einträge
 auch im Desktop verfügbar sind.
 
-## 4. JetBrains Mono Nerd Font installieren
+## 4. Ioskeley Mono installieren
 
-1. [JetBrainsMono.zip aus Nerd Fonts v3.4.0](https://github.com/ryanoasis/nerd-fonts/releases/download/v3.4.0/JetBrainsMono.zip)
-   herunterladen und entpacken.
-2. Diese vier Dateien auswählen:
-   - `JetBrainsMonoNerdFont-Regular.ttf`
-   - `JetBrainsMonoNerdFont-Bold.ttf`
-   - `JetBrainsMonoNerdFont-Italic.ttf`
-   - `JetBrainsMonoNerdFont-BoldItalic.ttf`
+1. Aus [Ioskeley Mono v2.1.0](https://github.com/ahatem/IoskeleyMono/releases/tag/v2.1.0)
+   `IoskeleyMono.zip` und `IoskeleyMono-Term-NerdFont.zip` herunterladen und entpacken.
+2. Alle TTF-Dateien aus `Normal/Hinted` des normalen Archivs und `Normal` des
+   Terminal-Nerd-Font-Archivs auswählen. Andere Breiten und die unhinted
+   Editor-Dateien nicht zusätzlich installieren.
 3. Per Rechtsklick, gegebenenfalls **Weitere Optionen anzeigen**, **Installieren**
    wählen. Für die Installation nur für dich nicht **Für alle Benutzer installieren**
    verwenden. Alternativ jede Datei öffnen und in der Schriftvorschau installieren.
 4. Unter **Einstellungen → Personalisierung → Schriftarten** nach
-   `JetBrainsMono Nerd Font` suchen. Sind die Fonts bereits vorhanden, die
+   `Ioskeley Mono` und `IoskeleyMonoTerm Nerd Font Mono` suchen. Sind die Fonts bereits vorhanden, die
    Installation überspringen; eine vorhandene andere Version nur bewusst ersetzen.
 
 Windows übernimmt Kopieren und Registrierung der Fonts. Keine Registry-Werte
@@ -148,19 +146,18 @@ Zed einmal starten und wieder beenden. Unter `%APPDATA%\Zed` diese Dateien ableg
 | --- | --- |
 | `zed/.config/zed/settings.json` | `settings.json` |
 | `zed/.config/zed/keymap.json` | `keymap.json` |
-| `zed/.config/zed/themes/Neovim-custom.json` | `themes\Neovim-custom.json` |
 | `zed/.config/zed/tasks.json` | `tasks.json` |
 
-In der kopierten `settings.json` diesen Eintrag suchen:
+In der kopierten `settings.json` innerhalb des `terminal`-Objekts diesen Eintrag suchen:
 
 ```json
-"terminal": { "shell": { "program": "zsh" } }
+"shell": { "program": "zsh" }
 ```
 
 Durch folgenden Eintrag ersetzen, das umgebende JSON und seine Kommas erhalten:
 
 ```json
-"terminal": { "shell": { "program": "pwsh.exe", "args": ["-NoLogo"] } }
+"shell": { "program": "pwsh.exe", "args": ["-NoLogo"] }
 ```
 
 In der kopierten `tasks.json` aus jedem Task die vollständige Zeile

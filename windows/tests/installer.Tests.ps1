@@ -51,6 +51,11 @@ try {
     $entries = @(Get-ConfigEntries $source 'Fedora')
     $noAuto = @(Get-ConfigEntries $source 'Fedora' -NoAutostart)
     Assert ($noAuto.Count -eq $entries.Count - 1) 'NoAutostart'
+    $zedPath = Join-Path $env:APPDATA 'Zed/settings.json'
+    $zedEntry = @($entries | Where-Object Path -eq $zedPath)[0]
+    $zedText = [Text.Encoding]::UTF8.GetString($zedEntry.Bytes)
+    Assert ($zedText.Contains('"font_family": "IoskeleyMonoTerm Nerd Font Mono"')) 'Zed terminal font missing'
+    Assert ($zedText.Contains('"program": "pwsh.exe"')) 'Zed Windows shell missing'
     $plan = @(Get-FilePlan $entries)
     Write-FilePlan $plan
     $second = @(Get-FilePlan $entries)
@@ -90,9 +95,12 @@ try {
     function Invoke-WebRequest { param($Uri, $OutFile, [switch]$UseBasicParsing) [IO.File]::WriteAllText($OutFile, 'mock archive') }
     function Expand-Archive {
         param($LiteralPath, $DestinationPath)
-        [IO.Directory]::CreateDirectory($DestinationPath) | Out-Null
-        foreach ($style in 'Regular', 'Bold', 'Italic', 'BoldItalic') {
-            [IO.File]::WriteAllText((Join-Path $DestinationPath "JetBrainsMonoNerdFont-$style.ttf"), "font $style")
+        $terminal = $LiteralPath -like '*term-nerd.zip'
+        $fontDirectory = if ($terminal) { Join-Path $DestinationPath 'Normal' } else { Join-Path $DestinationPath 'Normal/Hinted' }
+        [IO.Directory]::CreateDirectory($fontDirectory) | Out-Null
+        foreach ($number in 1..20) {
+            $family = if ($terminal) { 'IoskeleyMonoTermNerdFontMono' } else { 'IoskeleyMono' }
+            [IO.File]::WriteAllText((Join-Path $fontDirectory "$family-Style$number.ttf"), "font $family $number")
         }
     }
     function Read-FontRegistryValue { param($SubKey, $Name) return $null }
@@ -109,6 +117,8 @@ try {
     Install-WindowsDesktop $source
     Install-WindowsDesktop $source
     Assert ($script:registryWrites -eq 2) 'steps after skipped packages did not run'
+    $installedFonts = @(Get-ChildItem (Join-Path $env:LOCALAPPDATA 'Microsoft/Windows/Fonts') -Filter '*.ttf')
+    Assert ($installedFonts.Count -eq 40) 'both Ioskeley families must install all 20 styles'
     Assert (@($script:listedPackages | Where-Object { $_ -eq 'Flow-Launcher.Flow-Launcher' }).Count -eq 2) 'Flow package missing from repeated installation'
     Assert ($script:packageCalls -eq 12) 'full installation did not process packages'
     [IO.File]::WriteAllText($target, 'conflict again')
@@ -137,7 +147,10 @@ try {
         Throws { Install-WingetPackage 'test.package' } 'test.package.*Exit.*diagnostic'
         Assert ($script:codes.Count -eq 0) 'unexpected command sequence'
     }
-    $fontEntry = @([pscustomobject]@{ Path = 'JetBrainsMonoNerdFont-Regular.ttf' })
+    $fontEntry = @([pscustomobject]@{
+        Path = 'IoskeleyMonoTermNerdFontMono-Regular.ttf'
+        RegistryName = 'IoskeleyMonoTermNerdFontMono-Regular (TrueType)'
+    })
     $script:oldFont = $null
     function Read-FontRegistryValue { param($SubKey, $Name) return $script:oldFont }
     Assert ((Get-FontRegistryPlan $fontEntry 'test').Action -eq 'Create') 'missing font value'

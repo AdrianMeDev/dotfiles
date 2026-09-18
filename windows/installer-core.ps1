@@ -59,8 +59,8 @@ function Read-FontRegistryValue {
 function Get-FontRegistryPlan {
     param([object[]]$Entries, [string]$SubKey, [switch]$Backup)
     foreach ($entry in $Entries) {
-        $style = [IO.Path]::GetFileNameWithoutExtension($entry.Path) -replace '^JetBrainsMonoNerdFont-', ''
-        $name = "JetBrainsMono Nerd Font $style (TrueType)"
+        if (-not $entry.PSObject.Properties['RegistryName']) { throw "Registry-Name fehlt für Font: $($entry.Path)" }
+        $name = $entry.RegistryName
         $old = Read-FontRegistryValue $SubKey $name
         $action = 'Create'
         if ($null -ne $old) {
@@ -209,12 +209,11 @@ function Get-ConfigEntries {
     # WezTerm prefers this file to .config/wezterm; treat it as part of the conflict plan.
     New-TextEntry (Join-Path $env:USERPROFILE '.wezterm.lua') "return dofile(require('wezterm').home_dir .. '/.config/wezterm/wezterm.lua')`n"
     $settings = [IO.File]::ReadAllText((Join-Path $repo 'zed/.config/zed/settings.json'))
-    $needle = '"terminal": { "shell": { "program": "zsh" } }'
+    $needle = '"shell": { "program": "zsh" }'
     if (-not $settings.Contains($needle)) { throw 'Zed-Basiskonfiguration geaendert: Terminal-Anpassung pruefen.' }
-    $settings = $settings.Replace($needle, '"terminal": { "shell": { "program": "pwsh.exe", "args": ["-NoLogo"] } }')
+    $settings = $settings.Replace($needle, '"shell": { "program": "pwsh.exe", "args": ["-NoLogo"] }')
     New-TextEntry (Join-Path $zed 'settings.json') $settings
     New-CopyEntry (Join-Path $zed 'keymap.json') (Join-Path $repo 'zed/.config/zed/keymap.json')
-    New-CopyEntry (Join-Path $zed 'themes/Neovim-custom.json') (Join-Path $repo 'zed/.config/zed/themes/Neovim-custom.json')
     $tasks = @(Get-Content -LiteralPath (Join-Path $repo 'zed/.config/zed/tasks.json') -Raw | ConvertFrom-Json)
     foreach ($task in $tasks) { $task.PSObject.Properties.Remove('shell') }
     New-TextEntry (Join-Path $zed 'tasks.json') (ConvertTo-Json -InputObject $tasks -Depth 30)
@@ -245,22 +244,33 @@ function Install-WindowsDesktop {
     if ($DryRun) {
         Write-FilePlan $plan -DryRun
         foreach ($package in $packages) { Write-Host "Winget (falls fehlend): $package" }
-        Write-Host 'Font: JetBrains Mono Nerd Font v3.4.0 (Download und Inhalts-/Registry-Konfliktpruefung erst ohne -DryRun).'
+        Write-Host 'Fonts: Ioskeley Mono und Ioskeley Mono Term Nerd Font v2.1.0 (Download und Inhalts-/Registry-Konfliktpruefung erst ohne -DryRun).'
         return
     }
     $temp = Join-Path ([IO.Path]::GetTempPath()) ('dotfiles-' + [guid]::NewGuid().ToString('N'))
     try {
         [IO.Directory]::CreateDirectory($temp) | Out-Null
-        $archive = Join-Path $temp 'fonts.zip'
+        $editorArchive = Join-Path $temp 'ioskeley.zip'
+        $terminalArchive = Join-Path $temp 'ioskeley-term-nerd.zip'
         [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-        Invoke-WebRequest 'https://github.com/ryanoasis/nerd-fonts/releases/download/v3.4.0/JetBrainsMono.zip' -OutFile $archive -UseBasicParsing
-        Expand-Archive -LiteralPath $archive -DestinationPath (Join-Path $temp 'fonts')
+        Invoke-WebRequest 'https://github.com/ahatem/IoskeleyMono/releases/download/v2.1.0/IoskeleyMono.zip' -OutFile $editorArchive -UseBasicParsing
+        Invoke-WebRequest 'https://github.com/ahatem/IoskeleyMono/releases/download/v2.1.0/IoskeleyMono-Term-NerdFont.zip' -OutFile $terminalArchive -UseBasicParsing
+        $editorSource = Join-Path $temp 'ioskeley/Normal/Hinted'
+        $terminalSource = Join-Path $temp 'ioskeley-term/Normal'
+        Expand-Archive -LiteralPath $editorArchive -DestinationPath (Join-Path $temp 'ioskeley')
+        Expand-Archive -LiteralPath $terminalArchive -DestinationPath (Join-Path $temp 'ioskeley-term')
+        $editorFonts = @(Get-ChildItem -LiteralPath $editorSource -Filter '*.ttf' -File)
+        $terminalFonts = @(Get-ChildItem -LiteralPath $terminalSource -Filter '*.ttf' -File)
+        if ($editorFonts.Count -ne 20 -or $terminalFonts.Count -ne 20) {
+            throw 'Font-Archive enthalten nicht jeweils die erwarteten 20 TTF-Dateien.'
+        }
         $fontEntries = @()
         $fontRegistry = 'Software\Microsoft\Windows NT\CurrentVersion\Fonts'
-        foreach ($style in 'Regular', 'Bold', 'Italic', 'BoldItalic') {
-            $name = "JetBrainsMonoNerdFont-$style.ttf"
-            $target = Join-Path $env:LOCALAPPDATA "Microsoft/Windows/Fonts/$name"
-            $fontEntries += New-CopyEntry $target (Join-Path $temp "fonts/$name")
+        foreach ($source in ($editorFonts + $terminalFonts)) {
+            $target = Join-Path $env:LOCALAPPDATA "Microsoft/Windows/Fonts/$($source.Name)"
+            $entry = New-CopyEntry $target $source.FullName
+            $entry | Add-Member -NotePropertyName RegistryName -NotePropertyValue "$([IO.Path]::GetFileNameWithoutExtension($source.Name)) (TrueType)"
+            $fontEntries += $entry
         }
         $registryPlan = @(Get-FontRegistryPlan $fontEntries $fontRegistry -Backup:$Backup)
         $fontPlan = @(Get-FilePlan $fontEntries -Backup:$Backup)

@@ -485,6 +485,37 @@ install_system
 '''], success=False)
         self.assertEqual(result.returncode, 42)
 
+    def test_font_installer_installs_both_ioskeley_families_idempotently(self):
+        self.env['REPO_DIR'] = str(REPO)
+        result = self.run_command(['bash', '-c', r'''
+set -Eeuo pipefail
+source "$REPO_DIR/scripts/common.sh"
+source "$REPO_DIR/scripts/fonts.sh"
+DRY_RUN=0
+download() { printf archive > "$2"; }
+unzip() {
+  local archive=$2 destination=$4 family directory
+  if [[ $archive == *term-nerd* ]]; then
+    family=IoskeleyMonoTermNerdFontMono
+    directory="$destination/Normal"
+  else
+    family=IoskeleyMono
+    directory="$destination/Normal/Unhinted"
+  fi
+  mkdir -p "$directory"
+  for number in {1..19}; do printf font > "$directory/$family-Style$number.ttf"; done
+  printf font > "$directory/$family-Regular.ttf"
+}
+fc-cache() { :; }
+install_fonts
+install_fonts
+target="$XDG_DATA_HOME/fonts/IoskeleyMono"
+[[ $(find "$target/editor" -name '*.ttf' | wc -l) -eq 20 ]]
+[[ $(find "$target/terminal" -name '*.ttf' | wc -l) -eq 20 ]]
+[[ $(< "$target/.version") == 2.1.0 ]]
+'''])
+        self.assertIn('sind bereits installiert', result.stdout)
+
     def test_fedora_wsl_system_upgrade_keeps_windows_kernel(self):
         self.env['REPO_DIR'] = str(REPO)
         self.env['WSL_INTEROP'] = '/run/WSL/interop'
@@ -555,6 +586,9 @@ cd "$NEUTRAL_DIR"
             self.assertEqual(prefix.stdout.strip(), 'C-a')
             status = self.run_command([tmux, '-S', socket, 'show-option', '-gv', 'status'])
             self.assertEqual(status.stdout.strip(), 'off')
+            style = self.run_command([tmux, '-S', socket, 'show-option', '-gv', 'status-style'])
+            self.assertIn('#1a1b26', style.stdout)
+            self.assertIn('#a9b1d6', style.stdout)
             if Path('/usr/bin/zsh').is_file():
                 shell = self.run_command([tmux, '-S', socket, 'show-option', '-gv', 'default-shell'])
                 self.assertEqual(shell.stdout.strip(), '/usr/bin/zsh')
@@ -589,6 +623,19 @@ class ConfigTests(unittest.TestCase):
         settings = jsonc((REPO / 'zed/.config/zed/settings.json').read_text())
         self.assertNotIn('terminal_init_command', settings.get('agent', {}))
         self.assertFalse(settings['languages']['TypeScript']['prettier']['allowed'])
+        self.assertEqual(settings['theme'], 'Tokyo Night')
+        self.assertEqual(settings['buffer_font_family'], 'Ioskeley Mono')
+        self.assertEqual(settings['terminal']['font_family'], 'IoskeleyMonoTerm Nerd Font Mono')
+        self.assertEqual(settings['terminal']['line_height'], 'standard')
+        wezterm = (REPO / 'wezterm/.config/wezterm/wezterm.lua').read_text()
+        self.assertIn("config.color_scheme = 'Tokyo Night'", wezterm)
+        self.assertIn("'IoskeleyMonoTerm Nerd Font Mono'", wezterm)
+        starship = tomllib.loads((REPO / 'starship/.config/starship.toml').read_text())
+        self.assertEqual(starship['palette'], 'tokyo_night')
+        self.assertEqual(starship['palettes']['tokyo_night']['background'], '#1a1b26')
+        fzf = (REPO / 'zsh/.config/zsh/fzf.zsh').read_text()
+        self.assertIn('bg:#1a1b26', fzf)
+        self.assertFalse((REPO / 'zed/.config/zed/themes/Neovim-custom.json').exists())
 
     def test_secret_scanner_redaction(self):
         spec = importlib.util.spec_from_file_location('scanner', REPO / 'scripts/check-secrets.py')

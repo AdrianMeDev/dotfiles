@@ -1,11 +1,11 @@
-:root { color-scheme: dark; font: 12px 'JetBrainsMono Nerd Font', monospace; color: #d4d4d4; background: #17191f; }
+:root { color-scheme: dark; font: 12px 'IoskeleyMonoTerm Nerd Font Mono', 'Ioskeley Mono', monospace; color: #a9b1d6; background: #1a1b26; }
 * { box-sizing: border-box; }
 body { margin: 0; height: 32px; padding: 0 8px; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 10px; overflow: hidden; }
 nav, aside { display: flex; align-items: center; gap: 5px; min-width: 0; }
 aside { justify-content: flex-end; gap: 12px; white-space: nowrap; overflow: hidden; }
-button { font: inherit; color: #777d89; background: transparent; border: 0; border-bottom: 2px solid transparent; height: 28px; min-width: 23px; cursor: pointer; }
-button.occupied { color: #e2e5ec; border-bottom-color: #68788c; }
-button.displayed { background: #303847; }
-button.focused { color: #101318; background: #8dbcff; }
-button:hover, button:focus-visible { outline: 1px solid #8dbcff; }
-#status { color: #ffb4ab; }
+button { font: inherit; color: #565f89; background: transparent; border: 0; border-bottom: 2px solid transparent; height: 28px; min-width: 23px; cursor: pointer; }
+button.occupied { color: #c0caf5; border-bottom-color: #414868; }
+button.displayed { background: #292e42; }
+button.focused { color: #1a1b26; background: #7aa2f7; }
+button:hover, button:focus-visible { outline: 1px solid #7dcfff; }
+#status { color: #f7768e; }

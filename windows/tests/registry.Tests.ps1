@@ -11,7 +11,10 @@ $subKey = 'Software\DotfilesRegistryTests\' + [guid]::NewGuid().ToString('N')
 $backupDirectory = Join-Path ([IO.Path]::GetTempPath()) ([guid]::NewGuid().ToString('N'))
 $native = ${function:Invoke-Native}
 try {
-    $entries = @([pscustomobject]@{ Path = 'C:\Fonts\JetBrainsMonoNerdFont-Regular.ttf' })
+    $entries = @([pscustomobject]@{
+        Path = 'C:\Fonts\IoskeleyMonoTermNerdFontMono-Regular.ttf'
+        RegistryName = 'IoskeleyMonoTermNerdFontMono-Regular (TrueType)'
+    })
     $plan = @(Get-FontRegistryPlan $entries $subKey)
     Assert ($plan[0].Action -eq 'Create') 'missing key'
     Write-FontRegistryPlan $plan $subKey $backupDirectory

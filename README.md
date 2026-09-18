@@ -55,7 +55,7 @@ Fremde Verzeichnis-Symlinks müssen vorab manuell aufgelöst werden; der Install
 | `system` | DNF-Update, Compiler/Build-Werkzeuge, Git/GitHub CLI, Stow, zsh, tmux, zoxide, direnv, fzf, ripgrep, fd, bat, jq, btop/htop, tree, ShellCheck, shfmt, Clipboard, Podman und Flatpak |
 | `development` | Starship, fnm + Node 24, tree-sitter CLI, mise, uv + Python 3.14, .NET SDK 10, Neovim >= 0.12, WezTerm und Zed |
 | `flatpak` | Flathub für den Benutzer; ausgewählte optionale Desktop-Apps |
-| `fonts` | JetBrains Mono Nerd Font 3.4.0 im Benutzerverzeichnis |
+| `fonts` | Ioskeley Mono und Ioskeley Mono Term Nerd Font 2.1.0 im Benutzerverzeichnis |
 | `dotfiles` | Konfliktprüfung, Git-Identität, optionale Backups und Stow-Verlinkung |
 
 Die Paketlisten liegen in `manifests/`. Ohne Optionen werden alle Module in dieser Reihenfolge ausgeführt.
@@ -218,7 +218,8 @@ Konflikt-/Backup-Ablauf behandelt. `--dry-run` verändert auch bei der Migration
 
 ## Editoren und Terminal
 
-**Zed:** vorhandenes Theme „Neovim custom“, Vim-Modus, Space-Leader und Dock-Navigation bleiben.
+**Zed:** Tokyo Night mit vorhandener Transparenz, Ioskeley Mono im Editor und die
+terminaloptimierte Nerd Font im integrierten Terminal. Vim-Modus, Space-Leader und Dock-Navigation bleiben.
 TypeScript/JavaScript behalten ESLint statt Prettier. Python nutzt basedpyright/Ruff,
 C# die C#-Extension mit Roslyn. `Space r r` bietet npm-, pytest-, Django- und dotnet-Tasks an.
 Tasks starten nur manuell und erwarten passende Projektdateien/Abhängigkeiten im Worktree-Root.
@@ -227,9 +228,9 @@ Claude wird nicht automatisch gestartet; vorhandene Agent-Keybindings bleiben f�
 
 **Neovim:** eigenständige, deutsch kommentierte
 [`init.lua`](nvim/.config/nvim/init.lua), konzeptionell an
-[nvim-lite](https://github.com/radleylewis/nvim-lite) angelehnt, mit Zed-nahen Kürzeln und Farben.
-Sieben Plugins über `vim.pack`: fzf-lua, nvim-tree, Which-Key, nvim-lspconfig,
-Mason, mason-lspconfig und nvim-treesitter. Completion, Statuszeile und Formatierung sind nativ.
+[nvim-lite](https://github.com/radleylewis/nvim-lite) angelehnt, mit Zed-nahen Kürzeln und Tokyo Night.
+Neun Plugins über `vim.pack`: Tokyo Night, fzf-lua, nvim-tree, Which-Key, Flash,
+nvim-lspconfig, Mason, mason-lspconfig und nvim-treesitter. Completion, Statuszeile und Formatierung sind nativ.
 Neovim >= 0.12, Git, fzf, ripgrep und fd werden vorausgesetzt. Für Parser kommen C-Compiler
 und die native tree-sitter CLI hinzu; das Development-Modul installiert Letztere.
 
@@ -294,7 +295,13 @@ Dateien erreichen bestehende Stow-Dateilinks direkt.
 
 **WezTerm:** bestehende Tab-/Split-Bindings bleiben, `Ctrl-Shift-x` öffnet Copy-Mode,
 `Ctrl-Shift-Space` Quick Select. Die PowerShell-Taste existiert nur unter Windows.
-JetBrains Mono Nerd Font erhält einen DejaVu-Fallback.
+Tokyo Night bleibt mit der vorhandenen Transparenz aktiv. Ioskeley Mono Term Nerd Font
+erhält Fallbacks auf Ioskeley Mono und DejaVu Sans Mono.
+
+Das Font-Modul installiert aus Ioskeley Mono 2.1.0 die normale unhinted Editor-Familie
+und die terminaloptimierte Nerd-Font-Familie mit jeweils allen 20 Schnitten. Bereits
+anderweitig installierte Fonts werden nicht entfernt. `fc-match 'Ioskeley Mono'` und
+`fc-match 'IoskeleyMonoTerm Nerd Font Mono'` zeigen die tatsächlich gewählten Dateien.
 
 **tmux:** Prefix `Ctrl-a`, `h/j/k/l` Pane-Navigation, `-` und `\` Splits,
 `r` Reload, `S` Statusleiste umschalten. Statusleiste und Maus bleiben standardmäßig aus.
