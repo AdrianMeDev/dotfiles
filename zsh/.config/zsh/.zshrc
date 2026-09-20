@@ -21,3 +21,6 @@ source "$ZDOTDIR/bindings.zsh"
 source "$ZDOTDIR/plugins.zsh"
 source "$ZDOTDIR/prompt.zsh"
 if [[ -f "$ZDOTDIR/local.zsh" ]]; then source "$ZDOTDIR/local.zsh"; fi
+
+# Pi
+export PATH="/home/ame/.local/share/fnm/node-versions/v24.21.0/installation/bin:$PATH"

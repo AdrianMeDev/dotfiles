@@ -160,6 +160,11 @@ Durch folgenden Eintrag ersetzen, das umgebende JSON und seine Kommas erhalten:
 "shell": { "program": "pwsh.exe", "args": ["-NoLogo"] }
 ```
 
+Für lokale Edit Predictions muss Ollama unter `http://localhost:11434` laufen
+und `qwen2.5-coder:7b-base` geladen sein (`ollama pull qwen2.5-coder:7b-base`).
+Die Vorschläge sind in der kopierten Konfiguration aktiviert. Das Agent-Modell
+wird in Zed separat konfiguriert.
+
 In der kopierten `tasks.json` aus jedem Task die vollständige Zeile
 `"shell": { "program": "zsh" },` entfernen. Andere Felder wie `command`, `args`
 und `cwd` erhalten. Damit erzwingen Windows-Tasks keine lokal fehlende Zsh.

@@ -56,6 +56,9 @@ try {
     $zedText = [Text.Encoding]::UTF8.GetString($zedEntry.Bytes)
     Assert ($zedText.Contains('"font_family": "IoskeleyMonoTerm Nerd Font Mono"')) 'Zed terminal font missing'
     Assert ($zedText.Contains('"program": "pwsh.exe"')) 'Zed Windows shell missing'
+    Assert ($zedText.Contains('"show_edit_predictions": true')) 'Zed edit predictions disabled'
+    Assert ($zedText.Contains('"provider": "ollama"') -and $zedText.Contains('"model": "qwen2.5-coder:7b-base"')) 'Zed Ollama edit prediction missing'
+    Assert ($zedText.Contains('"panel.background": "#00000000"') -and $zedText.Contains('"surface.background": "#00000000"')) 'Zed panels are not transparent'
     $plan = @(Get-FilePlan $entries)
     Write-FilePlan $plan
     $second = @(Get-FilePlan $entries)

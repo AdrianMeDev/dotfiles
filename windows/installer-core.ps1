@@ -1,16 +1,30 @@
 # Functions are kept separate so tests can replace Windows boundaries without installing anything.
 function Invoke-NativeResult {
     param([string]$Program, [string[]]$Arguments)
-    # Windows PowerShell 5.1 wraps native stderr in ErrorRecords. Judge success by exit code.
-    $resolved = Get-Command $Program -CommandType Application -ErrorAction Stop
+
+    # Mehrere Fundstellen sind möglich, z. B. System32 und WindowsApps.
+    # Es wird nur der erste Treffer gemäß PATH-Reihenfolge verwendet.
+    $resolved = Get-Command $Program `
+        -CommandType Application `
+        -ErrorAction Stop |
+        Select-Object -First 1
+
     $previousPreference = $ErrorActionPreference
+
     try {
         $ErrorActionPreference = 'Continue'
         $PSNativeCommandUseErrorActionPreference = $false
         $output = & $resolved.Source @Arguments 2>&1
         $code = $LASTEXITCODE
-    } finally { $ErrorActionPreference = $previousPreference }
-    return [pscustomobject]@{ Code = $code; Output = @($output) }
+    }
+    finally {
+        $ErrorActionPreference = $previousPreference
+    }
+
+    return [pscustomobject]@{
+        Code   = $code
+        Output = @($output)
+    }
 }
 function Invoke-Native {
     param([string]$Program, [string[]]$Arguments, [int[]]$SuccessCodes = @(0))

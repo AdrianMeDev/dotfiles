@@ -220,6 +220,9 @@ Konflikt-/Backup-Ablauf behandelt. `--dry-run` verändert auch bei der Migration
 
 **Zed:** Tokyo Night mit vorhandener Transparenz, Ioskeley Mono im Editor und die
 terminaloptimierte Nerd Font im integrierten Terminal. Vim-Modus, Space-Leader und Dock-Navigation bleiben.
+Die Oberfläche nutzt einen 50-%-Fensterhintergrund mit transparenten Editor- und Panel-Flächen.
+Lokale Edit Predictions verwenden Ollama mit `qwen2.5-coder:7b-base`; das Modell muss
+lokal geladen sein (`ollama pull qwen2.5-coder:7b-base`).
 TypeScript/JavaScript behalten ESLint statt Prettier. Python nutzt basedpyright/Ruff,
 C# die C#-Extension mit Roslyn. `Space r r` bietet npm-, pytest-, Django- und dotnet-Tasks an.
 Tasks starten nur manuell und erwarten passende Projektdateien/Abhängigkeiten im Worktree-Root.

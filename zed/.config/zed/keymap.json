@@ -175,7 +175,7 @@
       "space a c": "agent::NewTerminalThread",
 
       // Neuer Zed-Agent Thread
-      "space a n": "agent::NewThread",
+      "space a n": ["agent::NewExternalAgentThread", { "agent": "Zed Agent" }],
 
       // Edit Predictions global ein/aus
       "space a p": "workspace::ToggleEditPrediction",
