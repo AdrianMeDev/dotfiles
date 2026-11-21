@@ -517,6 +517,8 @@ Grafische Editor- und Clipboard-Tests erfolgen weiterhin auf dem jeweiligen Ziel
 
 ### Manuelle Abnahme auf einer frischen VM (noch offen)
 
+Abhakbare Kurzfassung für VMs und Hardware: [`docs/ACCEPTANCE.md`](docs/ACCEPTANCE.md).
+
 Pro Zielsystem mit VM-Snapshot als normaler Benutzer; Ergebnis und VM-Version manuell festhalten.
 
 **Linux (CachyOS; Fedora und Debian ohne Schritte 5–6):**
