@@ -45,6 +45,42 @@ class ThemeModuleTests(unittest.TestCase):
                 self.assertIn(str(self.home / '.local/share/dotfiles/wallpaper.png'), output)
                 self.assertEqual(list(self.home.iterdir()), [])
 
+    def apply(self, gsettings):
+        """Run install_theme for real with stubbed packages; gsettings: None, 'noschema' or 'schema'."""
+        bin_dir = self.base / 'bin'
+        bin_dir.mkdir(exist_ok=True)
+        calls = self.base / 'gsettings.log'
+        if gsettings:
+            schemas = 'org.gnome.desktop.interface' if gsettings == 'schema' else 'org.example.other'
+            fake = bin_dir / 'gsettings'
+            fake.write_text(f'#!/usr/bin/env bash\n[[ $1 == list-schemas ]] && {{ echo {schemas}; exit 0; }}\n'
+                            f'echo "$*" >> {calls}\n')
+            fake.chmod(0o755)
+        script = (f'set -Eeuo pipefail; REPO_DIR={REPO}; PROFILE=desktop; DISTRO_FAMILY=arch; DRY_RUN=0\n'
+                  f'PKG_MANIFEST={REPO}/manifests/packages.tsv\n'
+                  f'source {REPO}/scripts/common.sh; source {REPO}/scripts/pkg.sh; source {REPO}/scripts/theme.sh\n'
+                  'is_wsl() { return 1; }; pkg_install() { :; }\n'
+                  + ('have() { [[ $1 == gsettings ]] || command -v "$1" >/dev/null; }\n' if gsettings else
+                     'have() { [[ $1 != gsettings ]] && command -v "$1" >/dev/null; }\n')
+                  + 'install_theme\n')
+        env = dict(PATH=f'{bin_dir}:{os.environ["PATH"]}', HOME=str(self.home))
+        output = subprocess.run(['bash', '-c', script], env=env, capture_output=True, text=True, check=True).stdout
+        self.assertTrue((self.home / '.local/share/dotfiles/wallpaper.png').is_file())
+        return output, calls.read_text().splitlines() if calls.exists() else []
+
+    def test_gsettings_missing(self):
+        for mode in (None, 'noschema'):
+            with self.subTest(mode=mode):
+                output, calls = self.apply(mode)
+                self.assertIn('GTK-Einstellungen übersprungen', output)
+                self.assertEqual(calls, [])
+
+    def test_gsettings_applied(self):
+        output, calls = self.apply('schema')
+        self.assertNotIn('übersprungen', output)
+        self.assertEqual(len(calls), 5)
+        self.assertIn('set org.gnome.desktop.interface cursor-size 24', calls)
+
     def test_skip(self):
         for args in [('fedora', 'headless'), ('debian', 'desktop'), ('arch', 'desktop', True)]:
             with self.subTest(args=args):
