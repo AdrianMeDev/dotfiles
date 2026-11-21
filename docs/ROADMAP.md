@@ -137,7 +137,7 @@ alles wird in der neuesten Version installiert und mit `dot update` aktualisiert
 - **Depends on:** M6
 - **Size:** S, ~4 commits
 
-### M11 [~] Doku + Cheatsheet
+### M11 [x] Doku + Cheatsheet
 - **Goal:** README und CHEATSHEET beschreiben den neuen Stand vollständig.
 - **Includes:** README neu (Bootstrap, Distros, `dot`, Windows, Theme), `windows/README.md`/`MANUAL.md` aktualisieren, `zed-config/`/`agent-config/`-READMEs angleichen, CHEATSHEET: Hyprland = GlazeWM, `dot`, Zed/Agents, Corne-Layer
 - **Done when:** jedes Binding im CHEATSHEET steht im Vertrag (Test), Installationsanleitung auf frischer VM nachvollzogen
@@ -165,3 +165,4 @@ alles wird in der neuesten Version installiert und mit `dot update` aktualisiert
 - 2026-11-21: M8 WSL2-Arch-Integration abgeschlossen (`wsl --install archlinux`, `windows/wsl-bootstrap.sh`, `.wslconfig` mit `networkingMode=mirrored`, WezTerm-Arch-Domain, Zed Remote-WSL, `dot.ps1 update`/`doctor` für WSL, Arch-Container-Check)
 - 2026-11-21: M9 Ein-Befehl-Bootstrap + Zusatztools implementiert (Linux `curl | bash`, Windows `irm | iex`, zsh-Rückfrage, eza/yazi/tealdeer/just/lazydocker, Bootstrap-Containerprüfungen); frische CachyOS-VM-Abnahme siehe README, manuelle Freigabe offen.
 - 2026-11-21: M10 Corne abgeschlossen (`corne`-Modul mit Vial + udev-Regel, Windows-Vial-Release in `%LOCALAPPDATA%\Vial` + `dot.ps1 update`/`doctor`, `corne_v4.vil` mit 6 Layern und Vertragsparität in `tests/test_corne_layout.py`, Doku in `docs/CORNE.md`, `README.md` und `windows/README.md`).
+- 2026-11-21: M11 Doku + Cheatsheet abgeschlossen (README/`windows/README.md`/Config-READMEs aktualisiert, CHEATSHEET mit Hyprland = GlazeWM, `dot`, Zed + Agents, mise/CLI-Tools und Corne-Layern; `tests/test_keybindings.py` prüft alle WM-Bindings im CHEATSHEET gegen `manifests/keybindings.tsv`; frische-VM-Abnahme laut README-Checkliste manuell offen)
