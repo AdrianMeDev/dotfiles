@@ -86,7 +86,8 @@ class InstallerTests(unittest.TestCase):
         before = snapshot(self.home)
         result = self.install('--dry-run', '--profile', 'desktop', '--extras', 'java,rust,rpmfusion,firefox,discord,spotify')
         self.assertEqual(snapshot(self.home), before)
-        self.assertIn('fnm install 24', result.stdout)
+        self.assertIn('mise install', result.stdout)
+        self.assertNotIn('fnm', result.stdout)
         self.assertNotIn('mise use', result.stdout)
 
     def test_invalid_arguments(self):

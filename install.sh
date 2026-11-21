@@ -14,7 +14,7 @@ usage() {
     cat <<'EOF'
 Linux Developer Setup (als normaler Benutzer starten)
   ./install.sh [--dry-run] [--backup] [--only MODULE] [--extras LISTE] [--profile desktop|headless]
-Module: system, development, flatpak, fonts, dotfiles
+Module: system, tools, apps, flatpak, fonts, dotfiles
 Extras (kommagetrennt): java, rust, rpmfusion, firefox, discord, spotify
 --dry-run    Zeigt Schritte ohne Downloads, Schreibzugriffe oder sudo.
 --backup     Sichert kollidierende Dateien vor dem Verlinken außerhalb des Repos.
@@ -46,7 +46,7 @@ while (($#)); do
     esac
     shift
 done
-MODULES=(system development flatpak fonts dotfiles)
+MODULES=(system tools apps flatpak fonts dotfiles)
 if [[ -n $ONLY ]]; then
     [[ " ${MODULES[*]} " == *" $ONLY "* ]] || die "Unbekanntes Modul: $ONLY"
     MODULES=("$ONLY")
@@ -54,7 +54,7 @@ fi
 IFS=',' read -r -a EXTRA_LIST <<< "$EXTRAS"
 for extra in "${EXTRA_LIST[@]}"; do
     case "$extra" in java|rust|rpmfusion|firefox|discord|spotify) ;; *) die "Unbekanntes Extra: $extra" ;; esac
-    case "$extra" in java|rust) owner=development ;; rpmfusion) owner=system ;; *) owner=flatpak ;; esac
+    case "$extra" in java|rust) owner=tools ;; rpmfusion) owner=system ;; *) owner=flatpak ;; esac
     [[ -z $ONLY || $ONLY == "$owner" ]] || die "Extra $extra benötigt Modul $owner."
 done
 
@@ -97,14 +97,15 @@ fi
 # Dependencies for individually selected modules; the system module installs these.
 if [[ -n $ONLY && $ONLY != system ]] && ((!DRY_RUN)); then
     case "$ONLY" in
-        development) for cmd in curl tar unzip python3 git; do need "$cmd"; done ;;
+        tools) for cmd in curl git; do need "$cmd"; done ;;
+        apps) for cmd in curl tar python3; do need "$cmd"; done ;;
         fonts) for cmd in curl unzip fc-cache; do need "$cmd"; done ;;
         flatpak) if [[ $PROFILE == desktop ]]; then need flatpak; fi ;;
         dotfiles) need stow; need git ;;
     esac
 fi
 
-export PATH="$HOME/.local/bin:${XDG_DATA_HOME:-$HOME/.local/share}/fnm:$PATH"
+export PATH="$HOME/.local/bin:${XDG_DATA_HOME:-$HOME/.local/share}/mise/shims:$PATH"
 for CURRENT_MODULE in "${MODULES[@]}"; do
     log "Modul: $CURRENT_MODULE"
     # shellcheck source=/dev/null
