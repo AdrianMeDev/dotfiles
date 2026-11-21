@@ -184,6 +184,72 @@ function Select-WslDistro {
     return $selected
 }
 
+# Streams straight to the console so interactive prompts (git identity) stay visible.
+function Invoke-NativeLive {
+    param([string]$Program, [string[]]$Arguments)
+    $resolved = Get-Command $Program -CommandType Application -ErrorAction Stop | Select-Object -First 1
+    & $resolved.Source @Arguments | Out-Host
+    return $LASTEXITCODE
+}
+
+function Get-WslUserName {
+    param([string]$Requested)
+    $raw = if ($Requested) { $Requested } else { $env:USERNAME }
+    $name = ("$raw".ToLowerInvariant() -replace '[^a-z0-9_-]', '_')
+    if ($name -notmatch '^[a-z_]') { $name = "_$name" }
+    if ($name.Length -gt 32) { $name = $name.Substring(0, 32) }
+    if ($name -eq 'root') { throw 'WSL-Benutzer darf nicht root sein. -WslUser <Name> angeben.' }
+    return $name
+}
+
+function Install-WslArch {
+    param([string]$Name = 'archlinux')
+    $selected = Select-WslDistro
+    if ($selected) { return $selected }
+    $rerun = 'Bitte Windows neu starten und bootstrap.ps1 erneut ausfuehren.'
+    if (-not (Get-Command 'wsl.exe' -ErrorAction SilentlyContinue)) {
+        throw "wsl.exe fehlt (WSL-Feature nicht aktiv). $rerun"
+    }
+    Write-Host "WSL: installiere $Name (wsl.exe --install $Name --no-launch)"
+    $result = Invoke-NativeResult 'wsl.exe' @('--install', $Name, '--no-launch')
+    $text = ($result.Output -join "`n") -replace "`0", ''
+    $text | Out-Host
+    if ($result.Code -eq 3010 -or $text -match '(?i)restart|reboot|neustart|neu gestartet') {
+        throw "WSL verlangt einen Neustart. $rerun"
+    }
+    if ($result.Code -ne 0) { throw "wsl.exe --install $Name (Exit $($result.Code)): $text" }
+    $selected = Select-WslDistro $Name
+    if (-not $selected) { throw "Die Distribution '$Name' ist nach der Installation nicht registriert. $rerun" }
+    return $selected
+}
+
+function ConvertTo-WslPath {
+    param([string]$Distro, [string]$Path)
+    $out = Invoke-Native 'wsl.exe' @('-d', $Distro, '-u', 'root', '--', 'wslpath', '-u', $Path.Replace('\', '/'))
+    return ((($out -join "`n") -replace "`0", '').Trim())
+}
+
+function Invoke-WslBootstrap {
+    param([string]$SourceRoot, [string]$Distro, [string]$WslUser, [switch]$Backup)
+    $user = Get-WslUserName $WslUser
+    $repo = ConvertTo-WslPath $Distro (Split-Path -Parent $SourceRoot)
+    $script = ConvertTo-WslPath $Distro (Join-Path $SourceRoot 'wsl-bootstrap.sh')
+    $arguments = @('-d', $Distro, '-u', 'root', '--', 'bash', $script, '--user', $user, '--repo', $repo)
+    if ($Backup) { $arguments += '--backup' }
+    Write-Host "WSL: richte Benutzer '$user' in $Distro ein (wsl-bootstrap.sh)"
+    $output = (Invoke-Native 'wsl.exe' $arguments) -join "`n" -replace "`0", ''
+    $output | Out-Host
+    # The script reports a rewritten /etc/wsl.conf; it only takes effect after the distro restarts.
+    if ($output -match '(?m)^geschrieben: \S*/etc/wsl\.conf$') {
+        Write-Host "WSL: /etc/wsl.conf geaendert, starte $Distro neu."
+        Invoke-Native 'wsl.exe' @('--terminate', $Distro) | Out-Null
+    }
+    $install = @('-d', $Distro, '-u', $user, '--cd', '~', '--', 'bash', './dotfiles/install.sh')
+    if ($Backup) { $install += '--backup' }
+    $code = Invoke-NativeLive 'wsl.exe' $install
+    if ($code -ne 0) { throw "WSL install.sh (Exit $code)" }
+}
+
 function New-TextEntry {
     param([string]$Path, [string]$Text)
     return [pscustomobject]@{ Path = $Path; Bytes = [Text.UTF8Encoding]::new($false).GetBytes($Text) }
@@ -398,16 +464,26 @@ function Assert-FlowConfigWritable {
 }
 
 function Install-WindowsDesktop {
-    param([string]$SourceRoot, [switch]$DryRun, [switch]$Backup, [string]$Distro, [switch]$NoAutostart, [string[]]$Extra = @())
+    param([string]$SourceRoot, [switch]$DryRun, [switch]$Backup, [string]$Distro, [switch]$NoAutostart, [string[]]$Extra = @(), [switch]$NoWsl, [string]$WslUser)
     $packages = Get-WingetPackages (Split-Path -Parent $SourceRoot) $Extra
     Assert-WindowsPrerequisites
     $selected = Select-WslDistro $Distro
-    if ($selected) { Write-Host "WSL2: $selected" } else { Write-Host 'WSL2: keine Distribution, nur native Windows-Konfiguration.' }
-    $entries = @(Get-ConfigEntries $SourceRoot $selected -NoAutostart:$NoAutostart)
+    # Without a distro the Arch instance is installed below; plan its name now so distro.lua is final.
+    $installWsl = -not $NoWsl -and -not $selected
+    $wslName = if ($installWsl) { 'archlinux' } else { $selected }
+    if ($NoWsl) { Write-Host 'WSL2: uebersprungen (-NoWsl).' }
+    elseif ($installWsl) { Write-Host "WSL2: keine Distribution, $wslName wird installiert." }
+    elseif ($selected) { Write-Host "WSL2: $selected" }
+    $entries = @(Get-ConfigEntries $SourceRoot $wslName -NoAutostart:$NoAutostart -NoWsl:$NoWsl)
     $plan = @(Get-FilePlan $entries -Backup:$Backup)
     $darkPlan = @(Get-DarkModePlan)
     if ($DryRun) {
         Write-FilePlan $plan -DryRun
+        if (-not $NoWsl) {
+            $user = Get-WslUserName $WslUser
+            if ($installWsl) { Write-Host "WSL: wsl.exe --install $wslName --no-launch (falls fehlend)" }
+            Write-Host "WSL: wsl-bootstrap.sh als root (Benutzer $user, sudo, /etc/wsl.conf, ~/dotfiles), dann install.sh$(if ($Backup) { ' --backup' })"
+        }
         foreach ($entry in $darkPlan) { Write-Host "$($entry.Action): HKCU\$(Get-DarkModeSubKey)\$($entry.Name) = $($entry.Value) (Dark Mode)" }
         foreach ($package in $packages) { Write-Host "Winget (falls fehlend): $package" }
         Write-Host 'Fonts: Ioskeley Mono und Ioskeley Mono Term Nerd Font v2.1.0 (Download und Inhalts-/Registry-Konfliktpruefung erst ohne -DryRun).'
@@ -454,6 +530,10 @@ function Install-WindowsDesktop {
         Write-DarkModePlan $darkPlan (Get-DarkModeSubKey) (Join-Path $env:LOCALAPPDATA 'dotfiles/backup')
         Write-FilePlan $plan
         Write-FilePlan $fontPlan
+        if (-not $NoWsl) {
+            $distroName = if ($installWsl) { Install-WslArch $wslName } else { $selected }
+            Invoke-WslBootstrap $SourceRoot $distroName $WslUser -Backup:$Backup
+        }
         Write-Host 'Flow Launcher einmal im Startmenue starten; danach Alt+Leertaste. Autostart wird beim Flow-Start uebernommen.'
         Write-Host 'Fertig. Ab-/Anmelden aktiviert Fonts, neuen PATH und (falls eingerichtet) GlazeWM.'
     } finally {

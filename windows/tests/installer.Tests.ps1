@@ -118,6 +118,117 @@ Describe 'Windows installer' {
         }
     }
 
+    Context 'wsl arch install and bootstrap' {
+        BeforeAll {
+            $script:wslCalls = @()
+            $script:installCode = 0
+            $script:installOutput = @('Installing')
+            $script:registers = $true
+            $script:bootstrapOutput = @('== wsl.conf', 'geschrieben: /etc/wsl.conf')
+            $script:liveCode = 0
+            function Invoke-Native {
+                param($Program, $Arguments, $SuccessCodes)
+                if ($Arguments -contains '--quiet') { return $script:names }
+                if ($Arguments -contains '--verbose') { return ($script:names | ForEach-Object { "  $_    Stopped    2" }) }
+                $script:wslCalls += , ($Arguments -join ' ')
+                if ($Arguments -contains 'wslpath') { return '/mnt/c/mock/' + (Split-Path -Leaf $Arguments[-1]) }
+                if ($Arguments -contains 'bash') { return $script:bootstrapOutput }
+                return
+            }
+            function Invoke-NativeResult {
+                param($Program, $Arguments)
+                $script:wslCalls += , ($Arguments -join ' ')
+                if ($script:registers -and $script:installCode -eq 0) { $script:names = @('archlinux') }
+                return [pscustomobject]@{ Code = $script:installCode; Output = $script:installOutput }
+            }
+            function Invoke-NativeLive {
+                param($Program, $Arguments)
+                $script:wslCalls += , ($Arguments -join ' ')
+                return $script:liveCode
+            }
+        }
+        BeforeEach {
+            $script:wslCalls = @()
+            $script:names = @()
+            $script:installCode = 0
+            $script:installOutput = @('Installing')
+            $script:registers = $true
+            $script:bootstrapOutput = @('== wsl.conf', 'geschrieben: /etc/wsl.conf')
+            $script:liveCode = 0
+        }
+        AfterAll { $script:names = @('archlinux') }
+        It 'installs archlinux when absent' {
+            Install-WslArch | Should -Be 'archlinux'
+            $script:wslCalls | Should -Be @('--install archlinux --no-launch')
+        }
+        It 'does not install again when the distro exists' {
+            $script:names = @('archlinux')
+            Install-WslArch | Should -Be 'archlinux'
+            $script:wslCalls | Should -BeNullOrEmpty
+        }
+        It 'asks for a reboot and rerun when WSL requires a restart' {
+            $script:installCode = 3010
+            Throws { Install-WslArch } 'Neustart.*erneut'
+            $script:installCode = 1
+            $script:installOutput = @('Changes will not be effective until the system is rebooted.')
+            Throws { Install-WslArch } 'Neustart.*erneut'
+        }
+        It 'fails when the distro stays unregistered' {
+            $script:registers = $false
+            Throws { Install-WslArch } 'nicht registriert.*erneut'
+        }
+        It 'fails on a plain install error' {
+            $script:installCode = 5
+            Throws { Install-WslArch } 'Exit 5'
+        }
+        It 'sanitizes the Linux user name' {
+            Get-WslUserName 'Max Mustermann' | Should -Be 'max_mustermann'
+            Get-WslUserName '1abc' | Should -Be '_1abc'
+            (Get-WslUserName ('a' * 40)).Length | Should -Be 32
+            $env:USERNAME = 'Ada.L'
+            try { Get-WslUserName | Should -Be 'ada_l' } finally { $env:USERNAME = $null }
+            Throws { Get-WslUserName 'Root' } 'root'
+        }
+        It 'bootstraps as root, terminates after a wsl.conf change, then runs install.sh as the user' {
+            $script:names = @('archlinux')
+            Invoke-WslBootstrap $script:source 'archlinux' 'Ada Lovelace' -Backup 6>$null
+            $script:wslCalls.Count | Should -Be 5 -Because '2x wslpath, bootstrap, terminate, install.sh'
+            $script:wslCalls[2] | Should -Be ('-d archlinux -u root -- bash /mnt/c/mock/wsl-bootstrap.sh --user ada_lovelace --repo /mnt/c/mock/' + (Split-Path -Leaf (Split-Path -Parent $script:source)) + ' --backup')
+            $script:wslCalls[4] | Should -Be '-d archlinux -u ada_lovelace --cd ~ -- bash ./dotfiles/install.sh --backup'
+        }
+        It 'orders the calls: root bootstrap, terminate, install.sh' {
+            Invoke-WslBootstrap $script:source 'archlinux' 'ada' 6>$null
+            ($script:wslCalls | Where-Object { $_ -like '*bash /mnt/c/mock/wsl-bootstrap.sh*' }).Count | Should -Be 1
+            $script:wslCalls[-3] | Should -Match '^-d archlinux -u root -- bash .*--user ada --repo'
+            $script:wslCalls[-2] | Should -Be '--terminate archlinux'
+            $script:wslCalls[-1] | Should -Be '-d archlinux -u ada --cd ~ -- bash ./dotfiles/install.sh'
+        }
+        It 'is idempotent: no terminate without a wsl.conf change, no backup unless asked' {
+            $script:bootstrapOutput = @('ok: /etc/wsl.conf default=ada')
+            Invoke-WslBootstrap $script:source 'archlinux' 'ada' 6>$null
+            $script:wslCalls | Should -Not -Contain '--terminate archlinux'
+            $script:wslCalls[-1] | Should -Not -Match '--backup'
+            $script:wslCalls[-1] | Should -Match 'install\.sh$'
+        }
+        It 'fails when install.sh fails' {
+            $script:liveCode = 3
+            Throws { Invoke-WslBootstrap $script:source 'archlinux' 'ada' 6>$null } 'install\.sh \(Exit 3\)'
+        }
+        It 'dry run with no distro plans the install but changes nothing' {
+            $output = (Install-WindowsDesktop $script:source -DryRun -Backup -WslUser ada 6>&1 | Out-String)
+            $output | Should -Match '--install archlinux --no-launch'
+            $output | Should -Match 'install\.sh --backup'
+            $script:wslCalls | Should -BeNullOrEmpty
+            Test-Path $script:temporary | Should -BeFalse
+        }
+        It '-NoWsl skips the WSL steps' {
+            $output = (Install-WindowsDesktop $script:source -DryRun -NoWsl 6>&1 | Out-String)
+            $output | Should -Not -Match 'install\.sh|--install archlinux'
+            $output | Should -Not -Match '\.wslconfig'
+            $script:wslCalls | Should -BeNullOrEmpty
+        }
+    }
+
     Context 'wslconfig' {
         BeforeEach {
             $script:wslPath = Join-Path $env:USERPROFILE '.wslconfig'
@@ -355,8 +466,8 @@ Describe 'Windows installer' {
             $script:packageCalls = 0
         }
         It 'installs repeatedly with mocked registry, network, archive and packages' {
-            Install-WindowsDesktop $script:source
-            Install-WindowsDesktop $script:source
+            Install-WindowsDesktop $script:source -NoWsl
+            Install-WindowsDesktop $script:source -NoWsl
             $script:registryWrites | Should -Be 2 -Because 'steps after skipped packages did not run'
             $installedFonts = @(Get-ChildItem (Join-Path $env:LOCALAPPDATA 'Microsoft/Windows/Fonts') -Filter '*.ttf')
             $installedFonts.Count | Should -Be 40 -Because 'both Ioskeley families must install all 20 styles'
@@ -366,7 +477,7 @@ Describe 'Windows installer' {
         It 'runs the conflict preflight before any package' {
             [IO.File]::WriteAllText($script:target, 'conflict again')
             $before = $script:packageCalls
-            Throws { Install-WindowsDesktop $script:source } 'Dateikonflikt'
+            Throws { Install-WindowsDesktop $script:source -NoWsl } 'Dateikonflikt'
             $script:packageCalls | Should -Be $before
         }
     }
