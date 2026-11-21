@@ -37,7 +37,13 @@ class WindowsSetupTests(unittest.TestCase):
 
     @unittest.skipUnless(shutil.which("pwsh"), "PowerShell fehlt")
     def test_powershell_installer(self):
-        result = subprocess.run(["pwsh", "-NoProfile", "-File", str(ROOT / "windows/tests/installer.Tests.ps1")], capture_output=True, text=True)
+        pester = subprocess.run(
+            ["pwsh", "-NoProfile", "-Command", 'if (Get-Module -ListAvailable Pester | Where-Object Version -ge ([version]"5.0")) { exit 0 } else { exit 1 }'],
+            capture_output=True, text=True,
+        )
+        if pester.returncode != 0:
+            self.skipTest("Pester 5 fehlt")
+        result = subprocess.run(["pwsh", "-NoProfile", "-File", str(ROOT / "windows/check.ps1")], capture_output=True, text=True)
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
 
     @unittest.skipUnless(shutil.which("nvim"), "Neovim für Lua-Verhaltenstest fehlt")

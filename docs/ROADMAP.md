@@ -109,7 +109,7 @@ alles wird in der neuesten Version installiert und mit `dot update` aktualisiert
 - **Depends on:** M1, M5
 - **Size:** L, ~8 commits
 
-### M7 [ ] Windows nativ neu aufbauen
+### M7 [~] Windows nativ neu aufbauen
 - **Goal:** `bootstrap.ps1` richtet Windows 11 mit einem Befehl ein, im selben Look, und hält es aktuell.
 - **Includes:** winget-Liste (WezTerm, Zed, GlazeWM, Zebar, Flow, PowerShell 7, Git, .NET SDK, Ollama, Claude Code), Extra `vs`, Zed- und Agent-Config nativ, Theme aus Tokens (Dark Mode, GlazeWM-Rahmen/Transparenz, Zebar, Flow-Theme, WezTerm-Acrylic), `dot.ps1 install|update|doctor` (gezieltes `winget upgrade`), Pester-Tests + Windows-CI-Runner
 - **Done when:** frische Win11-VM: `bootstrap.ps1` liefert die Windows-Seite komplett und optisch wie Linux; `dot.ps1 update` aktualisiert sie; CI grün
