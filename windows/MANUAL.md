@@ -1,7 +1,7 @@
 # Windows-Setup manuell einrichten
 
 Diese Anleitung richtet WezTerm, Zed, GlazeWM, Zebar, Flow Launcher und die
-Schriftarten für Windows 11 mit Fedora unter WSL2 ein. Du installierst Programme
+Schriftarten für Windows 11 mit Arch Linux unter WSL2 ein, dazu Dark Mode, Flow-Theme und Agent-Konfigurationen. Du installierst Programme
 über ihre Installer, kopierst Konfigurationsdateien im Explorer und bearbeitest
 sie im Texteditor. Die Setup- und Startskripte dieses Repositorys werden nicht
 benötigt. Einzelne unten genannte Befehle werden direkt eingegeben; Lua-, JSON-
@@ -25,16 +25,16 @@ Das Desktop-Setup wird als normaler Windows-Benutzer eingerichtet. Nur die
 Aktivierung von WSL oder einzelne Programm-Installer können Administratorrechte
 anfordern.
 
-## 2. Fedora unter WSL2 vorbereiten
+## 2. Arch Linux unter WSL2 vorbereiten
 
-Wenn Fedora bereits funktioniert, in Windows Terminal eingeben:
+Wenn Arch Linux bereits funktioniert, in Windows Terminal eingeben:
 
 ```text
 wsl --list --verbose
 ```
 
-Den exakten Fedora-Namen notieren, einschließlich Leerzeichen. In der Spalte
-`VERSION` muss `2` stehen.
+Den exakten Namen notieren (Standard: `archlinux`). In der Spalte `VERSION` muss
+`2` stehen.
 
 Falls WSL noch fehlt, Windows Terminal als Administrator öffnen, folgenden
 Befehl einzeln ausführen und anschließend bei Aufforderung neu starten:
@@ -43,28 +43,29 @@ Befehl einzeln ausführen und anschließend bei Aufforderung neu starten:
 wsl --install --no-distribution
 ```
 
-Danach die verfügbaren Distributionen anzeigen:
+Danach Arch Linux installieren und einmal starten:
 
 ```text
-wsl --list --online
+wsl --install archlinux
 ```
 
-Fedora mit dem exakt dort angezeigten Namen installieren:
-
-```text
-wsl --install -d <Name-aus-der-Liste>
-```
-
-`<Name-aus-der-Liste>` einschließlich der Winkelklammern ersetzen. Fedora einmal
-über das Startmenü öffnen und die Ersteinrichtung abschließen. Eine bestehende
-WSL1-Installation lässt sich nach Sicherung ihrer Daten mit
-`wsl --set-version "DEIN-FEDORA-NAME" 2` umstellen.
+Eine bestehende WSL1-Installation lässt sich nach Sicherung ihrer Daten mit
+`wsl --set-version "archlinux" 2` umstellen.
 Die [Microsoft-Anleitung zu WSL](https://learn.microsoft.com/en-us/windows/wsl/install)
 erläutert Voraussetzungen und Installation.
 
-Die Linux-Entwicklungswerkzeuge und die gewünschte Standard-Shell werden innerhalb
-von Fedora eingerichtet. Dieses Dokument behandelt das Windows-Desktop-Setup;
-Node, Python, .NET und Projektabhängigkeiten sind davon getrennt.
+Damit WSL2 unter Windows laufendes Ollama (`127.0.0.1:11434`) erreicht, in
+`%USERPROFILE%\.wslconfig` anlegen oder ergänzen (vorhandene Einstellungen erhalten):
+
+```ini
+[wsl2]
+networkingMode=mirrored
+```
+
+Danach `wsl --shutdown` ausführen. Benutzer (Mitglied von `wheel`, `zsh`), Linux-Dotfiles
+und Entwicklungswerkzeuge werden innerhalb von Arch eingerichtet, zum Beispiel mit
+`./install.sh --profile headless` im Klon unter `~/dotfiles`. Dieses Dokument behandelt
+das Windows-Desktop-Setup; Node, Python, .NET und Projektabhängigkeiten sind davon getrennt.
 
 ## 3. Windows-Programme installieren
 
@@ -74,7 +75,7 @@ werden. Wenn angeboten, die Aufnahme in `PATH` aktivieren.
 
 | Programm | Offizieller Download | Zweck |
 | --- | --- | --- |
-| WezTerm | [Windows-Installation](https://wezterm.org/install/windows.html) | Terminal für Fedora und lokale PowerShell |
+| WezTerm | [Windows-Installation](https://wezterm.org/install/windows.html) | Terminal für Arch Linux und lokale PowerShell |
 | Zed | [Download](https://zed.dev/download) | Editor mit WSL-Unterstützung |
 | GlazeWM | [Releases](https://github.com/glzr-io/glazewm/releases) | Tiling und Workspaces |
 | Zebar | [Releases](https://github.com/glzr-io/zebar/releases) | Statusleiste |
@@ -123,7 +124,7 @@ Im Zielordner zusätzlich `distro.lua` anlegen. Als Inhalt den in Schritt 2
 ermittelten Namen einsetzen, zum Beispiel:
 
 ```lua
-return "Fedora Linux"
+return "archlinux"
 ```
 
 Unter `%USERPROFILE%` die Datei `.wezterm.lua` anlegen. Eine vorhandene Datei
@@ -133,9 +134,9 @@ zuerst sichern, da WezTerm diesen Einstiegspunkt bevorzugt:
 return dofile(require('wezterm').home_dir .. '/.config/wezterm/wezterm.lua')
 ```
 
-WezTerm starten. Das erste Terminal soll in Fedora laufen. `Ctrl+T` öffnet einen
+WezTerm starten. Das erste Terminal soll in Arch Linux laufen. Die Konfiguration aktiviert unter Windows zusätzlich `win32_system_backdrop = 'Acrylic'`. `Ctrl+T` öffnet einen
 weiteren Tab in derselben Domain, `Ctrl+Shift+P` eine lokale PowerShell 7 und
-`Ctrl+Shift+O` den WezTerm-Launcher. Die Fedora-Standard-Shell muss in Fedora selbst
+`Ctrl+Shift+O` den WezTerm-Launcher. Die Standard-Shell (`zsh`) muss in Arch selbst
 konfiguriert sein. Details zur [WSL-Domain](https://wezterm.org/config/lua/WslDomain.html).
 
 ## 6. Zed konfigurieren
@@ -166,15 +167,20 @@ und `qwen2.5-coder:7b-base` geladen sein (`ollama pull qwen2.5-coder:7b-base`).
 Die Vorschläge sind in der kopierten Konfiguration aktiviert. Das Agent-Modell
 wird in Zed separat konfiguriert.
 
-In der kopierten `tasks.json` aus jedem Task die vollständige Zeile
-`"shell": { "program": "zsh" },` entfernen. Andere Felder wie `command`, `args`
-und `cwd` erhalten. Damit erzwingen Windows-Tasks keine lokal fehlende Zsh.
-Die Task-Werkzeuge müssen jeweils in der Umgebung des Projekts installiert sein.
+Die kopierte `tasks.json` bleibt unverändert; die Task-Werkzeuge müssen jeweils in der
+Umgebung des Projekts installiert sein.
 
-Für Fedora-Projekte in Zeds Command Palette (`Ctrl+Shift+P`) **projects: open wsl**
+Optional die Distribution für Remote-WSL in `settings.json` vorregistrieren, indem
+direkt nach der öffnenden `{` ergänzt wird:
+
+```json
+"wsl_connections": [{ "distro_name": "archlinux" }],
+```
+
+Für Arch-Projekte in Zeds Command Palette (`Ctrl+Shift+P`) **projects: open wsl**
 verwenden und Distribution sowie Projektordner wählen. Ein bloß im Explorer
 geöffneter WSL-UNC-Pfad ersetzt diese Verbindung nicht. Im Projektterminal mit
-`uname -a` und `pwd` prüfen, dass Befehle in Fedora laufen. Siehe
+`uname -a` und `pwd` prüfen, dass Befehle in Arch Linux laufen. Siehe
 [Zeds WSL-Dokumentation](https://zed.dev/docs/remote-development#wsl-support).
 
 ## 7. Zebar-Dateien kopieren
@@ -275,14 +281,32 @@ Autostartordner nach Sicherung entfernen. Sonst würde zusätzlich das alte
 Startskript ausgeführt. Bereits vorhandene andere GlazeWM-/Zebar-Autostarts in
 **Einstellungen → Apps → Autostart** ebenfalls auf Doppelungen prüfen.
 
-## 10. Funktion prüfen
+## 10. Dark Mode, Flow-Theme, Agent-Konfiguration und Vial
+
+1. **Dark Mode:** **Einstellungen → Personalisierung → Farben**, Modus **Dunkel** wählen
+   (entspricht `AppsUseLightTheme` und `SystemUsesLightTheme` = 0 unter
+   `HKCU\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize`).
+2. **Flow-Theme:** `windows/flow/TokyoNight.xaml` nach
+   `%APPDATA%\FlowLauncher\Themes\TokyoNight.xaml` kopieren, in Flows Einstellungen
+   unter **Theme** `TokyoNight` wählen.
+3. **Agent-Konfiguration:** Den Inhalt von `agent-config/claude/` nach `%USERPROFILE%\.claude\`
+   und `agent-config/pi/` nach `%USERPROFILE%\.pi\agent\` kopieren; `agent-config/skills/`
+   jeweils nach `skills\` darin. Das Claude-Frontmatter (`claude-frontmatter.txt`) wird
+   vom Skript nach Zeile 1 jeder obersten `SKILL.md` eingefügt und nur für Claude verwendet; manuell
+   ist das fehleranfällig, daher bevorzugt `windows/dot.ps1 install`.
+4. **Vial (Corne):** Das portable Release (`Vial-v*-portable.zip`) von
+   [vial-kb/vial-gui](https://github.com/vial-kb/vial-gui/releases) nach
+   `%LOCALAPPDATA%\Vial` entpacken und `Vial.exe` verknüpfen. Layout `corne_v4.vil` laden;
+   siehe [`docs/CORNE.md`](../docs/CORNE.md).
+
+## 11. Funktion prüfen
 
 Ab- und wieder anmelden. Danach prüfen:
 
 | Prüfung | Erwartetes Ergebnis |
 | --- | --- |
 | `Alt+Leertaste`, `zed` eingeben | Flow zeigt Zed; `Enter` startet es |
-| `Alt+Enter` | WezTerm startet in Fedora |
+| `Alt+Enter` | WezTerm startet in Arch Linux |
 | `Ctrl+Shift+P` in WezTerm | Neuer lokaler PowerShell-Tab |
 | `Alt+1` bis `Alt+9` | GlazeWM wechselt Workspaces |
 | `Alt+Q` in einem Testfenster | Fenster schließt regulär, ggf. mit Speichern-Abfrage |

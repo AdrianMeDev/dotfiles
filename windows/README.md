@@ -4,8 +4,10 @@ Dieses Setup richtet über `bootstrap.ps1` bzw. `windows/dot.ps1` native
 Windows-Anwendungen (WezTerm, Zed, GlazeWM, Zebar, Flow Launcher, PowerShell 7,
 Git, .NET SDK, Ollama und Claude Code) sowie eine Arch-Linux-WSL2-Instanz samt
 Linux-Dotfiles mit einem Befehl ein. Die Windows-Taskleiste bleibt erhalten.
-GlazeWM nähert COSMICs Tiling mit neun vordefinierten Workspaces an; es ersetzt
-keinen vollständigen Desktop.
+GlazeWM bildet mit neun Workspaces den Hyprland-Desktop unter Linux nach
+(Vertrag: `manifests/keybindings.tsv`, Hyprland = GlazeWM); es ersetzt keinen
+vollständigen Desktop. Außerdem werden Windows-Dark-Mode, das Flow-Theme und die
+Agent-Konfigurationen für Claude Code und Pi nativ unter Windows eingerichtet.
 
 Für die Einrichtung ohne Setup- und Startskripte gibt es die separate
 [Anleitung zur manuellen Installation](MANUAL.md).
@@ -113,10 +115,14 @@ ist daher nicht vorgesehen.
 | `%USERPROFILE%\.glzr\glazewm\` | Tiling-Konfiguration und Startskripte |
 | `%USERPROFILE%\.glzr\zebar\` | Zebar-Einstellungen und eigenes `dotfiles`-Widget-Paket |
 | `%LOCALAPPDATA%\Microsoft\Windows\Fonts\` | Benutzer-Fonts; Registrierung unter `HKCU\Software\Microsoft\Windows NT\CurrentVersion\Fonts` |
+| `%APPDATA%\FlowLauncher\Themes\TokyoNight.xaml` | Flow-Theme Tokyo Night aus `windows/flow/TokyoNight.xaml`; in `Settings.json` als `Theme` gesetzt |
+| `%USERPROFILE%\.claude\` und `%USERPROFILE%\.pi\agent\` | Native Agent-Konfiguration aus `agent-config/` (Claude Code bzw. Pi; Skills, Templates, Claude-Frontmatter). Überschreibbar über `CLAUDE_CONFIG_DIR` und `PI_CODING_AGENT_DIR` |
+| `HKCU\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize` | Windows Dark Mode: `AppsUseLightTheme` und `SystemUsesLightTheme` = 0 (ohne Administratorrechte; bei abweichenden Werten sichert `-Backup` den Schlüssel als `.reg` unter `%LOCALAPPDATA%\dotfiles\backup`) |
 | `%LOCALAPPDATA%\Vial\` | Portables Vial-Release (`Vial.exe`, `.version`-Marker) plus Startmenü-Verknüpfung `Vial.lnk` |
 | Windows-Autostartordner | `Dotfiles-GlazeWM.vbs`, startet GlazeWM ohne Konsolenfenster |
 
-WezTerm verwendet Tokyo Night, die vorhandene Transparenz, Ioskeley Mono Term Nerd Font
+WezTerm verwendet Tokyo Night, die vorhandene Transparenz (unter Windows zusätzlich
+`win32_system_backdrop = 'Acrylic'`), Ioskeley Mono Term Nerd Font
 und die bestehenden Tastenkürzel. Zed nutzt Tokyo Night und die normale Ioskeley-Mono-Familie.
 Zeds Fenster erhält einen Tokyo-Night-Hintergrund mit 75 % Deckkraft; Editor, Terminal,
 Agent-, Git- und Projekt-Panel bleiben darüber transparent. Edit Predictions nutzen
@@ -158,6 +164,14 @@ wird durch GlazeWM nicht belegt; es gibt keine globale Tastaturumstellung.
 | `Alt+Shift+Space` | Schwebendes Fenster umschalten |
 | `Alt+Shift+R` | GlazeWM-Konfiguration neu laden |
 | `Alt+Shift+P` | Tiling und Kürzel pausieren/fortsetzen |
+| `Win+L` | Bildschirm sperren (Windows) |
+| `Win+V` | Zwischenablage-Verlauf (Windows) |
+| `Win+Shift+S` | Screenshot-Ausschnitt (Windows) |
+
+Die Bindings stammen aus `manifests/keybindings.tsv` (Hyprland = GlazeWM, per Test
+geprüft). Drei Aktionen gehören unter Windows dem System und werden nicht von GlazeWM
+belegt: `Win+L` (Sperren; unter Linux `Alt+Shift+X`), `Win+V` (Zwischenablage-Verlauf)
+und `Win+Shift+S` (Screenshot). Flow Launcher besitzt `Alt+Leertaste`.
 
 Standard-Windows-Dialoge (`#32770`) schweben. Anwendungsspezifische Dialoge können
 bei Bedarf über weitere `window_rules` ergänzt werden. Workspaces haben keine
@@ -170,7 +184,8 @@ feste Monitorzuordnung. Näheres in der [GlazeWM-Konfiguration](https://github.c
 im Windows-Startmenü öffnen. `Alt+Leertaste` öffnet danach die Suche; zum Beispiel
 `wezterm` oder `zed` eingeben und mit `Enter` starten.
 
-Der Installer setzt in `%APPDATA%\FlowLauncher\Settings\Settings.json` den Hotkey
+Der Installer kopiert `TokyoNight.xaml` nach `%APPDATA%\FlowLauncher\Themes\` und setzt in
+`%APPDATA%\FlowLauncher\Settings\Settings.json` das Theme `TokyoNight`, den Hotkey
 auf `Alt + Space`, aktiviert den Windows-Autostart und blendet das Suchfenster beim
 Start aus. Flow selbst richtet den Autostart beim nächsten Start ein. Mit
 `-NoAutostart` bleibt die vorhandene Flow-Autostarteinstellung erhalten; bei einer
@@ -283,7 +298,9 @@ powershell.exe -NoProfile -File .\windows\check.ps1
 pwsh -NoProfile -File .\windows\check.ps1
 ```
 
-Die PowerShell-Tests brauchen kein Pester. Sie verwenden temporäre Profile und
+`windows/check.ps1` prüft die Syntax und führt die Pester-5-Tests aus
+`windows/tests/` aus (`Invoke-Pester -CI`; Pester >= 5.0 muss installiert sein, sonst
+bricht das Skript ab). Sie verwenden temporäre Profile und
 simulieren Winget, WSL, Font-Download und Registry. Geprüft werden Vorschau ohne
 Dateischreibzugriffe/Paketaufrufe, Wiederholung, Backups, frühe Konfliktabbrüche,
 fehlende Voraussetzungen, WSL1, mehrdeutige Namen, Leerzeichen und externe Exitcodes.
@@ -303,6 +320,8 @@ Ein Lua-Verhaltenstest mit Neovim prüft WSL- und PowerShell-Domain sowie Tab-K�
   `Ctrl+Shift+P` startet lokale PowerShell 7.
 - Zed öffnet ein Arch-WSL-Projekt über Remote-WSL; Terminal, Task und Sprachserver
   laufen in Arch Linux.
+- Windows Dark Mode, Flow-Theme `TokyoNight`, WezTerm-Acrylic und die nativen Agent-Konfigurationen
+  (`%USERPROFILE%\.claude`, `%USERPROFILE%\.pi\agent`) sind sichtbar bzw. vorhanden.
 - Claude Code läuft in WSL (`claude --version`); Ollama unter Windows ist bei Bedarf
   über `networkingMode=mirrored` aus WSL erreichbar.
 - `windows/dot.ps1 update` aktualisiert sowohl Windows als auch Arch WSL2;
@@ -320,11 +339,3 @@ HKCU-Testschlüssel und entfernt ihn anschließend. Er prüft fehlende Schlüsse
 Wiederholung, Sicherungsfehler, Backup-Inhalt und den Erhalt fremder Einträge.
 Unter Windows beide obigen Befehle ausführen, um PowerShell 5.1 und 7 abzudecken.
 Unter Linux wird dieser Integrationstest ausdrücklich übersprungen.
-
-Prüfstand dieser Änderung: Fünf portable Windows-Tests bestanden; der PowerShell-Test
-wurde mangels `pwsh` übersprungen. ShellCheck, Bash-/Zsh-/JavaScript-Syntax,
-strukturierte Konfigurationen und Secret-Scan bestanden. LuaJIT fehlt.
-Im Gesamtlauf bleiben zwei bestehende Zsh-Fehler durch fehlende Programme im
-reduzierten Test-PATH. tmux besteht außerhalb der Socket-Sandbox, WezTerm mit
-direktem AppRun-Pfad. PowerShell-Parser, PowerShell-Verhaltenstests sowie die
-Windows-Registry-Integration unter PowerShell 5.1 und 7 sind noch auszuführen.
