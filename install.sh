@@ -5,6 +5,12 @@ REPO_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)
 export REPO_DIR
 # shellcheck source=scripts/common.sh
 source "$REPO_DIR/scripts/common.sh"
+# shellcheck source=scripts/detect.sh
+source "$REPO_DIR/scripts/detect.sh"
+# shellcheck source=scripts/pkg.sh
+source "$REPO_DIR/scripts/pkg.sh"
+# Fedora only until detection is wired in a later step.
+DISTRO_FAMILY=fedora PROFILE=desktop
 
 usage() {
     cat <<'EOF'
@@ -69,7 +75,7 @@ if [[ $ONLY != dotfiles ]]; then
     if ((!DRY_RUN)); then
         ((EUID != 0)) || die 'Bitte ohne sudo starten; nur DNF-Schritte verwenden sudo.'
         need sudo
-        need dnf
+        pkg_need
     fi
 fi
 

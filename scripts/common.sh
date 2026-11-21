@@ -30,12 +30,3 @@ upstream_installer() {
     download "$url" "$WORK_DIR/$name-install.sh"
     "$interpreter" "$WORK_DIR/$name-install.sh" "$@"
 }
-install_manifest() {
-    local file=$1 line
-    local packages=()
-    while IFS= read -r line || [[ -n $line ]]; do
-        [[ -z $line || $line == \#* ]] && continue
-        packages+=("$line")
-    done < "$REPO_DIR/manifests/$file"
-    run sudo dnf install -y "${packages[@]}"
-}

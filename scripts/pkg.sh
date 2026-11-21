@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Löst logische Paketnamen aus manifests/packages.tsv pro Distro-Familie auf.
-# Spalten: logical, group (base|desktop), arch, fedora, debian. "-" = überspringen.
+# Spalten: logical, group (base|desktop|dev), arch, fedora, debian. "-" = überspringen.
 
 if ! declare -F die >/dev/null 2>&1; then
     # shellcheck source=scripts/common.sh

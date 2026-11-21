@@ -478,8 +478,9 @@ bindkey -M viins '^\'
         result = self.run_command(['bash', '-c', '''
 set -Eeuo pipefail
 source "$REPO_DIR/scripts/common.sh"
+source "$REPO_DIR/scripts/pkg.sh"
 source "$REPO_DIR/scripts/system.sh"
-DRY_RUN=0 EXTRAS=''
+DRY_RUN=0 EXTRAS='' DISTRO_FAMILY=fedora PROFILE=desktop
 sudo() { return 42; }
 install_system
 '''], success=False)
@@ -523,15 +524,16 @@ target="$XDG_DATA_HOME/fonts/IoskeleyMono"
         result = self.run_command(['bash', '-c', '''
 set -Eeuo pipefail
 source "$REPO_DIR/scripts/common.sh"
+source "$REPO_DIR/scripts/pkg.sh"
 source "$REPO_DIR/scripts/system.sh"
-DRY_RUN=0 EXTRAS=''
+DRY_RUN=0 EXTRAS='' DISTRO_FAMILY=fedora PROFILE=desktop
 sudo() { printf '%s\\n' "$*" >> "$WSL_LOG"; }
-install_manifest() { printf 'install:%s\\n' "$*" >> "$WSL_LOG"; }
+pkg_install_manifest() { printf 'install:%s\\n' "$*" >> "$WSL_LOG"; }
 install_system
 '''])
         commands = Path(self.env['WSL_LOG']).read_text().splitlines()
         self.assertEqual(commands[0], 'dnf upgrade --refresh -y --exclude=kernel*')
-        self.assertEqual(commands[1], 'install:system.txt')
+        self.assertEqual(commands[1], 'install:')
         self.assertIn('WSL erkannt', result.stdout)
 
     def test_fedora_wsl_dry_run_reports_kernel_exclusion(self):
@@ -540,8 +542,9 @@ install_system
         result = self.run_command(['bash', '-c', '''
 set -Eeuo pipefail
 source "$REPO_DIR/scripts/common.sh"
+source "$REPO_DIR/scripts/pkg.sh"
 source "$REPO_DIR/scripts/system.sh"
-DRY_RUN=1 EXTRAS=''
+DRY_RUN=1 EXTRAS='' DISTRO_FAMILY=fedora PROFILE=desktop
 install_system
 '''])
         self.assertIn('--exclude=kernel\\*', result.stdout)

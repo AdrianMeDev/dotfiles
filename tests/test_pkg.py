@@ -9,7 +9,6 @@ import unittest
 REPO = Path(__file__).resolve().parents[1]
 PKG_SH = REPO / 'scripts' / 'pkg.sh'
 MANIFEST = REPO / 'manifests' / 'packages.tsv'
-SYSTEM_TXT = REPO / 'manifests' / 'system.txt'
 NAME_RE = re.compile(r'^[A-Za-z0-9][A-Za-z0-9+._-]*$')
 
 
@@ -20,14 +19,6 @@ def manifest_rows():
             continue
         rows.append(line.split('\t'))
     return rows
-
-
-def system_packages():
-    return {
-        line.strip()
-        for line in SYSTEM_TXT.read_text(encoding='utf-8').splitlines()
-        if line.strip() and not line.startswith('#')
-    }
 
 
 class PkgTests(unittest.TestCase):
@@ -58,17 +49,24 @@ class PkgTests(unittest.TestCase):
             with self.subTest(name=row[0]):
                 self.assertEqual(len(row), 5, row)
                 self.assertTrue(all(cell.strip() == cell and cell for cell in row), row)
-                self.assertIn(row[1], ('base', 'desktop'))
+                self.assertIn(row[1], ('base', 'desktop', 'dev'))
                 for cell in row[2:]:
                     if cell == '-':
                         continue
                     for pkg in cell.split(','):
                         self.assertRegex(pkg, NAME_RE)
 
-    def test_fedora_matches_system_txt(self):
+    def test_fedora_desktop_has_no_duplicates(self):
         resolved = self.resolve('fedora', 'desktop')
         self.assertEqual(len(resolved), len(set(resolved)))
-        self.assertEqual(set(resolved), system_packages())
+
+    def test_dev_rows_are_not_in_profile_install(self):
+        for profile in ('headless', 'desktop'):
+            resolved = self.resolve('fedora', profile)
+            self.assertNotIn('dotnet-sdk-10.0', resolved)
+            self.assertNotIn('wezterm', resolved)
+        res = self.run_pkg('pkg_names dotnet-sdk fedora; pkg_names wezterm fedora')
+        self.assertEqual(res.stdout.split(), ['dotnet-sdk-10.0', 'wezterm'])
 
     def test_headless_excludes_desktop_rows(self):
         rows = manifest_rows()
@@ -76,7 +74,7 @@ class PkgTests(unittest.TestCase):
         for family, col in (('arch', 2), ('fedora', 3), ('debian', 4)):
             with self.subTest(family=family):
                 base = {p for r in rows if r[1] == 'base' for p in r[col].split(',')}
-                full = {p for r in rows for p in r[col].split(',')}
+                full = {p for r in rows if r[1] != 'dev' for p in r[col].split(',')}
                 self.assertEqual(set(self.resolve(family, 'headless')), base)
                 self.assertEqual(set(self.resolve(family, 'desktop')), full)
 

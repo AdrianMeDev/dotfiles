@@ -86,8 +86,8 @@ PY
 install_wezterm() {
     if command -v wezterm >/dev/null 2>&1; then log 'WezTerm ist vorhanden.'; return; fi
     if ((DRY_RUN)); then log 'WezTerm: Fedora-Paket, sonst stabiles Upstream-AppImage (x86_64), entpackt ohne FUSE.'; return; fi
-    if dnf -q list --available wezterm >/dev/null 2>&1; then
-        run sudo dnf install -y wezterm
+    if pkg_available wezterm; then
+        pkg_install wezterm
         command -v wezterm >/dev/null 2>&1 || die 'WezTerm-Paket enthält kein ausführbares wezterm.'
         return
     fi
@@ -115,7 +115,9 @@ PY
 }
 
 install_development() {
-    run sudo dnf install -y dotnet-sdk-10.0
+    local dotnet_pkgs
+    mapfile -t dotnet_pkgs < <(pkg_names dotnet-sdk)
+    pkg_install "${dotnet_pkgs[@]}"
     if ! command -v starship >/dev/null 2>&1; then
         if ((!DRY_RUN)); then mkdir -p "$HOME/.local/bin"; fi
         upstream_installer starship https://starship.rs/install.sh sh --yes --bin-dir "$HOME/.local/bin"
