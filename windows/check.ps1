@@ -1,6 +1,7 @@
 # Parse check plus Pester 5 tests. Run: pwsh -NoProfile -File windows/check.ps1
 $ErrorActionPreference = 'Stop'
-foreach ($file in (Get-ChildItem -LiteralPath $PSScriptRoot -Filter '*.ps1' -Recurse)) {
+$files = @(Get-ChildItem -LiteralPath $PSScriptRoot -Filter '*.ps1' -Recurse) + (Get-Item -LiteralPath "$PSScriptRoot/../bootstrap.ps1")
+foreach ($file in $files) {
     $tokens = $null
     $parseErrors = $null
     [Management.Automation.Language.Parser]::ParseFile($file.FullName, [ref]$tokens, [ref]$parseErrors) | Out-Null

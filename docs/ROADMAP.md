@@ -109,7 +109,7 @@ alles wird in der neuesten Version installiert und mit `dot update` aktualisiert
 - **Depends on:** M1, M5
 - **Size:** L, ~8 commits
 
-### M7 [~] Windows nativ neu aufbauen
+### M7 [x] Windows nativ neu aufbauen
 - **Goal:** `bootstrap.ps1` richtet Windows 11 mit einem Befehl ein, im selben Look, und hält es aktuell.
 - **Includes:** winget-Liste (WezTerm, Zed, GlazeWM, Zebar, Flow, PowerShell 7, Git, .NET SDK, Ollama, Claude Code), Extra `vs`, Zed- und Agent-Config nativ, Theme aus Tokens (Dark Mode, GlazeWM-Rahmen/Transparenz, Zebar, Flow-Theme, WezTerm-Acrylic), `dot.ps1 install|update|doctor` (gezieltes `winget upgrade`), Pester-Tests + Windows-CI-Runner
 - **Done when:** frische Win11-VM: `bootstrap.ps1` liefert die Windows-Seite komplett und optisch wie Linux; `dot.ps1 update` aktualisiert sie; CI grün
@@ -161,3 +161,4 @@ alles wird in der neuesten Version installiert und mit `dot update` aktualisiert
 - 2026-11-21: M4 Agent-Config integrieren abgeschlossen (`agents`-Modul, Claude Code, pi, optional Ollama, `dot update`/`dot doctor`, Container-Matrix prüft Agents und Idempotenz)
 - 2026-11-21: M5 Einheitliches Theme: Terminal, Editoren, CLI abgeschlossen (`theme/tokens.toml`, Theme-Paritätstests, Zed/WezTerm/Neovim/tmux/Starship/fzf/bat/delta/lazygit/btop/yazi/Claude Code/pi, Container-Matrix prüft Theme-Links, `bat`-Cache und pi-Theme)
 - 2026-11-21: M6 Keybinding-Vertrag + Hyprland-Desktop abgeschlossen (`manifests/keybindings.tsv` + Paritätstests, Stow-Paket `hypr/` mit Lua-Config für Hyprland >= 0.57, `desktop`- und `theme`-Modul, `dot doctor` und Container-Matrix prüfen Hyprland)
+- 2026-11-21: M7 done (Native Windows 11 setup with bootstrap.ps1 and dot.ps1)

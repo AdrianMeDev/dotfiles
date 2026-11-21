@@ -41,3 +41,6 @@ jobs:
         shell: pwsh
         run: Install-Module Pester -MinimumVersion 5.0 -Force -SkipPublisherCheck -Scope CurrentUser
       - run: pwsh -NoProfile -File windows/check.ps1
+      - name: Bootstrap dry run
+        shell: pwsh
+        run: pwsh -NoProfile -File bootstrap.ps1 -DryRun -Backup
