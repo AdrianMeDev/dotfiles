@@ -29,7 +29,7 @@ EXCEPTIONS = {
                            'opacity here and is not given blur settings.',
     'window.blur.neovim': 'Neovim runs inside the terminal and inherits its blur and opacity.',
     'font.neovim': 'Neovim runs inside the terminal and inherits its font and size.',
-    'font.size.ui_bar': 'ui (15) applies to Zed UI only; bar (12) has no consumer in WezTerm/Zed/Neovim yet.',
+    'font.size.ui_bar': 'ui (15) applies to Zed UI only.',
     'font': 'Fonts and sizes are set by the terminal; CLI/TUI tools inherit them.',
     'border': 'Rounded borders only apply where the tool supports them (fzf --border=rounded); '
               'tmux draws plain pane borders and Starship has none.',
@@ -368,6 +368,25 @@ class ParityTests(unittest.TestCase):
         self.assertEqual(cfg['decoration.inactive_opacity'], tokens['window']['opacity'])
         self.assertEqual(lua_color(cfg['general.col.active_border']), tokens['palette']['border_active'])
         self.assertEqual(lua_color(cfg['general.col.inactive_border']), tokens['palette']['border'])
+
+    def test_waybar(self):
+        tokens = load_tokens()
+        config = jsonc(read('hypr/.config/waybar/config.jsonc'))
+        css = read('hypr/.config/waybar/style.css')
+        self.assertEqual(config['height'], 32)
+        self.assertEqual(config['modules-left'], ['hyprland/workspaces'])
+        self.assertEqual(config['modules-center'], ['clock'])
+        self.assertEqual(config['hyprland/workspaces']['persistent-workspaces'], {'*': 9})
+        # Zebar's #status is an error slot without Waybar counterpart.
+        zebar = re.search(r'<aside>(.*)</aside>', read('windows/zebar/index.html')).group(1)
+        zebar_modules = [m for m in re.findall(r'id="(\w+)"', zebar) if m != 'status']
+        self.assertEqual(config['modules-right'], zebar_modules)
+        self.assertEqual(hexes(css) - self.allowed, set())
+        self.assertIn(f"font-family: '{tokens['font']['terminal_family']}'", css)
+        self.assertEqual(set(re.findall(r'font-size: (\d+)px', css)), {str(tokens['font']['size']['bar'])})
+        for state in ('active', 'urgent'):
+            self.assertIn(f'#workspaces button.{state}', css)
+        self.assertIn('#workspaces button:not(.empty)', css)  # Zebar "occupied"
 
     def test_neovim(self):
         tokens = load_tokens()
