@@ -5,6 +5,7 @@
 [core]
     editor = nvim
     excludesFile = ~/.config/git/ignore
+    pager = delta
 [fetch]
     prune = true
 [pull]
@@ -16,6 +17,25 @@
 [diff]
     algorithm = histogram
     colorMoved = default
+[interactive]
+    diffFilter = delta --color-only
+[delta]
+    dark = true
+    navigate = true
+    syntax-theme = tokyonight_night
+    minus-style = syntax "#37222c"
+    minus-emph-style = syntax "#394b70"
+    plus-style = syntax "#20303b"
+    plus-emph-style = syntax "#394b70"
+    zero-style = syntax "#1a1b26"
+    hunk-header-style = "#7aa2f7" "#1f2231"
+    hunk-header-decoration-style = "#414868" box
+    line-numbers = true
+    line-numbers-minus-style = "#f7768e" "#37222c"
+    line-numbers-plus-style = "#9ece6a" "#20303b"
+    line-numbers-zero-style = "#565f89" "#1a1b26"
+    line-numbers-left-style = "#565f89"
+    line-numbers-right-style = "#565f89"
 [alias]
     st = status --short --branch
     lg = log --graph --oneline --decorate -30

@@ -2,7 +2,10 @@
 """Tests for the unified theme contract (theme/tokens.toml) and tool parity."""
 from pathlib import Path
 import json
+import plistlib
 import re
+import shlex
+import subprocess
 import tomllib
 import unittest
 
@@ -110,6 +113,61 @@ class ParityTests(unittest.TestCase):
     def assert_colors_in_contract(self, path):
         unknown = hexes(read(path)) - self.allowed
         self.assertEqual(unknown, set(), f'{path}: colors outside theme/tokens.toml')
+
+    def test_bat(self):
+        self.assertEqual(shlex.split(read('bat/.config/bat/config')),
+                         ['--theme=tokyonight_night'])
+        path = 'bat/.config/bat/themes/tokyonight_night.tmTheme'
+        theme = plistlib.loads(read(path).encode())
+        self.assertEqual(theme['name'], 'tokyonight_night')
+        self.assert_colors_in_contract(path)
+        p = self.palette
+        self.assertEqual(theme['settings'][0]['settings'], {
+            'background': p['bg'], 'foreground': p['fg'], 'caret': p['fg'],
+            'invisibles': p['border'], 'lineHighlight': p['bg_highlight'],
+            'selection': p['bg_highlight'], 'gutter': p['bg'],
+            'gutterForeground': p['comment'],
+        })
+        scopes = {scope.strip(): rule['settings']['foreground']
+                  for rule in theme['settings'][1:] for scope in rule['scope'].split(',')}
+        expected = {
+            'comment': 'comment', 'string': 'green', 'constant.numeric': 'orange',
+            'keyword': 'magenta', 'keyword.operator': 'cyan', 'entity.name.function': 'blue',
+            'entity.name.type': 'cyan', 'variable': 'fg', 'variable.parameter': 'yellow',
+            'entity.name.tag': 'red', 'entity.other.attribute-name': 'yellow',
+            'punctuation': 'fg_dark', 'invalid': 'red', 'markup.heading': 'blue',
+            'markup.inserted': 'green', 'markup.deleted': 'red', 'markup.changed': 'yellow',
+        }
+        for scope, token in expected.items():
+            self.assertEqual(scopes[scope], p[token], scope)
+
+    def test_delta(self):
+        # Let Git parse quoting: unquoted hex colors would become comments.
+        result = subprocess.run(['git', 'config', '--file', str(REPO / 'git/.gitconfig'),
+                                 '--null', '--list'], check=True, capture_output=True, text=True)
+        config = dict(entry.split('\n', 1) for entry in result.stdout.split('\0') if entry)
+        self.assertEqual(config['core.pager'], 'delta')
+        self.assertEqual(config['interactive.difffilter'], 'delta --color-only')
+        p, d = self.palette, load_tokens()['diff']
+        expected = {
+            'dark': 'true', 'navigate': 'true', 'syntax-theme': 'tokyonight_night',
+            'minus-style': f"syntax {d['delete']}",
+            'minus-emph-style': f"syntax {d['text']}",
+            'plus-style': f"syntax {d['add']}",
+            'plus-emph-style': f"syntax {d['text']}",
+            'zero-style': f"syntax {p['bg']}",
+            'hunk-header-style': f"{p['blue']} {d['change']}",
+            'hunk-header-decoration-style': f"{p['border']} box",
+            'line-numbers': 'true',
+            'line-numbers-minus-style': f"{p['red']} {d['delete']}",
+            'line-numbers-plus-style': f"{p['green']} {d['add']}",
+            'line-numbers-zero-style': f"{p['comment']} {p['bg']}",
+            'line-numbers-left-style': p['comment'],
+            'line-numbers-right-style': p['comment'],
+        }
+        self.assertEqual({key.removeprefix('delta.'): value for key, value in config.items()
+                          if key.startswith('delta.')}, expected)
+        self.assertEqual(hexes(read('git/.gitconfig')) - self.allowed - set(d.values()), set())
 
     def test_tmux(self):
         text = read('tmux/.config/tmux/tmux.conf')
