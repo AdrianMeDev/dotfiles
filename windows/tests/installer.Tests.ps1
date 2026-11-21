@@ -34,6 +34,11 @@ Describe 'Windows installer' {
             throw "Unexpected command: $Program"
         }
         function Assert-WindowsPrerequisites {}
+        # Never touch the real HKCU: reads come from $script:darkValue, writes are counted.
+        $script:darkValue = $null
+        $script:darkWrites = 0
+        function Read-FontRegistryValue { param($SubKey, $Name) return $script:darkValue }
+        function Write-DarkModePlan { param($Plan, $SubKey, $BackupDirectory) $script:darkWrites++ }
         $script:noWsl = $false
         function Get-Command { param($Name, $ErrorAction) if ($Name -ne 'wsl.exe' -or -not $script:noWsl) { return $Name } }
     }
@@ -47,6 +52,26 @@ Describe 'Windows installer' {
             Install-WindowsDesktop $script:source -DryRun
             Test-Path $script:temporary | Should -BeFalse
             $script:packageCalls | Should -Be 0
+            $script:darkWrites | Should -Be 0
+        }
+        It 'dry run shows the dark mode plan and the Flow theme' {
+            $output = (Install-WindowsDesktop $script:source -DryRun 6>&1 | Out-String)
+            $output | Should -Match 'Create: HKCU\\.*Personalize\\AppsUseLightTheme = 0'
+            $output | Should -Match 'Create: HKCU\\.*Personalize\\SystemUsesLightTheme = 0'
+            $output | Should -Match 'FlowLauncher.Themes.TokyoNight\.xaml'
+        }
+        It 'plans dark mode as Create, Replace, then Skip' {
+            $script:darkValue = $null
+            (Get-DarkModePlan 'test').Action | Should -Be @('Create', 'Create')
+            $script:darkValue = [pscustomobject]@{ Value = 1; Kind = [Microsoft.Win32.RegistryValueKind]::DWord }
+            (Get-DarkModePlan 'test').Action | Should -Be @('Replace', 'Replace')
+            $script:darkValue = [pscustomobject]@{ Value = 0; Kind = [Microsoft.Win32.RegistryValueKind]::DWord }
+            (Get-DarkModePlan 'test').Action | Should -Be @('Skip', 'Skip')
+            $script:darkValue = $null
+        }
+        It 'sets the Flow theme to TokyoNight' {
+            $flowEntry = Get-FlowConfigEntry
+            ([Text.Encoding]::UTF8.GetString($flowEntry.Bytes) | ConvertFrom-Json).Theme | Should -BeExactly 'TokyoNight'
         }
         It 'rejects ambiguous, missing and WSL1 distros' {
             $script:names = @('Fedora', 'Fedora Test')

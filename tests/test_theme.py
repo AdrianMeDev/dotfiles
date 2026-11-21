@@ -9,6 +9,7 @@ import shlex
 import subprocess
 import tomllib
 import unittest
+from xml.etree import ElementTree
 
 REPO = Path(__file__).resolve().parents[1]
 HEX = re.compile(r'^#[0-9a-f]{6}$')
@@ -384,6 +385,33 @@ class ParityTests(unittest.TestCase):
         self.assertIn(f"font: {font['size']['bar']}px '{font['terminal_family']}'", css)
         self.assertIn(f"background: {self.palette['bg']}", css)
         self.assertIn('zebar.opacity', EXCEPTIONS)
+
+    def test_flow(self):
+        tokens = load_tokens()
+        p, font, border = tokens['palette'], tokens['font'], tokens['border']
+        path = 'windows/flow/TokyoNight.xaml'
+        root = ElementTree.fromstring(read(path))
+        self.assert_colors_in_contract(path)
+
+        def setters(key):
+            style = next(e for e in root if e.get('{http://schemas.microsoft.com/winfx/2006/xaml}Key') == key)
+            return {s.get('Property'): s.get('Value') for s in style}
+
+        window = setters('WindowBorderStyle')
+        self.assertEqual(window['Background'], p['bg'])
+        self.assertEqual(window['BorderBrush'], p['border_active'])
+        self.assertEqual(window['BorderThickness'], str(border['width']))
+        self.assertEqual(window['CornerRadius'], str(border['radius']))
+        self.assertEqual(setters('QueryBoxStyle')['Foreground'], p['fg'])
+        self.assertEqual(setters('ItemTitleStyle')['Foreground'], p['fg'])
+        self.assertEqual(setters('ItemSubTitleStyle')['Foreground'], p['comment'])
+        self.assertEqual(setters('SeparatorStyle')['Fill'], p['border'])
+        for key in ('QueryBoxStyle', 'ItemTitleStyle', 'ItemSubTitleStyle'):
+            self.assertEqual(setters(key)['FontFamily'], font['editor_family'], key)
+        selected = [e.get('Color') for e in root if e.get('{http://schemas.microsoft.com/winfx/2006/xaml}Key')
+                    == 'ItemSelectedBackgroundColor']
+        self.assertEqual(selected, [p['bg_highlight']])
+        self.assertIn("Theme = 'TokyoNight'", read('windows/installer-core.ps1'))
 
     def test_wezterm_windows(self):
         text = read('wezterm/.config/wezterm/wezterm.lua')

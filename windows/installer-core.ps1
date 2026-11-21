@@ -104,6 +104,36 @@ function Write-FontRegistryPlan {
     } finally { if ($null -ne $key) { $key.Dispose() } }
 }
 
+# Windows dark mode for apps and system UI (HKCU, no admin). Reuses the generic HKCU reader above.
+function Get-DarkModeSubKey { return 'Software\Microsoft\Windows\CurrentVersion\Themes\Personalize' }
+function Get-DarkModePlan {
+    param([string]$SubKey = (Get-DarkModeSubKey))
+    foreach ($name in 'AppsUseLightTheme', 'SystemUsesLightTheme') {
+        $old = Read-FontRegistryValue $SubKey $name
+        $same = $null -ne $old -and $old.Kind -eq [Microsoft.Win32.RegistryValueKind]::DWord -and $old.Value -eq 0
+        $action = if ($same) { 'Skip' } elseif ($null -eq $old) { 'Create' } else { 'Replace' }
+        [pscustomobject]@{ Name = $name; Value = 0; Action = $action }
+    }
+}
+function Write-DarkModePlan {
+    param([object[]]$Plan, [string]$SubKey, [string]$BackupDirectory)
+    foreach ($entry in $Plan) { Write-Host "$($entry.Action): HKCU\$SubKey\$($entry.Name) = $($entry.Value)" }
+    if (-not @($Plan | Where-Object Action -ne 'Skip').Count) { return }
+    if (@($Plan | Where-Object Action -eq 'Replace').Count) {
+        [IO.Directory]::CreateDirectory($BackupDirectory) | Out-Null
+        $saved = Join-Path $BackupDirectory "Personalize.backup-$([guid]::NewGuid().ToString('N')).reg"
+        Invoke-Native 'reg.exe' @('export', "HKCU\$SubKey", $saved) | Out-Host
+        if (-not (Test-Path -LiteralPath $saved -PathType Leaf)) { throw "Registry-Backup fehlt: $saved" }
+        Write-Host "Registry-Backup: $saved"
+    }
+    $key = [Microsoft.Win32.Registry]::CurrentUser.CreateSubKey($SubKey)
+    try {
+        foreach ($entry in $Plan) {
+            if ($entry.Action -ne 'Skip') { $key.SetValue($entry.Name, [int]$entry.Value, [Microsoft.Win32.RegistryValueKind]::DWord) }
+        }
+    } finally { if ($null -ne $key) { $key.Dispose() } }
+}
+
 function Test-Windows11 {
     return ([Environment]::OSVersion.Platform -eq 'Win32NT' -and [Environment]::OSVersion.Version.Build -ge 22000)
 }
@@ -197,7 +227,7 @@ function Get-FlowConfigEntry {
         $settings = Get-Content -LiteralPath $path -Raw -ErrorAction Stop | ConvertFrom-Json -ErrorAction Stop
         if ($null -eq $settings -or $settings -isnot [pscustomobject]) { throw "Ungueltige Flow-Einstellungen: $path" }
     }
-    $desired = @{ Hotkey = 'Alt + Space'; HideOnStartup = $true }
+    $desired = @{ Hotkey = 'Alt + Space'; HideOnStartup = $true; Theme = 'TokyoNight' }
     if (-not $NoAutostart) { $desired.StartFlowLauncherOnSystemStartup = $true }
     $changed = -not $exists
     foreach ($name in $desired.Keys) {
@@ -285,6 +315,7 @@ function Get-ConfigEntries {
         New-CopyEntry (Join-Path $zebar "dotfiles/$name") (Join-Path $SourceRoot "zebar/$name")
     }
     Get-FlowConfigEntry -NoAutostart:$NoAutostart
+    New-CopyEntry (Join-Path $env:APPDATA 'FlowLauncher/Themes/TokyoNight.xaml') (Join-Path $SourceRoot 'flow/TokyoNight.xaml')
     if (-not $NoAutostart) {
         $startup = Join-Path $env:APPDATA 'Microsoft/Windows/Start Menu/Programs/Startup/Dotfiles-GlazeWM.vbs'
         $launcher = Join-Path $glaze 'start-glazewm.ps1'
@@ -318,8 +349,10 @@ function Install-WindowsDesktop {
     if ($selected) { Write-Host "WSL2: $selected" } else { Write-Host 'WSL2: keine Distribution, nur native Windows-Konfiguration.' }
     $entries = @(Get-ConfigEntries $SourceRoot $selected -NoAutostart:$NoAutostart)
     $plan = @(Get-FilePlan $entries -Backup:$Backup)
+    $darkPlan = @(Get-DarkModePlan)
     if ($DryRun) {
         Write-FilePlan $plan -DryRun
+        foreach ($entry in $darkPlan) { Write-Host "$($entry.Action): HKCU\$(Get-DarkModeSubKey)\$($entry.Name) = $($entry.Value) (Dark Mode)" }
         foreach ($package in $packages) { Write-Host "Winget (falls fehlend): $package" }
         Write-Host 'Fonts: Ioskeley Mono und Ioskeley Mono Term Nerd Font v2.1.0 (Download und Inhalts-/Registry-Konfliktpruefung erst ohne -DryRun).'
         return
@@ -365,6 +398,7 @@ function Install-WindowsDesktop {
             Install-WingetPackage $package
         }
         Write-FontRegistryPlan $registryPlan $fontRegistry (Join-Path $env:LOCALAPPDATA 'Microsoft/Windows/Fonts')
+        Write-DarkModePlan $darkPlan (Get-DarkModeSubKey) (Join-Path $env:LOCALAPPDATA 'dotfiles/backup')
         Write-FilePlan $plan
         Write-FilePlan $fontPlan
         Write-Host 'Flow Launcher einmal im Startmenue starten; danach Alt+Leertaste. Autostart wird beim Flow-Start uebernommen.'
