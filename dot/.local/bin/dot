@@ -10,10 +10,10 @@ dot – Dotfiles CLI
 
 Verwendung:
   dot install [OPTIONEN...]   Führt install.sh mit den angegebenen Optionen aus.
-  dot update [OPTIONEN...]    Aktualisiert System, mise-Tools, Flatpaks und zsh-Plugins
+  dot update [OPTIONEN...]    Aktualisiert System, mise-Tools, Agenten, Flatpaks und zsh-Plugins
                               (--dry-run, --profile desktop|headless, --help).
-  dot doctor                  Prüft Umgebung, Tool-Versionen, mise, Stow-Links, Git-Identität
-                              und fnm-Überreste (read-only; Exit 1 bei [FEHLER]).
+  dot doctor                  Prüft Umgebung, Tool-Versionen, mise, Stow-Links, Agent-Config,
+                              Git-Identität und fnm-Überreste (read-only; Exit 1 bei [FEHLER]).
   dot zed-template [--dry-run] [--backup] angular|django|dotnet <PFAD>
                               Kopiert die Zed-Projektvorlage (.zed/*.json) in ein Projekt.
   dot help | -h | --help     Zeigt diese Hilfe.

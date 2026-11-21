@@ -251,6 +251,56 @@ class DotCliTests(unittest.TestCase):
                                         text=True, check=True, env=self.env).stdout, head)
         self.assertFalse((plugin / 'b').exists())
 
+    def setup_agent_update(self, family='fedora', tools=('claude', 'pi', 'ollama'), fail=None):
+        self.setup_update(family, tools=('sudo', 'dnf', 'pacman', 'mise', *tools), fail=fail)
+        bindir = self.base / 'fakebin'
+        curl = bindir / 'curl'
+        curl.write_text('#!/bin/sh\nwhile [ $# -gt 0 ]; do\n  if [ "$1" = --output ]; then out=$2; fi\n  shift\ndone\n'
+                        f'printf \'echo "ollama-installer" >> "{self.log}"\\n\' > "$out"\n')
+        curl.chmod(0o755)
+        (bindir / 'sh').symlink_to(shutil.which('sh'))
+        self.tmpdir = self.base / 'tmp'
+        self.tmpdir.mkdir(exist_ok=True)
+        self.env['TMPDIR'] = str(self.tmpdir)
+
+    def test_update_agents(self):
+        self.setup_agent_update()
+        result = self.run_dot('update', '--profile', 'headless')
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        calls = self.calls()
+        self.assertIn('claude update', calls)
+        self.assertIn('mise exec -- npm install -g @earendil-works/pi-coding-agent@latest', calls)
+        self.assertIn('mise reshim', calls)
+        self.assertIn('ollama-installer', calls)
+        self.assertEqual(list(self.tmpdir.iterdir()), [])
+
+    def test_update_agents_skips_absent_and_arch_ollama(self):
+        self.setup_agent_update(tools=())
+        result = self.run_dot('update', '--profile', 'headless')
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertFalse([c for c in self.calls() if c.startswith(('claude', 'ollama', 'mise exec', 'mise reshim'))])
+        self.log.unlink()
+        shutil.rmtree(self.base / 'fakebin')
+        self.setup_agent_update('arch', tools=('ollama',))
+        result = self.run_dot('update', '--profile', 'headless')
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertNotIn('ollama-installer', self.calls())
+
+    def test_update_agents_dry_run(self):
+        self.setup_agent_update()
+        result = self.run_dot('update', '--dry-run', '--profile', 'headless')
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertEqual(self.calls(), [])
+        for step in ('claude update', '@earendil-works/pi-coding-agent@latest', 'mise reshim',
+                     'https://ollama.com/install.sh'):
+            self.assertIn(step, result.stdout)
+
+    def test_update_agent_failure_propagates(self):
+        self.setup_agent_update(fail='claude')
+        result = self.run_dot('update', '--profile', 'headless')
+        self.assertEqual(result.returncode, 3, result.stdout + result.stderr)
+        self.assertEqual(list(self.tmpdir.iterdir()), [])
+
     def test_update_help_and_bad_option(self):
         result = self.run_dot('update', '--help')
         self.assertEqual(result.returncode, 0, result.stderr)
@@ -261,9 +311,9 @@ class DotCliTests(unittest.TestCase):
     # --- dot doctor -------------------------------------------------------
 
     DOCTOR_TOOLS = ('mise', 'nvim', 'node', 'uv', 'starship', 'tree-sitter', 'lazygit', 'rg', 'fd', 'fzf', 'bat',
-                    'delta', 'shfmt', 'shellcheck', 'zsh', 'tmux', 'git', 'stow', 'podman')
+                    'delta', 'shfmt', 'shellcheck', 'zsh', 'tmux', 'git', 'stow', 'podman', 'claude', 'pi', 'ollama')
 
-    def setup_doctor(self, omit=(), nvim='NVIM v0.12.1', missing='', extra=()):
+    def setup_doctor(self, omit=(), nvim='NVIM v0.12.1', missing='', extra=(), agents=True):
         bindir = self.base / 'fakebin'
         bindir.mkdir()
         self.log = self.base / 'calls.log'
@@ -290,6 +340,48 @@ class DotCliTests(unittest.TestCase):
         local = self.home / '.gitconfig-local'
         local.write_text('[user]\n\tname = T\n\temail = t@example.invalid\n')
         local.chmod(0o600)
+        if agents:
+            subprocess.run(['python3', str(REPO / 'scripts/agents.py')], env=self.env, check=True,
+                           capture_output=True, stdin=subprocess.DEVNULL)
+
+    def agent_files(self):
+        return sorted(p for p in self.home.rglob('*') if p.is_file() and p.name != '.gitconfig-local')
+
+    def test_doctor_agent_tools(self):
+        self.setup_doctor(omit=('claude', 'pi', 'ollama'))
+        result = self.run_dot('doctor')
+        self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
+        self.assertIn('[FEHLER]  claude fehlt.', result.stdout)
+        self.assertIn('[FEHLER]  pi fehlt.', result.stdout)
+        self.assertIn('[WARN]    ollama fehlt (optional).', result.stdout)
+
+    def test_doctor_ollama_optional(self):
+        self.setup_doctor(omit=('ollama',))
+        result = self.run_dot('doctor')
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn('[WARN]    ollama fehlt (optional).', result.stdout)
+
+    def test_doctor_agent_config_ok_missing_modified(self):
+        self.setup_doctor()
+        result = self.run_dot('doctor')
+        self.assertIn('[OK]      Agent-Config: stimmt', result.stdout)
+        files = self.agent_files()
+        self.assertTrue(files)
+        modified = files[0]
+        modified.write_text('# local\n')
+        result = self.run_dot('doctor')
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn('[WARN]    Agent-Config: lokal abweichende', result.stdout)
+        self.assertEqual(modified.read_text(), '# local\n')
+        missing = files[-1]
+        missing.unlink()
+        before = self.snapshot()
+        result = self.run_dot('doctor')
+        self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
+        self.assertIn('[FEHLER]  Agent-Config: Dateien fehlen', result.stdout)
+        self.assertFalse(missing.exists())
+        self.assertEqual(modified.read_text(), '# local\n')
+        self.assertEqual(self.snapshot(), before)
 
     def snapshot(self):
         return sorted((str(p.relative_to(self.home)), p.stat().st_mtime_ns, p.is_symlink())
