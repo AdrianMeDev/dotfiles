@@ -130,7 +130,7 @@ alles wird in der neuesten Version installiert und mit `dot update` aktualisiert
 - **Depends on:** M2, M3, M4, M5, M6, M8
 - **Size:** M, ~4 commits
 
-### M10 [ ] Corne
+### M10 [~] Corne
 - **Goal:** Vial installiert, Corne ohne root nutzbar, Layout zum Vertrag passend.
 - **Includes:** `corne`-Modul (Vial: AUR bzw. AppImage mit Digest-Prüfung, udev-Regel; Windows: Vial-Release), `corne_v4.vil` um Layer für WM-/Navigations-/Zahlen-Bindings ergänzen, Layer-Doku
 - **Done when:** Vial erkennt den Corne unter Linux ohne sudo und unter Windows; neues Layout geladen, alle Vertrags-Bindings mit dem Corne erreichbar
