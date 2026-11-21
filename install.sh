@@ -14,7 +14,7 @@ usage() {
     cat <<'EOF'
 Linux Developer Setup (als normaler Benutzer starten)
   ./install.sh [--dry-run] [--backup] [--only MODULE] [--extras LISTE] [--profile desktop|headless]
-Module: system, tools, apps, flatpak, fonts, dotfiles, agents
+Module: system, desktop, tools, apps, flatpak, fonts, dotfiles, agents
 Extras (kommagetrennt): java, rust, rpmfusion, firefox, discord, spotify, ollama, ollama-models
 --dry-run    Zeigt Schritte ohne Downloads, Schreibzugriffe oder sudo.
 --backup     Sichert kollidierende Dateien vor dem Verlinken außerhalb des Repos.
@@ -46,7 +46,7 @@ while (($#)); do
     esac
     shift
 done
-MODULES=(system tools apps flatpak fonts dotfiles agents)
+MODULES=(system desktop tools apps flatpak fonts dotfiles agents)
 if [[ -n $ONLY ]]; then
     [[ " ${MODULES[*]} " == *" $ONLY "* ]] || die "Unbekanntes Modul: $ONLY"
     MODULES=("$ONLY")
@@ -107,6 +107,7 @@ if [[ -n $ONLY && $ONLY != system ]] && ((!DRY_RUN)); then
         tools) for cmd in curl git; do need "$cmd"; done ;;
         apps) for cmd in curl tar python3; do need "$cmd"; done ;;
         fonts) for cmd in curl unzip fc-cache; do need "$cmd"; done ;;
+        desktop) ;; # needs only sudo and the package manager, both checked in preflight
         flatpak) if [[ $PROFILE == desktop ]]; then need flatpak; fi ;;
         dotfiles) need stow; need git ;;
         agents) need python3 ;;

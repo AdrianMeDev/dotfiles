@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Löst logische Paketnamen aus manifests/packages.tsv pro Distro-Familie auf.
-# Spalten: logical, group (base|desktop|dev), arch, fedora, debian. "-" = überspringen.
+# Spalten: logical, group (base|desktop|dev|hypr), arch, fedora, debian. "-" = überspringen.
 
 if ! declare -F die >/dev/null 2>&1; then
     # shellcheck source=scripts/common.sh
@@ -40,6 +40,7 @@ pkg_names() {
 }
 
 # pkg_resolve FAMILY PROFILE: Paketnamen (einer pro Zeile); base immer, desktop nur bei Profil desktop.
+# Die Gruppen dev und hypr werden hier übersprungen (hypr installiert das Modul desktop).
 pkg_resolve() {
     local family=${1:-} profile=${2:-}
     local col

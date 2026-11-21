@@ -49,7 +49,7 @@ class PkgTests(unittest.TestCase):
             with self.subTest(name=row[0]):
                 self.assertEqual(len(row), 5, row)
                 self.assertTrue(all(cell.strip() == cell and cell for cell in row), row)
-                self.assertIn(row[1], ('base', 'desktop', 'dev'))
+                self.assertIn(row[1], ('base', 'desktop', 'dev', 'hypr'))
                 for cell in row[2:]:
                     if cell == '-':
                         continue
@@ -88,7 +88,7 @@ class PkgTests(unittest.TestCase):
             with self.subTest(family=family):
                 # '-' marks a package that is unavailable on this family and must be skipped.
                 base = {p for r in rows if r[1] == 'base' for p in r[col].split(',') if p != '-'}
-                full = {p for r in rows if r[1] != 'dev' for p in r[col].split(',') if p != '-'}
+                full = {p for r in rows if r[1] in ('base', 'desktop') for p in r[col].split(',') if p != '-'}
                 self.assertEqual(set(self.resolve(family, 'headless')), base)
                 self.assertEqual(set(self.resolve(family, 'desktop')), full)
 
