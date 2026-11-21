@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Tests for the unified theme contract (theme/tokens.toml) and tool parity."""
 from pathlib import Path
+import json
 import re
 import tomllib
 import unittest
@@ -21,6 +22,11 @@ EXCEPTIONS = {
     'window.opacity': 'Owned by the terminal emulator (WezTerm/Windows Terminal); tmux, Starship, '
                       'fzf and zsh draw on the terminal background and inherit its opacity.',
     'window.blur': 'Compositor/terminal feature; CLI tools cannot configure blur.',
+    'window.blur.wezterm': 'Blur radius/passes are compositor-owned on Linux; WezTerm only gets '
+                           'opacity here and is not given blur settings.',
+    'window.blur.neovim': 'Neovim runs inside the terminal and inherits its blur and opacity.',
+    'font.neovim': 'Neovim runs inside the terminal and inherits its font and size.',
+    'font.size.ui_bar': 'ui (15) applies to Zed UI only; bar (12) has no consumer in WezTerm/Zed/Neovim yet.',
     'font': 'Fonts and sizes are set by the terminal; CLI/TUI tools inherit them.',
     'border': 'Rounded borders only apply where the tool supports them (fzf --border=rounded); '
               'tmux draws plain pane borders and Starship has none.',
@@ -35,6 +41,14 @@ def load_tokens():
 
 def read(path):
     return (REPO / path).read_text(encoding='utf-8')
+
+
+def jsonc(text):
+    text = re.sub(r'"(?:\\.|[^"\\])*"|//[^\n]*|/\*[\s\S]*?\*/',
+                  lambda m: m[0] if m[0].startswith('"') else '', text)
+    text = re.sub(r'"(?:\\.|[^"\\])*"|,\s*(?=[}\]])',
+                  lambda m: m[0] if m[0].startswith('"') else '', text)
+    return json.loads(text)
 
 
 def hexes(text):
@@ -147,6 +161,41 @@ class ParityTests(unittest.TestCase):
         text = read('zsh/.config/zsh/plugins.zsh')
         self.assert_colors_in_contract('zsh/.config/zsh/plugins.zsh')
         self.assertIn(f"ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE='fg={self.palette['comment']}'", text)
+
+    def test_zed(self):
+        tokens = load_tokens()
+        p, font, window = tokens['palette'], tokens['font'], tokens['window']
+        settings = jsonc(read('zed-config/.config/zed/settings.json'))
+        self.assertEqual(settings['theme'], tokens['meta']['name'])
+        self.assertEqual(settings['buffer_font_family'], font['editor_family'])
+        self.assertEqual(settings['buffer_font_size'], font['size']['editor'])
+        self.assertEqual(settings['ui_font_size'], font['size']['ui'])
+        self.assertEqual(settings['terminal']['font_family'], font['terminal_family'])
+        self.assertEqual(settings['terminal']['font_size'], font['size']['terminal'])
+        overrides = settings['experimental.theme_overrides']
+        self.assertEqual(overrides['background.appearance'], 'blurred')
+        self.assertEqual(overrides['background'], p['bg'] + window['alpha_hex'])
+        surfaces = [k for k, v in overrides.items() if k.endswith('.background') and k != 'background']
+        self.assertTrue(surfaces)
+        for key in surfaces:
+            self.assertEqual(overrides[key], '#00000000', key)
+
+    def test_wezterm(self):
+        tokens = load_tokens()
+        text = read('wezterm/.config/wezterm/wezterm.lua')
+        self.assertIn(f"config.color_scheme = '{tokens['meta']['name']}'", text)
+        self.assertIn(f"config.window_background_opacity = {tokens['window']['opacity']}", text)
+        self.assertIn(f"config.font_size = {tokens['font']['size']['terminal']}\n", text)
+        self.assertRegex(text, rf"font_with_fallback \{{\s*'{re.escape(tokens['font']['terminal_family'])}',"
+                               rf"\s*'{re.escape(tokens['font']['editor_family'])}'")
+
+    def test_neovim(self):
+        tokens = load_tokens()
+        text = read('nvim/.config/nvim/init.lua')
+        self.assertIn(f"style = '{tokens['meta']['variant']}'", text)
+        self.assertIn('transparent = true', text)
+        self.assertIn("styles = { sidebars = 'transparent', floats = 'transparent' }", text)
+        self.assertIn(f"colorscheme 'tokyonight-{tokens['meta']['variant']}'", text)
 
 
 if __name__ == '__main__':

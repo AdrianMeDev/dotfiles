@@ -22,6 +22,7 @@ if wezterm.target_triple:find 'linux' then
   if ok then config.default_prog = { shell:gsub('%s+$', ''), '-l' } end
 end
 
+config.font_size = 14
 config.color_scheme = 'Tokyo Night'
 config.window_background_opacity = 0.75
 config.text_background_opacity = 0.0
