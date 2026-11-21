@@ -303,6 +303,8 @@ class InstallerTests(unittest.TestCase):
         self.env['PATH'] = str(bin_dir)
         result = self.run_command([zsh, '-ic', ':'])
         self.assertEqual(result.stderr, '')
+        skip_result = self.run_command([zsh, '-c', 'print -r -- $skip_global_compinit'])
+        self.assertEqual(skip_result.stdout.strip(), '1')
 
     def test_zsh_helpers_handle_special_paths_and_errors(self):
         zsh = self.prepare_zsh()

@@ -4,6 +4,9 @@ export XDG_DATA_HOME="${XDG_DATA_HOME:-$HOME/.local/share}"
 export XDG_STATE_HOME="${XDG_STATE_HOME:-$HOME/.local/state}"
 export XDG_CACHE_HOME="${XDG_CACHE_HOME:-$HOME/.cache}"
 export ZDOTDIR="$XDG_CONFIG_HOME/zsh"
+# Skip Debian/Ubuntu's /etc/zsh/zshrc global compinit, which aborts on insecure
+# fpath dirs; our .zshrc runs compinit itself.
+skip_global_compinit=1
 
 typeset -U path PATH
 path=("$HOME/.local/bin" "$XDG_DATA_HOME/fnm" "$HOME/.cargo/bin" "$HOME/.dotnet/tools" $path)
