@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Tests for the keybinding contract and its GlazeWM parity."""
+import json
 from pathlib import Path
 import re
 import unittest
@@ -11,10 +12,12 @@ WEZTERM_CONFIGS = (
     REPO / 'wezterm/.config/wezterm/wezterm.lua',
     REPO / 'windows/wezterm/wezterm.lua',
 )
+ZED_KEYMAP = REPO / 'zed-config/.config/zed/keymap.json'
 COMBO = re.compile(r'^(win\+)?(ctrl\+)?(alt\+)?(shift\+)?[a-z0-9]+$')
 EXTERNAL = ('os:', 'flow:')
 MOD_ORDER = ('win', 'ctrl', 'alt', 'shift')
 WEZTERM_MODS = {'super': 'win', 'win': 'win', 'ctrl': 'ctrl', 'alt': 'alt', 'shift': 'shift'}
+ZED_MODS = {**WEZTERM_MODS, 'cmd': 'win'}
 
 
 def load_contract():
@@ -75,6 +78,57 @@ def parse_wezterm(text):
     return combos
 
 
+def jsonc(text):
+    # Match strings first so comment delimiters within strings remain untouched.
+    text = re.sub(r'"(?:\\.|[^"\\])*"|//[^\n]*|/\*[\s\S]*?\*/',
+                  lambda m: m[0] if m[0].startswith('"') else '', text)
+    text = re.sub(r'"(?:\\.|[^"\\])*"|,\s*(?=[}\]])',
+                  lambda m: m[0] if m[0].startswith('"') else '', text)
+    def unique(pairs):
+        result = {}
+        for key, value in pairs:
+            if key in result:
+                raise ValueError(f'Duplicate JSON key: {key}')
+            result[key] = value
+        return result
+    return json.loads(text, object_pairs_hook=unique)
+
+
+def normalize_zed_combo(chord):
+    """Normalize a single-chord Zed keybinding to the contract combo format."""
+    if chord == '-':
+        return '-'
+    parts = chord.split('-')
+    if len(parts) >= 2 and parts[-1] == '' and parts[-2] == '':
+        mod_parts, key = parts[:-2], '-'
+    else:
+        mod_parts, key = parts[:-1], parts[-1]
+    mods = {ZED_MODS[m.lower()] for m in mod_parts if m}
+    ordered = [m for m in MOD_ORDER if m in mods]
+    return '+'.join([*ordered, key.lower()])
+
+
+def parse_zed(text):
+    """Return normalized single-chord combos from a Zed keymap JSONC file."""
+    combos = []
+    for entry in jsonc(text):
+        for chord in entry.get('bindings', {}):
+            if ' ' not in chord:
+                combos.append(normalize_zed_combo(chord))
+    return combos
+
+
+def reserved_combos():
+    reserved = set()
+    for _, mode, combo, windows in load_contract():
+        if mode != 'global':
+            continue
+        reserved.add(combo)
+        if windows.startswith(EXTERNAL):
+            reserved.add(windows.split(':', 1)[1])
+    return reserved
+
+
 class KeybindingTests(unittest.TestCase):
     def test_schema(self):
         rows = load_contract()
@@ -122,18 +176,18 @@ class KeybindingTests(unittest.TestCase):
                 self.assertNotIn((mode, combo), glaze)
 
     def test_wezterm_no_collision_with_reserved_combos(self):
-        reserved = set()
-        for _, mode, combo, windows in load_contract():
-            if mode != 'global':
-                continue
-            reserved.add(combo)
-            if windows.startswith(EXTERNAL):
-                reserved.add(windows.split(':', 1)[1])
+        reserved = reserved_combos()
 
         for path in WEZTERM_CONFIGS:
             combos = parse_wezterm(path.read_text(encoding='utf-8'))
             collisions = sorted(set(combos) & reserved)
             self.assertEqual(collisions, [], f'{path.relative_to(REPO)} collides with reserved combos: {collisions}')
+
+    def test_zed_no_collision_with_reserved_combos(self):
+        reserved = reserved_combos()
+        combos = parse_zed(ZED_KEYMAP.read_text(encoding='utf-8'))
+        collisions = sorted(set(combos) & reserved)
+        self.assertEqual(collisions, [], f'{ZED_KEYMAP.relative_to(REPO)} collides with reserved combos: {collisions}')
 
 
 if __name__ == '__main__':

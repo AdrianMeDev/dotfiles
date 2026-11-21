@@ -124,17 +124,19 @@ Verfügbare Tasks: `Node: start`, `Node: test`, `Node: build`, `Python: pytest`,
 
 ### Docks, Agent und Visual Mode
 
-| Kontext             | Kürzel                     | Aktion                               |
-| ------------------- | -------------------------- | ------------------------------------ |
-| Dock/Terminal/Panel | `Ctrl-W h/j/k/l`           | Fokus bewegen                        |
-| Dock/Terminal/Panel | `Ctrl-W Q` oder `Ctrl-W C` | Aktives Dock schließen               |
-| Normal              | `Space a a`                | Agent Panel umschalten               |
-| Normal              | `Space a c`                | neuen Claude-Terminal-Thread starten |
-| Normal              | `Space a n`                | neuen Zed-Agent-Thread starten       |
-| Normal              | `Space a p`                | Edit Predictions umschalten          |
-| Insert              | `Ctrl+Alt+P`               | Edit Predictions umschalten          |
-| Visual              | `S`, danach Zeichen        | Auswahl umschließen, etwa mit `(`    |
-| Visual              | `Space a s`                | Auswahl an Agent-Thread übergeben    |
+| Kontext             | Kürzel                      | Aktion                                   |
+| ------------------- | --------------------------- | ---------------------------------------- |
+| Dock/Terminal/Panel | `Ctrl-W h/j/k/l`            | Fokus bewegen                            |
+| Dock/Terminal/Panel | `Ctrl-W Q` oder `Ctrl-W C`  | Aktives Dock schließen                   |
+| Terminal            | `Ctrl+Alt+h/j/k/l`          | Fokus zwischen Panes bewegen             |
+| Normal              | `Space a a`                 | Agent Panel umschalten                   |
+| Normal              | `Space a c`                 | neuen Claude-Terminal-Thread starten     |
+| Normal              | `Space a n`                 | neuen Zed-Agent-Thread starten           |
+| Normal              | `Space a p`                 | Edit Predictions umschalten              |
+| Insert              | `Ctrl+Alt+P`                | Edit Predictions umschalten              |
+| Insert              | `Ctrl+Alt+l` / `Ctrl+Alt+j` | Edit Prediction / nächste Zeile annehmen |
+| Visual              | `S`, danach Zeichen         | Auswahl umschließen, etwa mit `(`        |
+| Visual              | `Space a s`                 | Auswahl an Agent-Thread übergeben        |
 
 ## Vim-Grundlagen für Zed und Neovim
 
