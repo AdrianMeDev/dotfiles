@@ -1,0 +1,11 @@
+# Colors, font, border and opacity come from theme/tokens.toml (checked by tests/test_theme.py).
+font=IoskeleyMonoTerm Nerd Font Mono 15
+background-color=#1a1b26bf
+text-color=#c0caf5
+border-color=#7aa2f7
+progress-color=over #292e42
+border-size=2
+border-radius=8
+
+[urgency=high]
+border-color=#f7768e

@@ -213,6 +213,16 @@ class KeybindingTests(unittest.TestCase):
         self.assertEqual(sorted(expected - set(found)), [], 'contract row not bound in Hyprland')
         self.assertEqual(sorted(set(found) - expected), [], 'Hyprland binding outside the contract')
 
+    def test_hyprland_exec_commands_call_session_tools(self):
+        text = HYPR_BINDINGS.read_text(encoding='utf-8')
+        execs = dict(re.findall(r'hl\.bind\("([^"]+)", hl\.dsp\.exec_cmd\("(.*)"\)\)$', text, re.M))
+        self.assertEqual(execs['ALT + SPACE'], 'fuzzel')
+        self.assertEqual(execs['ALT + SHIFT + X'], 'hyprlock')
+        for tool in ('cliphist list', 'fuzzel --dmenu', 'cliphist decode', 'wl-copy'):
+            self.assertIn(tool, execs['ALT + V'])
+        for tool in ('grim', 'slurp', 'wl-copy'):
+            self.assertIn(tool, execs['ALT + SHIFT + S'])
+
     def test_hyprland_combo_normalization(self):
         self.assertEqual(normalize_hypr_combo('ALT + SHIFT + H'), 'alt+shift+h')
         self.assertEqual(normalize_hypr_combo('SHIFT + SUPER + RETURN'), 'win+shift+enter')

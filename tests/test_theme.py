@@ -388,6 +388,55 @@ class ParityTests(unittest.TestCase):
             self.assertIn(f'#workspaces button.{state}', css)
         self.assertIn('#workspaces button:not(.empty)', css)  # Zebar "occupied"
 
+    def test_fuzzel(self):
+        tokens = load_tokens()
+        p, font, window, border = tokens['palette'], tokens['font'], tokens['window'], tokens['border']
+        text = read('hypr/.config/fuzzel/fuzzel.ini')
+        self.assertIn(f"font={font['terminal_family']}:size={font['size']['ui']}\n", text)
+        colors = dict(re.findall(r'(?m)^([\w-]+)=([0-9a-f]{8})$', text))
+        self.assertEqual(colors, {
+            'background': p['bg'][1:] + window['alpha_hex'], 'text': p['fg'][1:] + 'ff',
+            'match': p['cyan'][1:] + 'ff', 'selection': p['bg_highlight'][1:] + 'ff',
+            'selection-text': p['fg'][1:] + 'ff', 'selection-match': p['cyan'][1:] + 'ff',
+            'border': p['border_active'][1:] + 'ff',
+        })
+        self.assertRegex(text, rf"(?m)^width={border['width']}$")
+        self.assertRegex(text, rf"(?m)^radius={border['radius']}$")
+
+    def test_mako(self):
+        tokens = load_tokens()
+        p, font, window, border = tokens['palette'], tokens['font'], tokens['window'], tokens['border']
+        text = read('hypr/.config/mako/config')
+        self.assert_colors_in_contract('hypr/.config/mako/config')
+        conf = dict(re.findall(r'(?m)^([\w-]+)=(.+)$', text.split('[urgency=high]')[0]))
+        self.assertEqual(conf, {
+            'font': f"{font['terminal_family']} {font['size']['ui']}",
+            'background-color': p['bg'] + window['alpha_hex'], 'text-color': p['fg'],
+            'border-color': p['border_active'], 'progress-color': f"over {p['bg_highlight']}",
+            'border-size': str(border['width']), 'border-radius': str(border['radius']),
+        })
+        self.assertIn(f"[urgency=high]\nborder-color={p['red']}", text)
+
+    def test_hyprlock(self):
+        tokens = load_tokens()
+        p, font, window, border = tokens['palette'], tokens['font'], tokens['window'], tokens['border']
+        path = 'hypr/.config/hypr/hyprlock.conf'
+        text = read(path)
+        self.assert_colors_in_contract(path)
+        colors = dict(re.findall(r'(?m)^\s*(\w+) = rgba\(([0-9a-f]{8})\)$', text))
+        self.assertEqual(colors, {
+            'color': p['fg'][1:] + 'ff', 'outer_color': p['border_active'][1:] + 'ff',
+            'inner_color': p['bg'][1:] + window['alpha_hex'], 'font_color': p['fg'][1:] + 'ff',
+            'check_color': p['yellow'][1:] + 'ff', 'fail_color': p['red'][1:] + 'ff',
+        })  # 'color' is the label's: it overwrites the background's (bg, opaque) in the dict
+        self.assertIn(f"outline_thickness = {border['width']}", text)
+        self.assertIn(f"rounding = {border['radius']}", text)
+        self.assertIn(f"blur_size = {window['blur']['radius']}", text)
+        self.assertIn(f"blur_passes = {window['blur']['passes']}", text)
+        self.assertEqual(set(re.findall(r'font_family = (.+)', text)), {font['terminal_family']})
+        self.assertIn(f"font_size = {font['size']['ui']}", text)
+        self.assertIn('path = ~/.local/share/dotfiles/wallpaper.png', text)
+
     def test_neovim(self):
         tokens = load_tokens()
         text = read('nvim/.config/nvim/init.lua')
