@@ -60,3 +60,120 @@ pkg_resolve() {
         for pkg in $cell; do printf '%s\n' "$pkg"; done
     done < "$PKG_MANIFEST"
 }
+
+# pkg_need: prüft, dass der Paketmanager der Familie vorhanden ist.
+pkg_need() {
+    local family=${1:-${DISTRO_FAMILY:-}} tool
+    case "$family" in
+        arch) tool=pacman ;;
+        fedora) tool=dnf ;;
+        debian) tool=apt-get ;;
+        *) die "Unbekannte Distro-Familie: ${family:-<leer>}" ;;
+    esac
+    have "$tool" || die "Paketmanager fehlt: $tool."
+}
+
+# pkg_available PKG: 0, wenn das Paket in den Repos der Familie existiert (nur lesend).
+pkg_available() {
+    local pkg=${1:-}
+    [[ -n $pkg ]] || die 'pkg_available: Paketname fehlt.'
+    case "${DISTRO_FAMILY:-}" in
+        arch) pacman -Si "$pkg" >/dev/null 2>&1 ;;
+        fedora) dnf -q info "$pkg" >/dev/null 2>&1 ;;
+        debian) apt-cache show "$pkg" >/dev/null 2>&1 ;;
+        *) die "Unbekannte Distro-Familie: ${DISTRO_FAMILY:-<leer>}" ;;
+    esac
+}
+
+# pkg_aur_helper: gibt den vorhandenen AUR-Helfer aus (paru vor yay); Status 1, wenn keiner da ist.
+pkg_aur_helper() {
+    local helper
+    for helper in paru yay; do
+        if have "$helper"; then
+            printf '%s\n' "$helper"
+            return 0
+        fi
+    done
+    return 1
+}
+
+# pkg_ensure_aur_helper: setzt PKG_AUR_HELPER. Ohne Helfer: paru per pacman, sonst paru-bin per makepkg.
+pkg_ensure_aur_helper() {
+    local helper
+    if helper=$(pkg_aur_helper); then
+        PKG_AUR_HELPER=$helper
+        return 0
+    fi
+    PKG_AUR_HELPER=paru
+    log 'Kein AUR-Helfer gefunden: installiere paru.'
+    if ((${DRY_RUN:-0})); then
+        run sudo pacman -S --needed --noconfirm paru
+        run git clone https://aur.archlinux.org/paru-bin.git paru-bin
+        return 0
+    fi
+    if DISTRO_FAMILY=arch pkg_available paru; then
+        run sudo pacman -S --needed --noconfirm paru
+        return $?
+    fi
+    pkg_need arch
+    have git || die 'Programm fehlt: git (für paru-bin).'
+    have makepkg || die 'Programm fehlt: makepkg (base-devel).'
+    workspace
+    run git clone https://aur.archlinux.org/paru-bin.git "$WORK_DIR/paru-bin" || return $?
+    (cd "$WORK_DIR/paru-bin" && run makepkg -si --noconfirm --needed)
+}
+
+# pkg_install PKG...: installiert Pakete mit dem Paketmanager der Familie; "aur:NAME" nur auf Arch.
+pkg_install() {
+    local family=${DISTRO_FAMILY:-}
+    (($#)) || return 0
+    local repo=() aur=() pkg
+    for pkg in "$@"; do
+        if [[ $pkg == aur:* ]]; then
+            [[ $family == arch ]] || die "AUR-Paket nur auf Arch möglich: ${pkg#aur:}"
+            aur+=("${pkg#aur:}")
+        else
+            repo+=("$pkg")
+        fi
+    done
+    case "$family" in
+        arch)
+            if ((${#repo[@]})); then
+                run sudo pacman -S --needed --noconfirm "${repo[@]}" || return $?
+            fi
+            if ((${#aur[@]})); then
+                pkg_ensure_aur_helper || return $?
+                run "$PKG_AUR_HELPER" -S --needed --noconfirm "${aur[@]}" || return $?
+            fi
+            ;;
+        fedora) run sudo dnf install -y "${repo[@]}" ;;
+        debian) run sudo env DEBIAN_FRONTEND=noninteractive apt-get install -y "${repo[@]}" ;;
+        *) die "Unbekannte Distro-Familie: ${family:-<leer>}" ;;
+    esac
+}
+
+# pkg_install_manifest [FAMILY] [PROFILE]: installiert alle Pakete des Profils aus dem Manifest.
+pkg_install_manifest() {
+    local family=${1:-${DISTRO_FAMILY:-}} profile=${2:-${PROFILE:-}} resolved
+    resolved=$(pkg_resolve "$family" "$profile") || return $?
+    local packages=()
+    [[ -z $resolved ]] || mapfile -t packages <<< "$resolved"
+    DISTRO_FAMILY=$family pkg_install "${packages[@]}"
+}
+
+# pkg_upgrade: aktualisiert das System (unter WSL ohne Kernel-Pakete auf Fedora).
+pkg_upgrade() {
+    case "${DISTRO_FAMILY:-}" in
+        arch) run sudo pacman -Syu --noconfirm ;;
+        fedora)
+            local extra=()
+            if is_wsl; then extra=(--exclude='kernel*'); fi
+            run sudo dnf upgrade --refresh -y "${extra[@]}"
+            ;;
+        debian)
+            run sudo env DEBIAN_FRONTEND=noninteractive apt-get update || return $?
+            run sudo env DEBIAN_FRONTEND=noninteractive apt-get full-upgrade -y
+            ;;
+        *) die "Unbekannte Distro-Familie: ${DISTRO_FAMILY:-<leer>}" ;;
+    esac
+}

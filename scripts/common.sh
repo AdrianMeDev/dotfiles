@@ -2,6 +2,8 @@
 # Shared by install.sh and its modules; never enable shell tracing (identity data).
 log() { printf '\n%s\n' "$*"; }
 die() { printf 'Fehler: %s\n' "$*" >&2; exit 1; }
+# have CMD: wrapper around command -v (overridable in tests).
+have() { command -v "$1" >/dev/null 2>&1; }
 need() { command -v "$1" >/dev/null 2>&1 || die "Programm fehlt: $1. Zuerst --only system ausführen."; }
 has_extra() { [[ ",$EXTRAS," == *",$1,"* ]]; }
 is_wsl() {

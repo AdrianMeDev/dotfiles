@@ -123,5 +123,134 @@ class PkgTests(unittest.TestCase):
         self.assertNotEqual(res.returncode, 0)
 
 
+class PkgCommandTests(unittest.TestCase):
+    """Commands per family, with sudo/have/is_wsl mocked (nothing real runs)."""
+
+    PRELUDE = r'''
+set +e
+CALLS=()
+sudo() { CALLS+=("sudo $*"); return "${SUDO_RC:-0}"; }
+git() { CALLS+=("git $*"); mkdir -p "${!#}"; }
+makepkg() { echo "makepkg $*" >&2; }  # runs in a subshell
+paru() { CALLS+=("paru $*"); }
+yay() { CALLS+=("yay $*"); }
+HAVE=${HAVE:-}
+have() { [[ " $HAVE " == *" $1 "* ]]; }
+is_wsl() { [[ ${WSL:-0} == 1 ]]; }
+DRY_RUN=${DRY_RUN:-0}
+dump() { printf '%s\n' "${CALLS[@]}"; }
+'''
+
+    def setUp(self):
+        self.bash = shutil.which('bash') or '/bin/bash'
+
+    def run_pkg(self, body, env=None):
+        import os
+        full_env = dict(os.environ, **(env or {}))
+        return subprocess.run(
+            [self.bash, '-c', f'source "{PKG_SH}"\n{self.PRELUDE}\n{body}'],
+            cwd=REPO, stdin=subprocess.DEVNULL, capture_output=True,
+            text=True, timeout=10, env=full_env,
+        )
+
+    def calls(self, body, env=None):
+        res = self.run_pkg(body, env)
+        self.assertEqual(res.returncode, 0, res.stderr)
+        return [l for l in res.stdout.splitlines() if not l.startswith('  +') and l.strip()]
+
+    def test_install_per_family(self):
+        self.assertEqual(
+            self.calls('DISTRO_FAMILY=arch; pkg_install git jq >/dev/null; dump'),
+            ['sudo pacman -S --needed --noconfirm git jq'])
+        self.assertEqual(
+            self.calls('DISTRO_FAMILY=fedora; pkg_install git jq >/dev/null; dump'),
+            ['sudo dnf install -y git jq'])
+        self.assertEqual(
+            self.calls('DISTRO_FAMILY=debian; pkg_install git jq >/dev/null; dump'),
+            ['sudo env DEBIAN_FRONTEND=noninteractive apt-get install -y git jq'])
+
+    def test_upgrade_per_family(self):
+        self.assertEqual(self.calls('DISTRO_FAMILY=arch; pkg_upgrade >/dev/null; dump'),
+                         ['sudo pacman -Syu --noconfirm'])
+        self.assertEqual(self.calls('DISTRO_FAMILY=fedora; pkg_upgrade >/dev/null; dump'),
+                         ['sudo dnf upgrade --refresh -y'])
+        self.assertEqual(
+            self.calls('DISTRO_FAMILY=fedora; pkg_upgrade >/dev/null; dump', {'WSL': '1'}),
+            ["sudo dnf upgrade --refresh -y --exclude=kernel*"])
+        self.assertEqual(
+            self.calls('DISTRO_FAMILY=debian; pkg_upgrade >/dev/null; dump'),
+            ['sudo env DEBIAN_FRONTEND=noninteractive apt-get update',
+             'sudo env DEBIAN_FRONTEND=noninteractive apt-get full-upgrade -y'])
+
+    def test_aur_split_from_fixture_manifest(self):
+        body = (
+            'tmp=$(mktemp); printf "a\\tbase\\tgit\\tgit\\tgit\\nb\\tbase\\taur:foo-bin\\t-\\t-\\n" > "$tmp"; '
+            'PKG_MANIFEST=$tmp; pkg_install_manifest arch headless >/dev/null; rm -f "$tmp"; dump'
+        )
+        self.assertEqual(self.calls(body, {'HAVE': 'paru'}),
+                         ['sudo pacman -S --needed --noconfirm git',
+                          'paru -S --needed --noconfirm foo-bin'])
+
+    def test_aur_prefix_rejected_off_arch(self):
+        res = self.run_pkg('DISTRO_FAMILY=fedora; pkg_install aur:foo')
+        self.assertNotEqual(res.returncode, 0)
+
+    def test_aur_helper_order(self):
+        self.assertEqual(self.run_pkg('pkg_aur_helper', {'HAVE': 'paru yay'}).stdout.strip(), 'paru')
+        self.assertEqual(self.run_pkg('pkg_aur_helper', {'HAVE': 'yay'}).stdout.strip(), 'yay')
+        self.assertNotEqual(self.run_pkg('pkg_aur_helper', {'HAVE': ''}).returncode, 0)
+
+    def test_yay_used_when_no_paru(self):
+        self.assertEqual(
+            self.calls('DISTRO_FAMILY=arch; pkg_install aur:foo >/dev/null; dump', {'HAVE': 'yay'}),
+            ['yay -S --needed --noconfirm foo'])
+
+    def test_bootstrap_via_pacman(self):
+        body = ('pkg_available() { return 0; }; DISTRO_FAMILY=arch; '
+                'pkg_ensure_aur_helper >/dev/null; echo "H=$PKG_AUR_HELPER"; dump')
+        self.assertEqual(self.calls(body),
+                         ['H=paru', 'sudo pacman -S --needed --noconfirm paru'])
+
+    def test_bootstrap_via_makepkg(self):
+        body = ('pkg_available() { return 1; }; DISTRO_FAMILY=arch; '
+                'pkg_ensure_aur_helper >/dev/null; echo "H=$PKG_AUR_HELPER"; dump; '
+                'rm -rf "$WORK_DIR"')
+        res = self.run_pkg(body, {'HAVE': 'git makepkg pacman'})
+        self.assertEqual(res.returncode, 0, res.stderr)
+        out = [l for l in res.stdout.splitlines() if not l.startswith('  +') and l.strip()]
+        self.assertEqual(out[0], 'H=paru')
+        self.assertTrue(out[1].startswith('git clone https://aur.archlinux.org/paru-bin.git '))
+        self.assertEqual(len(out), 2)
+        self.assertIn('makepkg -si --noconfirm --needed', res.stderr)
+
+    def test_dry_run_executes_nothing(self):
+        body = ('DISTRO_FAMILY=arch; pkg_install git aur:foo; pkg_upgrade; '
+                'echo "W=${WORK_DIR:-unset}"; dump')
+        res = self.run_pkg(body, {'DRY_RUN': '1'})
+        self.assertEqual(res.returncode, 0, res.stderr)
+        self.assertIn('W=unset', res.stdout)
+        executed = [l for l in res.stdout.splitlines() if l.startswith(('sudo ', 'paru ', 'git ', 'makepkg '))]
+        self.assertEqual(executed, [])
+        self.assertIn('sudo pacman -S --needed --noconfirm git', res.stdout)
+
+    def test_failure_status_propagates(self):
+        for family in ('arch', 'fedora', 'debian'):
+            with self.subTest(family=family):
+                res = self.run_pkg(f'DISTRO_FAMILY={family}; pkg_install git >/dev/null; echo "rc=$?"',
+                                   {'SUDO_RC': '7'})
+                self.assertIn('rc=7', res.stdout)
+                res = self.run_pkg(f'DISTRO_FAMILY={family}; pkg_upgrade >/dev/null; echo "rc=$?"',
+                                   {'SUDO_RC': '5'})
+                self.assertIn('rc=5', res.stdout)
+
+    def test_pkg_need(self):
+        for family, tool in (('arch', 'pacman'), ('fedora', 'dnf'), ('debian', 'apt-get')):
+            with self.subTest(family=family):
+                ok = self.run_pkg(f'pkg_need {family}', {'HAVE': tool})
+                self.assertEqual(ok.returncode, 0, ok.stderr)
+                bad = self.run_pkg(f'pkg_need {family}', {'HAVE': ''})
+                self.assertNotEqual(bad.returncode, 0)
+
+
 if __name__ == '__main__':
     unittest.main()
