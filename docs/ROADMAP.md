@@ -102,7 +102,7 @@ alles wird in der neuesten Version installiert und mit `dot update` aktualisiert
 - **Depends on:** M2, M3
 - **Size:** M, ~6 commits
 
-### M6 [ ] Keybinding-Vertrag + Hyprland-Desktop
+### M6 [~] Keybinding-Vertrag + Hyprland-Desktop
 - **Goal:** Hyprland auf Arch/Fedora mit denselben Bindings wie GlazeWM und dem Theme aus M5.
 - **Includes:** `manifests/keybindings.tsv` + Paritätstest, Stow-Paket `hypr/` (Hyprland mit Blur/Rahmen aus Tokens, Waybar wie Zebar, Launcher auf `Alt+Space` wie Flow, Mako, Hyprlock/Hypridle, Clipboard-Verlauf, Screenshot), `theme`-Modul (GTK/Qt dunkel, Cursor, Icons, Wallpaper), `desktop`-Modul nur auf Desktop-Profil, GlazeWM-Bindings an den Vertrag angleichen
 - **Done when:** auf CachyOS in die Hyprland-Session einloggen, alle Vertrags-Bindings funktionieren, GTK-/Qt-Apps dunkel im Tokyo-Night-Look; beide Paritätstests grün; KDE-Session startet weiterhin

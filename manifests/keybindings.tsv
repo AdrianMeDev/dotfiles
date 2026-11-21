@@ -1,0 +1,59 @@
+# action	mode	combo	windows
+# Single source of keybindings. mode: global or a mode name (resize). combo: modifiers in the order win+ctrl+alt+shift, then the key.
+# windows: GlazeWM command, or os:<combo> / flow:<combo> when Windows itself or Flow Launcher owns the binding (not checked against GlazeWM).
+focus-left-h	global	alt+h	focus --direction left
+focus-left-left	global	alt+left	focus --direction left
+move-left-h	global	alt+shift+h	move --direction left
+move-left-left	global	alt+shift+left	move --direction left
+focus-down-j	global	alt+j	focus --direction down
+focus-down-down	global	alt+down	focus --direction down
+move-down-j	global	alt+shift+j	move --direction down
+move-down-down	global	alt+shift+down	move --direction down
+focus-up-k	global	alt+k	focus --direction up
+focus-up-up	global	alt+up	focus --direction up
+move-up-k	global	alt+shift+k	move --direction up
+move-up-up	global	alt+shift+up	move --direction up
+focus-right-l	global	alt+l	focus --direction right
+focus-right-right	global	alt+right	focus --direction right
+move-right-l	global	alt+shift+l	move --direction right
+move-right-right	global	alt+shift+right	move --direction right
+focus-workspace-1	global	alt+1	focus --workspace 1
+move-workspace-1	global	alt+shift+1	move --workspace 1
+focus-workspace-2	global	alt+2	focus --workspace 2
+move-workspace-2	global	alt+shift+2	move --workspace 2
+focus-workspace-3	global	alt+3	focus --workspace 3
+move-workspace-3	global	alt+shift+3	move --workspace 3
+focus-workspace-4	global	alt+4	focus --workspace 4
+move-workspace-4	global	alt+shift+4	move --workspace 4
+focus-workspace-5	global	alt+5	focus --workspace 5
+move-workspace-5	global	alt+shift+5	move --workspace 5
+focus-workspace-6	global	alt+6	focus --workspace 6
+move-workspace-6	global	alt+shift+6	move --workspace 6
+focus-workspace-7	global	alt+7	focus --workspace 7
+move-workspace-7	global	alt+shift+7	move --workspace 7
+focus-workspace-8	global	alt+8	focus --workspace 8
+move-workspace-8	global	alt+shift+8	move --workspace 8
+focus-workspace-9	global	alt+9	focus --workspace 9
+move-workspace-9	global	alt+shift+9	move --workspace 9
+close	global	alt+q	close
+terminal	global	alt+enter	shell-exec wezterm.exe
+launcher	global	alt+space	flow:alt+space
+resize-mode	global	alt+r	wm-enable-binding-mode --name resize
+fullscreen	global	alt+f	toggle-fullscreen
+floating	global	alt+shift+space	toggle-floating --centered
+reload	global	alt+shift+r	wm-reload-config
+pause	global	alt+shift+p	wm-toggle-pause
+lock	global	ctrl+alt+l	os:win+l
+clipboard-history	global	alt+v	os:win+v
+screenshot	global	alt+shift+s	os:win+shift+s
+resize-width-shrink-h	resize	h	resize --width -2%
+resize-width-shrink-left	resize	left	resize --width -2%
+resize-width-grow-l	resize	l	resize --width +2%
+resize-width-grow-right	resize	right	resize --width +2%
+resize-height-shrink-k	resize	k	resize --height -2%
+resize-height-shrink-up	resize	up	resize --height -2%
+resize-height-grow-j	resize	j	resize --height +2%
+resize-height-grow-down	resize	down	resize --height +2%
+resize-exit-escape	resize	escape	wm-disable-binding-mode --name resize
+resize-exit-enter	resize	enter	wm-disable-binding-mode --name resize
+resize-exit-alt-r	resize	alt+r	wm-disable-binding-mode --name resize
