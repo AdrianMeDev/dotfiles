@@ -73,8 +73,9 @@ class PkgTests(unittest.TestCase):
         self.assertTrue(any(r[1] == 'desktop' for r in rows))
         for family, col in (('arch', 2), ('fedora', 3), ('debian', 4)):
             with self.subTest(family=family):
-                base = {p for r in rows if r[1] == 'base' for p in r[col].split(',')}
-                full = {p for r in rows if r[1] != 'dev' for p in r[col].split(',')}
+                # '-' marks a package that is unavailable on this family and must be skipped.
+                base = {p for r in rows if r[1] == 'base' for p in r[col].split(',') if p != '-'}
+                full = {p for r in rows if r[1] != 'dev' for p in r[col].split(',') if p != '-'}
                 self.assertEqual(set(self.resolve(family, 'headless')), base)
                 self.assertEqual(set(self.resolve(family, 'desktop')), full)
 

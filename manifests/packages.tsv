@@ -22,7 +22,8 @@ zoxide	base	zoxide	zoxide	zoxide
 direnv	base	direnv	direnv	direnv
 github-cli	base	github-cli	gh	gh
 shellcheck	base	shellcheck	ShellCheck	shellcheck
-shfmt	base	shfmt	shfmt	shfmt
+# Fedora 45 retired shfmt (golang-mvdan-sh); M2 installs it everywhere via mise.
+shfmt	base	shfmt	-	shfmt
 base-devel	base	base-devel	gcc,gcc-c++,make	build-essential
 cmake	base	cmake	cmake	cmake
 pkg-config	base	pkgconf	pkgconf-pkg-config	pkg-config
