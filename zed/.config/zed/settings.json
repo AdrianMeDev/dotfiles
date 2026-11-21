@@ -12,10 +12,27 @@
   "vim_mode": true,
   "which_key": { "enabled": true, "delay_ms": 350 },
 
-  "theme": { "mode": "system", "dark": "One Dark", "light": "One Light" },
+  "theme": "Tokyo Night",
   "ui_font_size": 15,
   "buffer_font_size": 14,
-  "buffer_font_family": ".ZedMono",
+  "buffer_font_family": "Ioskeley Mono",
+
+  // Transparent surfaces over a blurred, half-opaque window background.
+  "experimental.theme_overrides": {
+    "background.appearance": "blurred",
+    "background": "#00000080",
+    "editor.background": "#00000000",
+    "editor.gutter.background": "#00000000",
+    "tab_bar.background": "#00000000",
+    "panel.background": "#00000000",
+    "panel.overlay_background": "#00000000",
+    "surface.background": "#00000000",
+    "toolbar.background": "#00000000",
+    "terminal.background": "#00000000",
+    "status_bar.background": "#00000000",
+    "title_bar.background": "#00000000",
+    "title_bar.inactive_background": "#00000000"
+  },
 
   "relative_line_numbers": "enabled",
   "cursor_blink": false,
@@ -58,6 +75,10 @@
   "outline_panel": { "dock": "left" },
 
   "terminal": {
+    "font_family": "IoskeleyMonoTerm Nerd Font Mono",
+    "line_height": "standard",
+    // The Windows installer replaces this exact line with pwsh.exe.
+    "shell": { "program": "zsh" },
     "dock": "bottom",
     "copy_on_select": true,
     "working_directory": "current_project_directory",
@@ -80,6 +101,7 @@
 
   // Extensions werden beim ersten Start automatisch installiert
   "auto_install_extensions": {
+    "tokyo-night": true,
     "angular": true,
     "django": true,
     "csharp": true,
