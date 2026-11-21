@@ -437,6 +437,30 @@ printf 'cached theme\\n' > "$cache/themes.bin"
             self.assertEqual(result.stdout, '')
         self.assertFalse((self.home / '.local/share/zsh/plugins').exists())
 
+    def test_zsh_eza_aliases(self):
+        zsh = self.prepare_zsh()
+        bin_dir = self.base / 'bin'
+        bin_dir.mkdir()
+        for cmd in ['mkdir', 'uname', 'dirname', 'basename', 'cat', 'rm', 'mv', 'chmod', 'grep']:
+            executable = shutil.which(cmd)
+            if executable:
+                (bin_dir / cmd).symlink_to(executable)
+        self.env['PATH'] = str(bin_dir)
+        probe = 'printf "%s\\n%s\\n%s\\n" "${aliases[ls]-}" "${aliases[ll]-}" "${aliases[lt]-}"'
+        without_eza = self.run_command([zsh, '-ic', probe])
+        self.assertEqual(without_eza.stderr, '')
+        self.assertEqual(without_eza.stdout.splitlines(), ['', 'ls -lah', ''])
+
+        eza = bin_dir / 'eza'
+        eza.write_text('#!/bin/sh\nexit 0\n')
+        eza.chmod(0o755)
+        with_eza = self.run_command([zsh, '-ic', probe])
+        self.assertEqual(with_eza.stderr, '')
+        ls_alias, ll_alias, lt_alias = with_eza.stdout.splitlines()
+        self.assertTrue(ls_alias.startswith('eza '), ls_alias)
+        self.assertTrue(ll_alias.startswith('eza '), ll_alias)
+        self.assertTrue(lt_alias.startswith('eza '), lt_alias)
+
     def test_fish_migration_preserves_private_and_foreign_files(self):
         self.require_stow()
         config = self.home / '.config/fish'
@@ -857,9 +881,11 @@ class ConfigTests(unittest.TestCase):
         for tool in (
             'neovim', 'uv', 'starship', 'tree-sitter', 'lazygit', 'ripgrep',
             'fd', 'fzf', 'bat', 'delta', 'shfmt', 'shellcheck', 'zoxide',
-            'direnv', 'gh', 'jq',
+            'direnv', 'gh', 'jq', 'eza', 'yazi', 'tealdeer', 'just', 'lazydocker',
         ):
             self.assertIn(tool, mise['tools'])
+        for tool in ('eza', 'yazi', 'tealdeer', 'just', 'lazydocker'):
+            self.assertEqual(mise['tools'][tool], 'latest')
 
     def test_ci_workflow(self):
         workflow = (REPO / '.github/workflows/ci.yml').read_text()

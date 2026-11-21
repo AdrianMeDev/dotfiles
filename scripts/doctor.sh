@@ -9,7 +9,7 @@ _doc_err() { printf '[FEHLER]  %s\n' "$*"; _doc_errors=$((_doc_errors + 1)); }
 
 # Core tools as "label:binary[|alternative]". Missing ones are errors, except optional ones.
 _DOC_TOOLS=(mise nvim node uv starship tree-sitter lazygit rg 'fd:fd|fdfind' fzf 'bat:bat|batcat'
-    delta shfmt shellcheck zsh tmux git stow podman claude pi ollama)
+    delta shfmt shellcheck eza yazi tealdeer:tldr just lazydocker zsh tmux git stow podman claude pi ollama)
 _DOC_OPTIONAL=' podman ollama '
 
 _doc_version() {

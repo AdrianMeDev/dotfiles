@@ -123,7 +123,7 @@ alles wird in der neuesten Version installiert und mit `dot update` aktualisiert
 - **Depends on:** M2, M7
 - **Size:** M, ~5 commits
 
-### M9 [ ] Ein-Befehl-Bootstrap + Zusatztools
+### M9 [~] Ein-Befehl-Bootstrap + Zusatztools
 - **Goal:** Ein Befehl auf frischem CachyOS oder Windows, ohne vorher manuell zu klonen.
 - **Includes:** `bootstrap.sh` (curl|bash, HTTPS-Clone nach `~/dotfiles`, startet `dot install`), zsh als Login-Shell (mit Rückfrage), Zusatztools: eza, yazi, tealdeer, just, lazydocker/podman-tui
 - **Done when:** frischer Container und frische CachyOS-VM: ein Befehl → komplette Umgebung; zweiter Lauf ändert nichts

@@ -21,5 +21,10 @@ zoxide = "latest"
 direnv = "latest"
 gh = "latest"
 jq = "latest"
+eza = "latest"
+yazi = "latest"
+tealdeer = "latest"
+just = "latest"
+lazydocker = "latest"
 
 # Optional project runtime: mise use java@21 (writes the project's mise.toml).
