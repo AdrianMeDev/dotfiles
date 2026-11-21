@@ -33,6 +33,12 @@ EXCEPTIONS = {
     'font': 'Fonts and sizes are set by the terminal; CLI/TUI tools inherit them.',
     'border': 'Rounded borders only apply where the tool supports them (fzf --border=rounded); '
               'tmux draws plain pane borders and Starship has none.',
+    'lazygit.background': 'lazygit sets no background colors except selection; the terminal '
+                          'background and opacity show through.',
+    'btop.background': 'btop runs with theme_background = False so the terminal background shows '
+                       'through; main_bg only documents bg.',
+    'yazi.background': 'yazi only paints highlight/mode backgrounds; the terminal background and '
+                       'opacity show through.',
     'starship.foreground': 'Starship palette foreground uses fg_dark, matching the tmux/fzf text color.',
 }
 
@@ -214,6 +220,61 @@ class ParityTests(unittest.TestCase):
                       for pair in chunk.split(','))
         self.assertEqual(actual, expected)
         self.assertIn('--border=rounded', opts)
+
+    def test_lazygit(self):
+        path = 'lazygit/.config/lazygit/config.yml'
+        text = read(path)
+        self.assert_colors_in_contract(path)
+        p = self.palette
+        self.assertRegex(text, r'(?m)^  border: rounded$')
+        self.assertRegex(text, r'(?m)^  nerdFontsVersion: "3"$')
+        self.assertRegex(text, r'(?m)^    pager: delta --dark --paging=never$')
+        theme = {m[1]: re.findall(r'"(#[0-9a-f]{6})"', m[2]) for m in
+                 re.finditer(r'(?m)^    (\w+):\n((?:      - .*\n)+)', text)}
+        expected = {
+            'activeBorderColor': p['border_active'], 'inactiveBorderColor': p['border'],
+            'optionsTextColor': p['blue'], 'selectedLineBgColor': p['bg_highlight'],
+            'inactiveViewSelectedLineBgColor': p['bg_highlight'],
+            'unstagedChangesColor': p['red'], 'defaultFgColor': p['fg'],
+        }
+        for key, color in expected.items():
+            self.assertEqual(theme[key], [color], key)
+        self.assertNotIn(p['bg'], hexes(text))
+
+    def test_btop(self):
+        conf = dict(re.findall(r'(?m)^(\w+) = (.+)$', read('btop/.config/btop/btop.conf')))
+        self.assertEqual(conf, {'color_theme': '"tokyo-night"', 'theme_background': 'False',
+                                'truecolor': 'True', 'rounded_corners': 'True'})
+        path = 'btop/.config/btop/themes/tokyo-night.theme'
+        self.assert_colors_in_contract(path)
+        p = self.palette
+        theme = dict(re.findall(r'(?m)^theme\[(\w+)\]="(#[0-9a-f]{6})"$', read(path)))
+        expected = {
+            'main_bg': p['bg'], 'main_fg': p['fg'], 'title': p['fg'], 'hi_fg': p['blue'],
+            'selected_bg': p['bg_highlight'], 'inactive_fg': p['comment'],
+            'cpu_box': p['border'], 'mem_box': p['border'], 'net_box': p['border'],
+            'proc_box': p['border'], 'div_line': p['border'],
+        }
+        for key, color in expected.items():
+            self.assertEqual(theme[key], color, key)
+        self.assertEqual(len(theme), len(re.findall(r'(?m)^theme\[', read(path))))
+
+    def test_yazi(self):
+        path = 'yazi/.config/yazi/theme.toml'
+        config = tomllib.loads(read(path))
+        self.assert_colors_in_contract(path)
+        p = self.palette
+        self.assertEqual(config['mgr']['cwd']['fg'], p['cyan'])
+        self.assertEqual(config['mgr']['hovered'], {'fg': p['fg'], 'bg': p['bg_highlight']})
+        self.assertEqual(config['mgr']['border_style']['fg'], p['border'])
+        self.assertEqual(config['tabs']['active']['bg'], p['blue'])
+        self.assertEqual(config['mode']['normal_main']['bg'], p['blue'])
+        self.assertEqual(config['status']['progress_error']['fg'], p['red'])
+        for section in ('confirm', 'input', 'pick', 'completion', 'tasks'):
+            self.assertEqual(config[section]['border']['fg'], p['border_active'], section)
+        # Terminal background must show through: never paint bg/bg_dark on the main view.
+        self.assertNotIn(p['bg'], [v.get('bg') for s in config.values() if isinstance(s, dict)
+                                   for v in s.values() if isinstance(v, dict)])
 
     def test_zsh_plugins(self):
         text = read('zsh/.config/zsh/plugins.zsh')

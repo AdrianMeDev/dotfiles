@@ -203,6 +203,14 @@ printf 'cached theme\\n' > "$cache/themes.bin"
             link = self.home / '.config/bat' / name
             self.assertTrue(link.is_symlink(), link)
             self.assertEqual(link.resolve(strict=True), REPO / 'bat/.config/bat' / name)
+        for name in ('lazygit/config.yml', 'btop/btop.conf', 'btop/themes/tokyo-night.theme',
+                     'yazi/theme.toml'):
+            link = self.home / '.config' / name
+            self.assertTrue(link.is_symlink(), link)
+            self.assertEqual(link.resolve(strict=True),
+                             REPO / name.split('/')[0] / '.config' / name)
+        for name in ('lazygit', 'btop', 'btop/themes', 'yazi'):
+            self.assertFalse((self.home / '.config' / name).is_symlink(), name)
         for name in ('README.md', 'projects', '.stow-local-ignore'):
             self.assertFalse(os.path.lexists(self.home / name), name)
         before = snapshot(self.home)

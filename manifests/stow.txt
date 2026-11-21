@@ -9,3 +9,6 @@ ssh
 mise
 dot
 bat
+lazygit
+btop
+yazi
