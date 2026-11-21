@@ -78,6 +78,37 @@ def parse_wezterm(text):
     return combos
 
 
+HYPR_BINDINGS = REPO / 'hypr/.config/hypr/bindings.lua'
+HYPR_NAMES = {'super': 'win', 'ctrl': 'ctrl', 'control': 'ctrl', 'alt': 'alt', 'shift': 'shift',
+              'return': 'enter', 'escape': 'escape', 'space': 'space'}
+
+
+def normalize_hypr_combo(keys):
+    """Normalize a Hyprland key string like `ALT + SHIFT + H` to the contract combo format."""
+    parts = [HYPR_NAMES.get(p.strip().lower(), p.strip().lower()) for p in keys.split('+')]
+    mods = {p for p in parts[:-1]}
+    ordered = [m for m in MOD_ORDER if m in mods]
+    return '+'.join([*ordered, parts[-1]])
+
+
+def parse_hyprland(text):
+    """Return the list of (mode, combo) from `hl.bind("<keys>", …)` lines; submap blocks set the mode."""
+    found = []
+    mode = 'global'
+    for line in text.splitlines():
+        submap = re.match(r'^\s*hl\.define_submap\("([^"]+)",\s*function\(\)', line)
+        if submap:
+            mode = submap.group(1)
+            continue
+        if mode != 'global' and re.match(r'^\s*end\)\s*$', line):
+            mode = 'global'
+            continue
+        bind = re.match(r'^\s*hl\.bind\("([^"]+)"', line)
+        if bind:
+            found.append((mode, normalize_hypr_combo(bind.group(1))))
+    return found
+
+
 def jsonc(text):
     # Match strings first so comment delimiters within strings remain untouched.
     text = re.sub(r'"(?:\\.|[^"\\])*"|//[^\n]*|/\*[\s\S]*?\*/',
@@ -174,6 +205,18 @@ class KeybindingTests(unittest.TestCase):
         for _, mode, combo, windows in load_contract():
             if windows.startswith(EXTERNAL):
                 self.assertNotIn((mode, combo), glaze)
+
+    def test_hyprland_parity(self):
+        found = parse_hyprland(HYPR_BINDINGS.read_text(encoding='utf-8'))
+        self.assertEqual(len(found), len(set(found)), 'duplicate Hyprland binding in a mode')
+        expected = {(mode, combo) for _, mode, combo, _ in load_contract()}
+        self.assertEqual(sorted(expected - set(found)), [], 'contract row not bound in Hyprland')
+        self.assertEqual(sorted(set(found) - expected), [], 'Hyprland binding outside the contract')
+
+    def test_hyprland_combo_normalization(self):
+        self.assertEqual(normalize_hypr_combo('ALT + SHIFT + H'), 'alt+shift+h')
+        self.assertEqual(normalize_hypr_combo('SHIFT + SUPER + RETURN'), 'win+shift+enter')
+        self.assertEqual(normalize_hypr_combo('ALT + SPACE'), 'alt+space')
 
     def test_wezterm_no_collision_with_reserved_combos(self):
         reserved = reserved_combos()
