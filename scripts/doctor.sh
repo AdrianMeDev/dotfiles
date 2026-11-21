@@ -109,6 +109,56 @@ _doc_agents() {
     if ((!${#bad[@]} && !${#mod[@]})); then _doc_ok 'Agent-Config: stimmt mit dem Repo überein.'; fi
 }
 
+# Hyprland stack (binary names of manifest group hypr); missing ones are warnings only.
+_DOC_DESKTOP_TOOLS=(hyprland waybar fuzzel mako hyprlock hypridle hyprpaper cliphist grim slurp)
+_DOC_HYPRLAND_MIN=0.57
+
+_doc_desktop() {
+    local profile=$1 family=$2 bin version ver missing=() lua=$HOME/.config/hypr/hyprland.lua out
+    if ! have hyprland && [[ $profile != desktop || $family == debian ]]; then return 0; fi
+    for bin in "${_DOC_DESKTOP_TOOLS[@]}"; do
+        have "$bin" || missing+=("$bin")
+    done
+    if ((${#missing[@]})); then
+        _doc_warn "Desktop-Tools fehlen: ${missing[*]} (dot install --only desktop --profile desktop)."
+    else
+        _doc_ok 'Desktop-Tools: Hyprland-Stack vollständig.'
+    fi
+
+    if have waybar; then
+        version=$(waybar --version 2>&1 | head -n 1) || true
+        _doc_ok "waybar: ${version:-Version unbekannt}"
+    fi
+    have hyprland || return 0
+    version=$(hyprland --version 2>&1 | head -n 1) || true
+    ver=$(printf '%s\n' "$version" | grep -oE '[0-9]+\.[0-9]+(\.[0-9]+)?' | head -n 1) || true
+    _doc_ok "hyprland: ${version:-Version unbekannt}"
+    if [[ -n $ver && $(printf '%s\n%s\n' "$_DOC_HYPRLAND_MIN" "$ver" | sort -V | head -n 1) != "$_DOC_HYPRLAND_MIN" ]]; then
+        _doc_warn "Hyprland $ver ist älter als $_DOC_HYPRLAND_MIN; die Lua-Konfiguration benötigt mindestens $_DOC_HYPRLAND_MIN."
+    fi
+    if [[ -e $HOME/.config/hypr/hyprland.conf ]]; then
+        # shellcheck disable=SC2088  # literal tilde for display
+        _doc_warn '~/.config/hypr/hyprland.conf ist ein Überrest; Hyprland >= 0.57 lädt nur hyprland.lua.'
+    fi
+    [[ -f $lua ]] || return 0
+    if hyprland --help 2>&1 | grep -q -- '--verify-config'; then
+        if out=$(hyprland --verify-config --config "$lua" 2>&1); then
+            _doc_ok 'Hyprland-Konfiguration: hyprland --verify-config ohne Fehler.'
+        else
+            _doc_err 'Hyprland-Konfiguration: hyprland --verify-config meldet Fehler:'
+            printf '%s\n' "$out" | sed 's/^/            /'
+        fi
+    elif [[ -n ${HYPRLAND_INSTANCE_SIGNATURE:-} ]] && have hyprctl; then
+        out=$(hyprctl configerrors 2>&1) || true
+        if [[ -z $out || $out == *'no errors'* ]]; then
+            _doc_ok 'Hyprland-Konfiguration: hyprctl configerrors ohne Fehler.'
+        else
+            _doc_err 'Hyprland-Konfiguration: hyprctl configerrors meldet Fehler:'
+            printf '%s\n' "$out" | sed 's/^/            /'
+        fi
+    fi
+}
+
 dot_doctor() {
     (($# == 0)) || { case "$1" in
         -h|--help) printf 'dot doctor\n  Read-only Diagnose: Umgebung, Tool-Versionen, mise, Stow-Links, Agent-Config, Git-Identität, fnm.\n'; return 0 ;;
@@ -148,6 +198,7 @@ dot_doctor() {
         printf '%s\n' "$out" | sed 's/^/            /'
     fi
 
+    _doc_desktop "${profile:-}" "${family:-}"
     _doc_agents
     _doc_git_identity
     _doc_fnm

@@ -31,7 +31,7 @@ cd ~/dotfiles
 Nach der Installation steht der Befehl `dot` (Stow-Paket `dot`, `~/.local/bin/dot`) bereit:
 `dot install [OPTIONEN]` ruft `install.sh` auf, `dot update [--dry-run] [--profile …]` aktualisiert
 Systempakete, mise-Tools, Flatpaks, zsh-Plugins sowie Claude Code, pi und die Agent-Config,
-`dot doctor` prüft Tool-Versionen, mise, Stow-Links, Git-Identität, fnm-Überreste und lokale
+`dot doctor` prüft Tool-Versionen, mise, Stow-Links, Hyprland/Waybar (Version, Lua-Config, fehlende Desktop-Tools), Git-Identität, fnm-Überreste und lokale
 Abweichungen der Agent-Config (read-only; Exit 1 bei `[FEHLER]`), und
 `dot zed-template [--dry-run] [--backup] angular|django|dotnet <PFAD>` kopiert eine
 Zed-Projektvorlage nach `<PFAD>/.zed/`.
@@ -72,6 +72,8 @@ Fremde Verzeichnis-Symlinks müssen vorab manuell aufgelöst werden; der Install
 | `tools` | mise und alle Dev-CLI-Tools über mise in der neuesten Version (Neovim >= 0.12, Node LTS, uv, Starship, tree-sitter, lazygit, ripgrep, fd, fzf, bat, delta …; Konfiguration: `mise/config.toml`), Extras `java`/`rust` |
 | `apps` | .NET SDK 10 (Arch/Fedora), WezTerm, Zed, Claude Code (nativer Installer), pi (npm über mise-Node), optional Ollama (Extras `ollama`, `ollama-models`) |
 | `agents` | rendert `agent-config/` nach `~/.claude` und `~/.pi/agent` (Claude-Frontmatter der Skills wird eingefügt, `claude-frontmatter.txt` nicht kopiert); abweichende Dateien nur mit `--backup` ersetzt, idempotent |
+| `desktop` | Hyprland-Stack aus der Manifest-Gruppe `hypr` (Hyprland, Waybar, fuzzel, mako, hyprlock, hypridle, hyprpaper, cliphist, grim, slurp, Portal, Polkit-Agent); nur Arch/Fedora, nur Profil `desktop`, nicht unter WSL (Fedora über COPR `solopasha/hyprland`) |
+| `theme` | GTK/Qt dunkel, Cursor, Icons und Wallpaper (siehe [Theme-Modul](#theme-modul)); gleiche Bedingungen wie `desktop` |
 | `flatpak` | Flathub für den Benutzer; ausgewählte optionale Desktop-Apps (nur bei `--profile desktop`) |
 | `fonts` | Ioskeley Mono und Ioskeley Mono Term Nerd Font 2.1.0 im Benutzerverzeichnis |
 | `dotfiles` | Konfliktprüfung, Git-Identität, optionale Backups und Stow-Verlinkung |
@@ -115,6 +117,44 @@ aktualisiert Systempakete; bereits vorhandene externe Werkzeuge werden nicht aut
 Node/Python-Major-Versionen, Distro-Pakete, LSPs und einige Upstream-Installer sind nicht auf
 exakte Patchstände festgelegt: Das Setup ist wiederholbar, aber kein bitidentisches Systemabbild.
 Neovims Plugin-Versionen stehen in `nvim-pack-lock.json`; Plugin-Updates bewusst prüfen und committen.
+
+## Hyprland-Desktop
+
+Das Stow-Paket `hypr/` verlinkt immer (auch headless) `~/.config/hypr`, `waybar`, `fuzzel`, `mako`,
+`gtk-3.0`/`gtk-4.0` und `qt5ct`/`qt6ct`. Die Pakete selbst installiert `./install.sh --only desktop`
+(nur Arch/Fedora, Profil `desktop`, nicht unter WSL; auf Debian wird das Modul übersprungen).
+
+### Lua-Konfiguration (Hyprland >= 0.57)
+
+`hypr/.config/hypr/hyprland.lua` (mit `bindings.lua`) ist die **Lua-Konfiguration**. Sie benötigt
+**Hyprland >= 0.57**: Ab dieser Version lädt der Compositor `hyprland.conf` nicht mehr und liest nur
+noch `hyprland.lua`. Ein Überrest `~/.config/hypr/hyprland.conf` wird ignoriert und von `dot doctor`
+gemeldet. `hyprlock.conf`, `hypridle.conf` und `hyprpaper.conf` bleiben dagegen hyprlang.
+`dot install` warnt bei zu alter Version; `dot doctor` zeigt die Hyprland-/Waybar-Version, warnt bei
+< 0.57 und prüft die Konfiguration mit `hyprland --verify-config` (falls vorhanden, sonst in einer
+laufenden Session mit `hyprctl configerrors`). Fehlende Desktop-Tools werden als `[WARN]` gelistet.
+
+Anmelden: im Display-Manager die Session **Hyprland** wählen. Die KDE-Session bleibt unverändert
+installiert und startet weiterhin (Fallback: im Display-Manager wieder „Plasma“ wählen).
+
+### Keybinding-Vertrag
+
+`manifests/keybindings.tsv` ist die einzige Quelle der Bindings (Aktion, Modus, Kombination,
+Windows-Befehl). `hypr/.config/hypr/bindings.lua` und die GlazeWM-Config müssen sie exakt abbilden;
+`tests/test_keybindings.py` prüft beide. Auf Windows gehören `lock` (`Win+L`), Zwischenablage-Verlauf und
+Screenshot dem System (`os:`), der Launcher (`Alt+Space`) Flow Launcher (`flow:`); unter Linux liegt der
+Lock auf `Alt+Shift+X`. **Keine Kollisionen:** Zed-Keymap und WezTerm-Konfigurationen dürfen keine
+Kombination des Vertrags belegen (ebenfalls per Test geprüft), damit der Fenstermanager nie
+Editor-/Terminal-Kürzel verschluckt. Neue Bindings zuerst in die TSV eintragen.
+
+### Theme-Modul
+
+`./install.sh --only theme` (Arch/Fedora, Profil `desktop`, nicht WSL) installiert adw-gtk3, Papirus,
+qt5ct/qt6ct, Kvantum und den Bibata-Cursor (Arch: AUR; Fedora: Release-Archiv) und setzt per `gsettings`
+Dunkelmodus, `adw-gtk3-dark`, `Papirus-Dark` und den Cursor. Das Wallpaper wird einmalig aus
+`theme/tokens.toml` nach `~/.local/share/dotfiles/wallpaper.png` erzeugt (vorhandene Dateien bleiben).
+GTK-/Qt-Konfiguration (`gtk-3.0`, `gtk-4.0`, `qt5ct`, `qt6ct`), Waybar, mako, fuzzel und Hyprland
+beziehen Farben, Fonts, Deckkraft, Blur und Rahmen aus denselben Tokens; `tests/test_theme.py` prüft das.
 
 ## Git und private Einstellungen
 
@@ -360,7 +400,7 @@ Zum Entfernen der Links im Repo ausführen:
 
 ```bash
 stow --dir "$PWD" --target "$HOME" --no-folding --delete \
-  nvim zed-config wezterm zsh tmux starship git ssh mise dot bat lazygit btop yazi
+  nvim zed-config wezterm zsh tmux starship git ssh mise dot bat lazygit btop yazi hypr
 ```
 
 Anschließend die benötigten Dateien aus dem gemeldeten Backup an ihre ursprünglichen Pfade
@@ -401,7 +441,9 @@ pro Container als normaler Benutzer aus: `dot install --dry-run` (Familie erkann
 zweimal `dot install` (der zweite Lauf darf keine Backups erzeugen), dann `dot`, `nvim` (>= 0.12), `node`,
 `uv`, `claude --version` und `pi --version` über `zsh -c`, die Dateien unter `~/.claude` und `~/.pi/agent`
 (gerendertes Claude-Frontmatter, keine `claude-frontmatter.txt`), `dot update --dry-run`,
-`dot update` und `dot doctor`. Ist `GITHUB_TOKEN` gesetzt, wird er an die Container durchgereicht.
+`dot update` und `dot doctor`. Auf Arch/Fedora prüft die Matrix zusätzlich die `hypr`-Links
+(`hyprland.lua`, `bindings.lua`) und führt `desktop` und `theme` mit `--profile desktop --dry-run` aus
+(schreibt nichts). Ist `GITHUB_TOKEN` gesetzt, wird er an die Container durchgereicht.
 Die GitHub-Actions-CI (`.github/workflows/ci.yml`) führt sowohl `scripts/check.sh` als auch
 die Container-Matrix für `arch`, `fedora` und `debian` automatisch aus.
 Grafische Editor- und Clipboard-Tests erfolgen weiterhin auf dem jeweiligen Zielsystem.

@@ -485,6 +485,26 @@ verwaltet. Node/Python deshalb nicht zusätzlich über mise aktivieren.
 
 Podman läuft rootless: Container nicht mit `sudo` starten.
 
+## Linux: Hyprland (Vertrag mit GlazeWM)
+
+Gleiche Kürzel wie unter Windows (siehe unten); Quelle ist `manifests/keybindings.tsv`. Das Hyprland-Lua-Config braucht Hyprland >= 0.57. Alle Kürzel verwenden `Alt`.
+
+| Kürzel                              | Aktion                                               |
+| ----------------------------------- | ---------------------------------------------------- |
+| `Alt+1` … `9`                       | Workspace wechseln (mit `Shift`: Fenster verschieben) |
+| `Alt+h/j/k/l` oder `Alt+Pfeile`     | Fokus bewegen (mit `Shift`: Fenster verschieben)     |
+| `Alt+Enter`                         | WezTerm öffnen                                       |
+| `Alt+Space`                         | Launcher (fuzzel)                                    |
+| `Alt+Q`                             | Fenster schließen                                    |
+| `Alt+R`, dann `h/j/k/l` oder Pfeile | Resize Mode; `Esc`, `Enter` oder `Alt+R` beendet ihn |
+| `Alt+F`                             | Vollbild umschalten                                  |
+| `Alt+Shift+Space`                   | Floating umschalten                                  |
+| `Alt+Shift+R`                       | Konfiguration neu laden                              |
+| `Alt+Shift+P`                       | Bindings pausieren/fortsetzen                        |
+| `Alt+Shift+X`                       | Bildschirm sperren (hyprlock); Windows: `Win+L`      |
+| `Alt+V`                             | Zwischenablage-Verlauf (cliphist); Windows: `Win+V`  |
+| `Alt+Shift+S`                       | Screenshot (grim/slurp); Windows: `Win+Shift+S`      |
+
 ## Windows: GlazeWM und Flow Launcher
 
 Alle GlazeWM-Kürzel verwenden ausdrücklich das **linke** `Alt`; `AltGr` bleibt frei.
@@ -503,6 +523,8 @@ Alle GlazeWM-Kürzel verwenden ausdrücklich das **linke** `Alt`; `AltGr` bleibt
 | `Alt+Shift+Space`                   | Floating umschalten                                  |
 | `Alt+Shift+R`                       | GlazeWM-Konfiguration neu laden                      |
 | `Alt+Shift+P`                       | Tiling und globale Kürzel pausieren/fortsetzen       |
+| `Win+L`                             | Sperren (Windows; Linux: `Alt+Shift+X`)              |
+| `Alt+V` / `Alt+Shift+S`             | Zwischenablage-Verlauf (`Win+V`) / Screenshot (`Win+Shift+S`) |
 
 ## Dotfiles warten
 
