@@ -29,8 +29,11 @@ class ContainerMatrixTests(unittest.TestCase):
         )
         self.engine.chmod(0o755)
 
-    def run_matrix(self, *args, fail=''):
+    def run_matrix(self, *args, fail='', token=None):
         env = dict(os.environ, CONTAINER_ENGINE=str(self.engine), STUB_LOG=str(self.log), STUB_FAIL=fail)
+        env.pop('GITHUB_TOKEN', None)
+        if token is not None:
+            env['GITHUB_TOKEN'] = token
         return subprocess.run(
             [shutil.which('bash') or '/bin/bash', str(SCRIPT), *args],
             env=env, stdin=subprocess.DEVNULL, capture_output=True, text=True, timeout=30,
@@ -47,6 +50,17 @@ class ContainerMatrixTests(unittest.TestCase):
         for call, (distro, image) in zip(calls, IMAGES.items()):
             self.assertIn(f'run --rm -v {REPO}:/dotfiles:ro,z {image}', call)
             self.assertTrue(call.endswith(f'scripts/container-entry.sh {distro}'), call)
+
+    def test_github_token_is_forwarded_by_name_only(self):
+        res = self.run_matrix('arch', token='secret-value')
+        self.assertEqual(res.returncode, 0, res.stderr)
+        call = self.calls()[0]
+        self.assertIn('run --rm -e GITHUB_TOKEN -v', call)
+        self.assertNotIn('secret-value', call)
+
+    def test_no_token_flag_without_github_token(self):
+        self.run_matrix('arch')
+        self.assertNotIn('GITHUB_TOKEN', self.calls()[0])
 
     def test_subset(self):
         res = self.run_matrix('debian', 'arch')

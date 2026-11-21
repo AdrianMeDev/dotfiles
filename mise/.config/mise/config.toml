@@ -1,5 +1,25 @@
-# Node belongs to fnm, Python to uv. No competing runtime activation.
+# Python belongs to uv. Node is managed by mise (including .node-version/.nvmrc).
 [settings]
-disable_tools = ["node", "python"]
+disable_tools = ["python"]
+idiomatic_version_file_enable_tools = ["node"]
+
+[tools]
+neovim = "latest"
+node = "lts"
+uv = "latest"
+starship = "latest"
+tree-sitter = "latest"
+lazygit = "latest"
+ripgrep = "latest"
+fd = "latest"
+fzf = "latest"
+bat = "latest"
+delta = "latest"
+shfmt = "latest"
+shellcheck = "latest"
+zoxide = "latest"
+direnv = "latest"
+gh = "latest"
+jq = "latest"
 
 # Optional project runtime: mise use java@21 (writes the project's mise.toml).

@@ -83,23 +83,24 @@ class PkgTests(unittest.TestCase):
         arch = self.resolve('arch', 'headless')
         fedora = self.resolve('fedora', 'headless')
         debian = self.resolve('debian', 'headless')
-        self.assertIn('fd', arch)
-        self.assertIn('fd-find', fedora)
-        self.assertIn('fd-find', debian)
+        self.assertIn('xz', arch)
+        self.assertIn('xz', fedora)
+        self.assertIn('xz-utils', debian)
+        self.assertIn('pkgconf', arch)
+        self.assertIn('pkgconf-pkg-config', fedora)
+        self.assertIn('pkg-config', debian)
         self.assertIn('base-devel', arch)
         self.assertTrue({'gcc', 'gcc-c++', 'make'} <= set(fedora))
         self.assertIn('build-essential', debian)
         self.assertIn('libssl-dev', debian)
         self.assertIn('openssl-devel', fedora)
-        self.assertIn('gh', fedora)
-        self.assertIn('github-cli', arch)
 
     def test_pkg_names(self):
         res = self.run_pkg('pkg_names base-devel fedora')
         self.assertEqual(res.returncode, 0, res.stderr)
         self.assertEqual(res.stdout.split(), ['gcc', 'gcc-c++', 'make'])
-        res = self.run_pkg('DISTRO_FAMILY=debian pkg_names fd')
-        self.assertEqual(res.stdout.split(), ['fd-find'])
+        res = self.run_pkg('DISTRO_FAMILY=debian pkg_names xz')
+        self.assertEqual(res.stdout.split(), ['xz-utils'])
         res = self.run_pkg('pkg_names does-not-exist arch')
         self.assertNotEqual(res.returncode, 0)
 
@@ -180,6 +181,22 @@ dump() { printf '%s\n' "${CALLS[@]}"; }
             self.calls('DISTRO_FAMILY=debian; pkg_upgrade >/dev/null; dump'),
             ['sudo env DEBIAN_FRONTEND=noninteractive apt-get update',
              'sudo env DEBIAN_FRONTEND=noninteractive apt-get full-upgrade -y'])
+
+    def test_upgrade_aur(self):
+        self.assertEqual(
+            self.calls('DISTRO_FAMILY=arch; pkg_upgrade_aur >/dev/null; dump', {'HAVE': 'paru yay'}),
+            ['paru -Sua --noconfirm'])
+        self.assertEqual(
+            self.calls('DISTRO_FAMILY=arch; pkg_upgrade_aur >/dev/null; dump', {'HAVE': 'yay'}),
+            ['yay -Sua --noconfirm'])
+        self.assertEqual(self.calls('DISTRO_FAMILY=arch; pkg_upgrade_aur; dump', {'HAVE': ''}), [])
+        self.assertEqual(self.calls('DISTRO_FAMILY=fedora; pkg_upgrade_aur; dump', {'HAVE': 'paru'}), [])
+
+    def test_upgrade_aur_dry_run_executes_nothing(self):
+        res = self.run_pkg('DISTRO_FAMILY=arch; pkg_upgrade_aur; dump', {'HAVE': 'paru', 'DRY_RUN': '1'})
+        self.assertEqual(res.returncode, 0, res.stderr)
+        self.assertIn('+ paru -Sua --noconfirm', res.stdout)
+        self.assertEqual([l for l in res.stdout.splitlines() if l.startswith('paru ')], [])
 
     def test_aur_split_from_fixture_manifest(self):
         body = (

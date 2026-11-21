@@ -16,13 +16,33 @@ useradd -m -s /bin/bash dev
 printf 'dev ALL=(ALL) NOPASSWD:ALL\n' > /etc/sudoers.d/dev
 chmod 0440 /etc/sudoers.d/dev
 
-as_dev() { sudo -u dev -i bash -c "$1"; }
+as_dev() { sudo --preserve-env=GITHUB_TOKEN -u dev -i bash -c "$1"; }
 
-preview=$(as_dev 'bash /dotfiles/install.sh --dry-run')
+dot=/dotfiles/dot/.local/bin/dot
+
+# --dry-run must not write anything below $HOME.
+# shellcheck disable=SC2016 # expanded by the inner shell on purpose
+snapshot() { as_dev 'find "$HOME" -printf "%p %y %s %T@\n" | sort'; }
+before=$(snapshot)
+preview=$(as_dev "$dot install --dry-run")
 printf '%s\n' "$preview"
-grep -qF "Distro-Familie: $family" <<< "$preview" || { printf 'Erwartete Familie %s nicht erkannt.\n' "$family" >&2; exit 1; }
+grep -qF "Distro-Familie: $family" <<< "$preview" || { printf 'dot install --dry-run: Familie %s nicht erkannt.\n' "$family" >&2; exit 1; }
+[[ $before == "$(snapshot)" ]] || { printf 'dot install --dry-run hat Dateien geschrieben.\n' >&2; exit 1; }
 
 for run in 1 2; do
-    printf '==> install.sh --only system --profile desktop (Lauf %s)\n' "$run"
-    as_dev 'bash /dotfiles/install.sh --only system --profile desktop'
+    printf '==> dot install (Lauf %s)\n' "$run"
+    as_dev "$dot install"
 done
+
+printf '==> Werkzeuge prüfen\n'
+as_dev 'zsh -c "command -v dot && node --version && uv --version"'
+nvim_version=$(as_dev 'zsh -c "nvim --version"')
+[[ $nvim_version =~ NVIM\ v([0-9]+)\.([0-9]+) ]] || { printf 'nvim-Version nicht lesbar.\n' >&2; exit 1; }
+((BASH_REMATCH[1] > 0 || BASH_REMATCH[2] >= 12)) || { printf 'nvim >= 0.12 erwartet, gefunden: %s.%s\n' "${BASH_REMATCH[1]}" "${BASH_REMATCH[2]}" >&2; exit 1; }
+
+printf '==> dot update\n'
+as_dev 'zsh -c "dot update --dry-run"'
+as_dev 'zsh -c "dot update"'
+
+printf '==> dot doctor\n'
+as_dev 'zsh -c "dot doctor"'

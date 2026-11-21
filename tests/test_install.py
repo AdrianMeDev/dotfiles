@@ -86,7 +86,8 @@ class InstallerTests(unittest.TestCase):
         before = snapshot(self.home)
         result = self.install('--dry-run', '--profile', 'desktop', '--extras', 'java,rust,rpmfusion,firefox,discord,spotify')
         self.assertEqual(snapshot(self.home), before)
-        self.assertIn('fnm install 24', result.stdout)
+        self.assertIn('mise install', result.stdout)
+        self.assertNotIn('fnm', result.stdout)
         self.assertNotIn('mise use', result.stdout)
 
     def test_invalid_arguments(self):
@@ -222,7 +223,7 @@ class InstallerTests(unittest.TestCase):
                 (bin_dir / cmd).symlink_to(executable)
         self.env['PATH'] = str(bin_dir)
         self.env['EXPECTED'] = str(self.base / 'project space')
-        for flags, code in [('-c', '[[ $MISE_DISABLE_TOOLS = node,python ]]'),
+        for flags, code in [('-c', '[[ $MISE_DISABLE_TOOLS = python ]]'),
                             ('-ic', 'mkcd "project space" && [[ $PWD = $EXPECTED ]]')]:
             result = self.run_command([zsh, flags, code])
             self.assertEqual(result.stderr, '')
@@ -266,8 +267,17 @@ class InstallerTests(unittest.TestCase):
         zsh = self.prepare_zsh()
         bin_dir = self.home / '.local/bin'
         bin_dir.mkdir(parents=True)
+        mise_bin = self.base / 'mise-shims'
+        mise_bin.mkdir()
+        nvim = mise_bin / 'nvim'
+        nvim.write_text('#!/bin/sh\nexit 0\n')
+        nvim.chmod(0o755)
         scripts = {
-            'mise': "printf 'typeset -ga runtime_order; runtime_order+=(mise)\\n'\n",
+            'mise': (
+                'printf \'typeset -ga runtime_order; runtime_order+=(mise)\\n\'\n'
+                f'printf \'export PATH="{mise_bin}:$PATH"\\n\'\n'
+                'printf \'mise_args="%s"\\n\' "$*"\n'
+            ),
             'fnm': "printf 'runtime_order+=(fnm)\\n'\n",
             'git': 'exit 99\n',
         }
@@ -279,9 +289,9 @@ class InstallerTests(unittest.TestCase):
         for cmd in ['mkdir', 'rm', 'mv', 'cat', 'chmod', 'grep']:
             (bin_dir / cmd).symlink_to(shutil.which(cmd))
         self.env['PATH'] = str(bin_dir)
-        for flag in ['-c', '-ic']:
-            result = self.run_command([zsh, flag, 'print -r -- "${(j:,:)runtime_order}"'])
-            self.assertEqual(result.stdout.strip(), 'mise,fnm,local')
+        for flag, expected_args in [('-c', 'activate zsh --shims'), ('-ic', 'activate zsh')]:
+            result = self.run_command([zsh, flag, 'print -r -- "${(j:,:)runtime_order}|$EDITOR|$VISUAL|$mise_args"'])
+            self.assertEqual(result.stdout.strip(), f'mise,local|nvim|nvim|{expected_args}')
             self.assertEqual(result.stderr, '')
         self.assertFalse((self.home / '.local/share/zsh/plugins').exists())
 
@@ -529,33 +539,44 @@ target="$XDG_DATA_HOME/fonts/IoskeleyMono"
 '''])
         self.assertIn('sind bereits installiert', result.stdout)
 
-    def test_fnm_recursive_project_switch(self):
-        zsh, fnm = self.prepare_zsh(), shutil.which('fnm')
-        if not fnm:
-            self.skipTest('fnm fehlt')
-        self.env['FNM_DIR'] = str(self.home / '.local/share/fnm')
-        self.env['FNM_LOGLEVEL'] = 'error'
-        for version in ['24.0.0', '22.0.0']:
-            install = Path(self.env['FNM_DIR']) / 'node-versions' / ('v' + version) / 'installation'
-            (install / 'bin').mkdir(parents=True)
-            node = install / 'bin/node'
+    def test_mise_node_version_switching(self):
+        zsh, mise = self.prepare_zsh(), shutil.which('mise')
+        if not mise:
+            self.skipTest('mise fehlt')
+        mise_config = self.home / '.config/mise'
+        mise_config.mkdir(parents=True)
+        (mise_config / 'config.toml').write_text(
+            '[settings]\n'
+            'idiomatic_version_file_enable_tools = ["node"]\n\n'
+            '[tools]\n'
+            'node = "24.0.0"\n'
+        )
+        for version in ['24.0.0', '22.0.0', '20.0.0']:
+            install = self.home / '.local/share/mise/installs/node' / version / 'bin'
+            install.mkdir(parents=True)
+            node = install / 'node'
             node.write_text('#!/bin/sh\nprintf "v' + version + '\\n"\n')
             node.chmod(0o755)
-        self.run_command([fnm, 'default', '24.0.0'])
-        project = self.base / 'node project'
-        (project / 'subdir').mkdir(parents=True)
-        (project / '.node-version').write_text('22.0.0\n')
-        self.env.update(NODE_PROJECT=str(project / 'subdir'), NEUTRAL_DIR=str(self.base))
+        node_project = self.base / 'node project'
+        (node_project / 'subdir').mkdir(parents=True)
+        (node_project / '.node-version').write_text('22.0.0\n')
+        nvm_project = self.base / 'nvm project'
+        nvm_project.mkdir()
+        (nvm_project / '.nvmrc').write_text('20.0.0\n')
+        self.env.update(NODE_PROJECT=str(node_project / 'subdir'), NVM_PROJECT=str(nvm_project),
+                        NEUTRAL_DIR=str(self.base))
         code = '''
-[[ $MISE_DISABLE_TOOLS = node,python ]] || exit 1
-fnm use default >/dev/null
+[[ $MISE_DISABLE_TOOLS = python ]] || exit 1
 [[ $(node --version) = v24.0.0 ]] || exit 2
 cd "$NODE_PROJECT"
 [[ $(node --version) = v22.0.0 ]] || exit 3
+cd "$NVM_PROJECT"
+[[ $(node --version) = v20.0.0 ]] || exit 4
 cd "$NEUTRAL_DIR"
-[[ $(node --version) = v24.0.0 ]] || exit 4
+[[ $(node --version) = v24.0.0 ]] || exit 5
 '''
-        self.run_command([zsh, '-c', code])
+        for flag in ['-c', '-ic']:
+            self.run_command([zsh, flag, code])
 
     def test_tmux_configuration(self):
         tmux = shutil.which('tmux')
@@ -620,6 +641,16 @@ class ConfigTests(unittest.TestCase):
         fzf = (REPO / 'zsh/.config/zsh/fzf.zsh').read_text()
         self.assertIn('bg:#1a1b26', fzf)
         self.assertFalse((REPO / 'zed/.config/zed/themes/Neovim-custom.json').exists())
+        mise = tomllib.loads((REPO / 'mise/.config/mise/config.toml').read_text())
+        self.assertEqual(mise['settings']['disable_tools'], ['python'])
+        self.assertEqual(mise['settings']['idiomatic_version_file_enable_tools'], ['node'])
+        self.assertEqual(mise['tools']['node'], 'lts')
+        for tool in (
+            'neovim', 'uv', 'starship', 'tree-sitter', 'lazygit', 'ripgrep',
+            'fd', 'fzf', 'bat', 'delta', 'shfmt', 'shellcheck', 'zoxide',
+            'direnv', 'gh', 'jq',
+        ):
+            self.assertIn(tool, mise['tools'])
 
     def test_ci_workflow(self):
         workflow = (REPO / '.github/workflows/ci.yml').read_text()

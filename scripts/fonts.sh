@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 install_fonts() {
+    if [[ ${PROFILE:-desktop} == headless ]]; then log 'Profil headless: Schriften werden übersprungen.'; return; fi
     local version=2.1.0
     local target="${XDG_DATA_HOME:-$HOME/.local/share}/fonts/IoskeleyMono"
     if [[ -f $target/.version && $(< "$target/.version") == "$version" &&

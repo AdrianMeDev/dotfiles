@@ -74,7 +74,7 @@ alles wird in der neuesten Version installiert und mit `dot update` aktualisiert
 - **Depends on:** –
 - **Size:** L, ~7 commits
 
-### M2 [ ] Tools über mise + `dot`-Befehl
+### M2 [x] Tools über mise + `dot`-Befehl
 - **Goal:** Alle Dev-Tools in neuester Version über mise; Installation, Update und Diagnose über `dot`.
 - **Includes:** globale mise-Config (Neovim, Node LTS, uv, Starship, tree-sitter, lazygit, ripgrep, fd, fzf, bat, delta …), Migration fnm → mise in zsh, `dot install|update|doctor`, Update-Pfad pro Familie
 - **Done when:** frischer Container → `dot install` → `nvim`, `node`, `uv` vorhanden; `dot update` aktualisiert System, mise und Plugins; `dot doctor` zeigt Versionen und Probleme
@@ -156,3 +156,4 @@ alles wird in der neuesten Version installiert und mit `dot update` aktualisiert
 - 2026-11-21: einheitliches Theme ergänzt (Entscheidung #10, neuer M5, Theme-Anteile in M6/M7), Meilensteine neu nummeriert
 - 2026-11-21: Depends on/Size wieder als eigene Bullets, Abhängigkeiten ohne Bereiche (baton-kompatibel)
 - 2026-11-21: M1 Multi-Distro-Kern abgeschlossen
+- 2026-11-21: M2 Tools über mise + `dot`-Befehl abgeschlossen (Container-Matrix prüft install → update → doctor)

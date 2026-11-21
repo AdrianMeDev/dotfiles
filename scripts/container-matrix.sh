@@ -23,11 +23,15 @@ if [[ -z $engine ]]; then
     else printf 'Weder podman noch docker gefunden.\n' >&2; exit 2; fi
 fi
 
+# Optional: authenticated GitHub downloads avoid API rate limits (mise).
+env_args=()
+[[ -z ${GITHUB_TOKEN:-} ]] || env_args=(-e GITHUB_TOKEN)
+
 failed=()
 passed=()
 for distro in "${distros[@]}"; do
     printf '==> %s (%s)\n' "$distro" "${IMAGES[$distro]}"
-    if "$engine" run --rm -v "$REPO_DIR:/dotfiles:ro,z" "${IMAGES[$distro]}" \
+    if "$engine" run --rm "${env_args[@]}" -v "$REPO_DIR:/dotfiles:ro,z" "${IMAGES[$distro]}" \
         bash /dotfiles/scripts/container-entry.sh "$distro"; then
         passed+=("$distro")
     else
