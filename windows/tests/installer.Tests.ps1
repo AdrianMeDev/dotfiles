@@ -349,7 +349,7 @@ Describe 'Windows installer' {
             (Get-FilePlan @((Get-FlowConfigEntry))).Action | Should -Be 'Skip' -Because 'Flow repeat must preserve serialized settings'
         }
         It 'detects conflicts and backs up on request' {
-            $target = $script:entries[0].Path
+            $target = Join-Path $env:USERPROFILE '.config/wezterm/wezterm.lua'
             [IO.File]::WriteAllText($target, 'custom')
             Throws { Get-FilePlan $script:entries } 'Dateikonflikt'
             $backupPlan = @(Get-FilePlan $script:entries -Backup)
@@ -359,6 +359,18 @@ Describe 'Windows installer' {
             $saved = @(Get-ChildItem -LiteralPath (Split-Path $target) -Filter '*.backup-*')
             $saved.Count | Should -Be 1
             [IO.File]::ReadAllText($saved[0].FullName) | Should -Be 'custom'
+        }
+        It 'replaces generated distro.lua on distro change without Backup while wezterm.lua still conflicts' {
+            $distroPath = Join-Path $env:USERPROFILE '.config/wezterm/distro.lua'
+            $changedEntries = @(Get-ConfigEntries $script:source 'Arch')
+            $plan = @(Get-FilePlan $changedEntries)
+            (@($plan | Where-Object Path -eq $distroPath)[0]).Action | Should -Be 'Replace'
+            Write-FilePlan $plan
+            [IO.File]::ReadAllText($distroPath) | Should -Be "return `"Arch`"`n"
+            $weztermPath = Join-Path $env:USERPROFILE '.config/wezterm/wezterm.lua'
+            [IO.File]::WriteAllText($weztermPath, 'user-edited')
+            Throws { Get-FilePlan $changedEntries } 'Dateikonflikt'
+            Write-FilePlan @(Get-FilePlan $changedEntries -Backup)
         }
         It 'rejects directory and parent collisions' {
             $target = $script:entries[0].Path
@@ -451,7 +463,7 @@ Describe 'Windows installer' {
         BeforeAll {
             Use-TestProfile
             $script:entries = @(Get-ConfigEntries $script:source 'archlinux')
-            $script:target = $script:entries[0].Path
+            $script:target = Join-Path $env:USERPROFILE '.config/wezterm/wezterm.lua'
             function Invoke-WebRequest { param($Uri, $OutFile, [switch]$UseBasicParsing) [IO.File]::WriteAllText($OutFile, 'mock archive') }
             function Expand-Archive {
                 param($LiteralPath, $DestinationPath)

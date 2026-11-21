@@ -251,8 +251,8 @@ function Invoke-WslBootstrap {
 }
 
 function New-TextEntry {
-    param([string]$Path, [string]$Text)
-    return [pscustomobject]@{ Path = $Path; Bytes = [Text.UTF8Encoding]::new($false).GetBytes($Text) }
+    param([string]$Path, [string]$Text, [switch]$Generated)
+    return [pscustomobject]@{ Path = $Path; Bytes = [Text.UTF8Encoding]::new($false).GetBytes($Text); Generated = [bool]$Generated }
 }
 function New-CopyEntry {
     param([string]$Path, [string]$Source)
@@ -276,7 +276,7 @@ function Get-FilePlan {
             if (-not (Test-Path -LiteralPath $entry.Path -PathType Leaf)) { throw "Zieldatei ist ein Verzeichnis: $($entry.Path)" }
             $existing = [IO.File]::ReadAllBytes($entry.Path)
             if ([Convert]::ToBase64String($existing) -ceq [Convert]::ToBase64String($entry.Bytes)) { $action = 'Skip' }
-            elseif ($Backup) { $action = 'Replace' }
+            elseif ($Backup -or $entry.Generated) { $action = 'Replace' }
             else { throw "Dateikonflikt: $($entry.Path). Mit -Backup sichern und ersetzen." }
         }
         [pscustomobject]@{ Path = $entry.Path; Bytes = $entry.Bytes; Action = $action }
@@ -396,9 +396,9 @@ function Get-ConfigEntries {
     # JSON quoted strings are also Lua strings for WSL distro names, except Unicode escapes.
     if ($SelectedDistro) {
         $luaName = $SelectedDistro.Replace('\', '\\').Replace('"', '\"').Replace("`r", '\r').Replace("`n", '\n')
-        New-TextEntry (Join-Path $wezterm 'distro.lua') "return `"$luaName`"`n"
+        New-TextEntry (Join-Path $wezterm 'distro.lua') "return `"$luaName`"`n" -Generated
     } else {
-        New-TextEntry (Join-Path $wezterm 'distro.lua') "return nil`n"
+        New-TextEntry (Join-Path $wezterm 'distro.lua') "return nil`n" -Generated
     }
     New-CopyEntry (Join-Path $wezterm 'base.lua') (Join-Path $repo 'wezterm/.config/wezterm/wezterm.lua')
     New-CopyEntry (Join-Path $wezterm 'wezterm.lua') (Join-Path $SourceRoot 'wezterm/wezterm.lua')

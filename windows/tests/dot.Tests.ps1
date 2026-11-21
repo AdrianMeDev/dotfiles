@@ -109,6 +109,19 @@ Describe 'Windows dot commands' {
         $script:wslDistro = $null
         Update-WindowsDesktop $script:source 6>$null
         $script:wslCalls.Count | Should -Be 0
+        [IO.File]::ReadAllText((Join-Path $env:USERPROFILE '.config/wezterm/distro.lua')) | Should -Be "return nil`n"
+    }
+    It 'replaces distro.lua on distro change without -Backup while wezterm.lua still conflicts' {
+        $script:wslDistro = 'archlinux'
+        Update-WindowsDesktop $script:source -NoWsl 6>$null
+        $distroPath = Join-Path $env:USERPROFILE '.config/wezterm/distro.lua'
+        [IO.File]::ReadAllText($distroPath) | Should -Be "return `"archlinux`"`n"
+        $script:wslDistro = 'Arch'
+        Update-WindowsDesktop $script:source -NoWsl 6>$null
+        [IO.File]::ReadAllText($distroPath) | Should -Be "return `"Arch`"`n"
+        $weztermPath = Join-Path $env:USERPROFILE '.config/wezterm/wezterm.lua'
+        [IO.File]::WriteAllText($weztermPath, 'custom')
+        { Update-WindowsDesktop $script:source -NoWsl 6>$null } | Should -Throw '*Dateikonflikt*'
     }
     It 'fails when dot update in WSL fails' {
         $script:wslDistro = 'archlinux'
