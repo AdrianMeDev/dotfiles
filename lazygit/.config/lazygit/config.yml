@@ -1,0 +1,35 @@
+# Tokyo Night (Night) - colors from theme/tokens.toml; no background colors,
+# so the terminal background and its opacity show through.
+gui:
+  border: rounded
+  nerdFontsVersion: "3"
+  theme:
+    activeBorderColor:
+      - "#7aa2f7"
+      - bold
+    inactiveBorderColor:
+      - "#414868"
+    searchingActiveBorderColor:
+      - "#e0af68"
+      - bold
+    optionsTextColor:
+      - "#7aa2f7"
+    selectedLineBgColor:
+      - "#292e42"
+    inactiveViewSelectedLineBgColor:
+      - "#292e42"
+    cherryPickedCommitFgColor:
+      - "#7aa2f7"
+    cherryPickedCommitBgColor:
+      - "#bb9af7"
+    markedBaseCommitFgColor:
+      - "#7aa2f7"
+    markedBaseCommitBgColor:
+      - "#e0af68"
+    unstagedChangesColor:
+      - "#f7768e"
+    defaultFgColor:
+      - "#c0caf5"
+git:
+  paging:
+    pager: delta --dark --paging=never

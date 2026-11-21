@@ -6,9 +6,10 @@ family=${1:?Distro-Familie fehlt}
 ((EUID == 0)) || { printf 'Muss als root laufen.\n' >&2; exit 1; }
 
 case "$family" in
-    arch) pacman -Syu --noconfirm --needed sudo python ;;
-    fedora) dnf install -y sudo python3 ;;
-    debian) apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y sudo python3 ;;
+    # bat is needed to verify the theme cache below; Debian ships it as batcat.
+    arch) pacman -Syu --noconfirm --needed sudo python bat ;;
+    fedora) dnf install -y sudo python3 bat ;;
+    debian) apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y sudo python3 bat ;;
     *) printf 'Unbekannte Distro: %s\n' "$family" >&2; exit 2 ;;
 esac
 
@@ -51,9 +52,30 @@ sudo --preserve-env=GITHUB_TOKEN -u dev -i bash -s <<'EOF'
     set -euo pipefail
     for f in .claude/CLAUDE.md .claude/settings.json .claude/skills/next/SKILL.md \
         .pi/agent/AGENTS.md .pi/agent/settings.json .pi/agent/models.json \
-        .pi/agent/prompts/next.md .pi/agent/skills/next/SKILL.md; do
+        .pi/agent/themes/tokyo-night.json .pi/agent/prompts/next.md .pi/agent/skills/next/SKILL.md; do
         [[ -f $HOME/$f ]] || { printf 'Agent-Datei fehlt: %s\n' "$f" >&2; exit 1; }
     done
+    # The theme is rendered (copied), not Stowed: it must equal the repo source.
+    cmp -s "$HOME/.pi/agent/themes/tokyo-night.json" /dotfiles/agent-config/pi/themes/tokyo-night.json || {
+        printf 'pi-Theme weicht vom Repo ab: ~/.pi/agent/themes/tokyo-night.json\n' >&2
+        exit 1
+    }
+    python3 - "$HOME" <<'PY'
+import json
+import os
+import sys
+home = sys.argv[1]
+with open(os.path.join(home, '.pi/agent/settings.json'), encoding='utf-8') as fh:
+    settings = json.load(fh)
+with open(os.path.join(home, '.pi/agent/themes/tokyo-night.json'), encoding='utf-8') as fh:
+    theme = json.load(fh)
+if not settings.get('theme'):
+    sys.exit('pi settings.json: theme fehlt.')
+if settings['theme'] != theme.get('name'):
+    sys.exit(f"pi-Themeaktivierung passt nicht: settings={settings['theme']} theme={theme.get('name')}")
+if theme.get('appearance') != 'dark' or not theme.get('vars') or not theme.get('colors'):
+    sys.exit('pi-Theme ist unvollständig (appearance/vars/colors).')
+PY
     grep -qx 'context: fork' "$HOME/.claude/skills/next/SKILL.md" || {
         printf 'Claude-Frontmatter nicht gerendert.\n' >&2
         exit 1
@@ -85,6 +107,36 @@ sudo --preserve-env=GITHUB_TOKEN -u dev -i bash -s <<'EOF'
     done
     [[ ! -e "$HOME/README.md" && ! -e "$HOME/projects" ]] || {
         printf 'Unerwartete zed-config-Artefakte im HOME.\n' >&2
+        exit 1
+    }
+EOF
+
+printf '==> Theme-Links und bat-Cache prüfen\n'
+sudo --preserve-env=GITHUB_TOKEN -u dev -i bash -s <<'EOF'
+    set -euo pipefail
+    for rel in \
+        bat/.config/bat/config \
+        bat/.config/bat/themes/tokyonight_night.tmTheme \
+        lazygit/.config/lazygit/config.yml \
+        btop/.config/btop/btop.conf \
+        btop/.config/btop/themes/tokyo-night.theme \
+        yazi/.config/yazi/theme.toml; do
+        home_rel=${rel#*/}
+        link="$HOME/$home_rel"
+        [[ -L $link ]] || { printf 'Theme-Link ist kein Symlink: %s\n' "$link" >&2; exit 1; }
+        target=$(readlink -f "$link")
+        [[ $target == "/dotfiles/$rel" ]] || {
+            printf 'Theme-Link zeigt falsch: %s -> %s\n' "$link" "$target" >&2
+            exit 1
+        }
+    done
+    # Debian installs bat as batcat and bat's PAGER/MANPAGER setup needs a hook;
+    # resolve the binary like scripts/dotfiles.sh does.
+    bat_cmd=$(zsh -ic 'command -v bat || command -v batcat' || true)
+    [[ -n $bat_cmd ]] || { printf 'bat fehlt im PATH.\n' >&2; exit 1; }
+    themes=$("$bat_cmd" --list-themes)
+    grep -qF 'tokyonight_night' <<< "$themes" || {
+        printf 'bat-Theme tokyonight_night fehlt in bat --list-themes.\n' >&2
         exit 1
     }
 EOF

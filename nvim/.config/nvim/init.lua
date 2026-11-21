@@ -67,7 +67,11 @@ vim.pack.add {
   { src = 'https://github.com/nvim-treesitter/nvim-treesitter', version = 'main' },
 }
 
-require('tokyonight').setup { style = 'night', transparent = true }
+require('tokyonight').setup {
+  style = 'night',
+  transparent = true,
+  styles = { sidebars = 'transparent', floats = 'transparent' },
+}
 vim.cmd.colorscheme 'tokyonight-night'
 require('fzf-lua').setup {
   'default-title',

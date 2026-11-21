@@ -20,7 +20,7 @@
   // Transparent surfaces over a blurred, half-opaque window background.
   "experimental.theme_overrides": {
     "background.appearance": "blurred",
-    "background": "#00000080",
+    "background": "#1a1b26bf",
     "editor.background": "#00000000",
     "editor.gutter.background": "#00000000",
     "tab_bar.background": "#00000000",
@@ -76,6 +76,7 @@
 
   "terminal": {
     "font_family": "IoskeleyMonoTerm Nerd Font Mono",
+    "font_size": 14,
     "line_height": "standard",
     // The Windows installer replaces this exact line with pwsh.exe.
     "shell": { "program": "zsh" },

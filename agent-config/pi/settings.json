@@ -4,7 +4,7 @@
   "defaultModel": "qwen3-coder:30b",
   "defaultThinkingLevel": "off",
   "quietStartup": "header",
-  "theme": "system",
+  "theme": "tokyo-night",
   "defaultProjectTrust": "ask",
   "compaction": {
     "enabled": true,

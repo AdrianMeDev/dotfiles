@@ -36,6 +36,19 @@ save_git_identity() {
     )
 }
 
+rebuild_bat_cache() {
+    local bat_cmd
+    bat_cmd=$(command -v bat || command -v batcat || true)
+    [[ -n $bat_cmd ]] || return 0
+    local source="$HOME/.config/bat/themes/tokyonight_night.tmTheme"
+    local cache_dir="${XDG_CACHE_HOME:-$HOME/.cache}/bat"
+    [[ -e $source ]] || return 0
+    if [[ -f $cache_dir/themes.bin && ! $source -nt $cache_dir/themes.bin ]]; then
+        return 0
+    fi
+    run "$bat_cmd" cache --build
+}
+
 install_dotfiles() {
     if ((DRY_RUN)); then
         log 'Git-Identität lokal erfassen, ggf. Konflikte sichern und Stow-Pakete verlinken.'
@@ -53,6 +66,7 @@ install_dotfiles() {
     save_git_identity
     run stow --dir "$REPO_DIR" --target "$HOME" --no-folding "${packages[@]}"
     python3 "$REPO_DIR/scripts/links.py" --remove-legacy-fish-links
+    rebuild_bat_cache
     chmod 700 "$HOME/.ssh"
     log 'Dotfiles verlinkt. Private Overrides bleiben außerhalb des Repos.'
 }

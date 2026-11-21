@@ -80,6 +80,94 @@ class InstallerTests(unittest.TestCase):
         if not shutil.which('stow'):
             self.skipTest('GNU Stow fehlt')
 
+    def prepare_bat_stub(self):
+        bin_dir = self.base / 'bin'
+        bin_dir.mkdir()
+        bat = bin_dir / 'bat'
+        bat.write_text('''#!/bin/sh
+[ "$*" = 'cache --build' ] || exit 90
+[ -f "$HOME/.config/bat/themes/tokyonight_night.tmTheme" ] || exit 91
+cache="${XDG_CACHE_HOME:-$HOME/.cache}/bat"
+mkdir -p "$cache"
+printf 'build\\n' >> "$BAT_TEST_LOG"
+printf 'cached theme\\n' > "$cache/themes.bin"
+''')
+        bat.chmod(0o755)
+        self.env['PATH'] = str(bin_dir) + os.pathsep + self.env['PATH']
+        self.env['BAT_TEST_LOG'] = str(self.base / 'bat-builds')
+
+    def test_bat_cache_rebuilds_only_when_needed(self):
+        self.prepare_bat_stub()
+        source = self.home / '.config/bat/themes/tokyonight_night.tmTheme'
+        source.parent.mkdir(parents=True)
+        source.symlink_to(REPO / 'bat/.config/bat/themes/tokyonight_night.tmTheme')
+        self.env['DOTFILES_MODULE'] = str(REPO / 'scripts/dotfiles.sh')
+        self.env['COMMON_MODULE'] = str(REPO / 'scripts/common.sh')
+        command = ['bash', '-c', 'set -Eeuo pipefail; DRY_RUN=0; '
+                   'source "$COMMON_MODULE"; source "$DOTFILES_MODULE"; rebuild_bat_cache']
+        for custom_cache in (False, True):
+            with self.subTest(custom_cache=custom_cache):
+                if custom_cache:
+                    self.env['XDG_CACHE_HOME'] = str(self.home / 'custom cache')
+                else:
+                    self.env.pop('XDG_CACHE_HOME', None)
+                cache = Path(self.env.get('XDG_CACHE_HOME', self.home / '.cache')) / 'bat/themes.bin'
+                log = Path(self.env['BAT_TEST_LOG'])
+                log.unlink(missing_ok=True)
+                self.run_command(command)
+                self.assertTrue(cache.is_file())
+                self.assertEqual(log.read_text(), 'build\n')
+                before = snapshot(self.home)
+                modified = cache.stat().st_mtime_ns
+                self.run_command(command)
+                self.assertEqual(snapshot(self.home), before)
+                self.assertEqual(cache.stat().st_mtime_ns, modified)
+                self.assertEqual(log.read_text(), 'build\n')
+                # Equality also means current; only a strictly newer source rebuilds.
+                timestamp = source.stat().st_mtime_ns
+                os.utime(cache, ns=(timestamp, timestamp))
+                self.run_command(command)
+                self.assertEqual(log.read_text(), 'build\n')
+                os.utime(cache, ns=(timestamp - 1_000_000_000, timestamp - 1_000_000_000))
+                self.run_command(command)
+                self.assertEqual(log.read_text(), 'build\nbuild\n')
+                cache.unlink()
+                self.run_command(command)
+                self.assertEqual(log.read_text(), 'build\nbuild\nbuild\n')
+
+    def test_bat_dry_run_never_builds_cache(self):
+        self.prepare_bat_stub()
+        before = snapshot(self.home)
+        self.install('--only', 'dotfiles', '--dry-run')
+        self.assertEqual(snapshot(self.home), before)
+        source = self.home / '.config/bat/themes/tokyonight_night.tmTheme'
+        source.parent.mkdir(parents=True)
+        source.symlink_to(REPO / 'bat/.config/bat/themes/tokyonight_night.tmTheme')
+        cache = self.home / '.cache/bat/themes.bin'
+        cache.parent.mkdir(parents=True)
+        cache.write_text('stale cache')
+        os.utime(cache, ns=(0, 0))
+        before = snapshot(self.home)
+        self.install('--only', 'dotfiles', '--dry-run')
+        self.assertEqual(snapshot(self.home), before)
+        self.assertEqual(cache.stat().st_mtime_ns, 0)
+        self.assertFalse(Path(self.env['BAT_TEST_LOG']).exists())
+
+    def test_bat_stow_builds_cache_after_linking_and_repeat_skips_build(self):
+        self.require_stow()
+        self.prepare_bat_stub()
+        self.install('--only', 'dotfiles')
+        for name in ('config', 'themes/tokyonight_night.tmTheme'):
+            link = self.home / '.config/bat' / name
+            self.assertTrue(link.is_symlink(), link)
+            self.assertEqual(link.resolve(strict=True), REPO / 'bat/.config/bat' / name)
+        self.assertFalse((self.home / '.config/bat').is_symlink())
+        self.assertFalse((self.home / '.config/bat/themes').is_symlink())
+        before = snapshot(self.home)
+        self.install('--only', 'dotfiles')
+        self.assertEqual(snapshot(self.home), before)
+        self.assertEqual(Path(self.env['BAT_TEST_LOG']).read_text(), 'build\n')
+
     def test_dry_run_writes_nothing(self):
         sysroot = self.base / 'sysroot'
         (sysroot / 'etc').mkdir(parents=True)
@@ -111,6 +199,18 @@ class InstallerTests(unittest.TestCase):
             link = self.home / '.config/zed' / name
             self.assertTrue(link.is_symlink(), link)
             self.assertEqual(link.resolve(strict=True), REPO / 'zed-config/.config/zed' / name)
+        for name in ('config', 'themes/tokyonight_night.tmTheme'):
+            link = self.home / '.config/bat' / name
+            self.assertTrue(link.is_symlink(), link)
+            self.assertEqual(link.resolve(strict=True), REPO / 'bat/.config/bat' / name)
+        for name in ('lazygit/config.yml', 'btop/btop.conf', 'btop/themes/tokyo-night.theme',
+                     'yazi/theme.toml'):
+            link = self.home / '.config' / name
+            self.assertTrue(link.is_symlink(), link)
+            self.assertEqual(link.resolve(strict=True),
+                             REPO / name.split('/')[0] / '.config' / name)
+        for name in ('lazygit', 'btop', 'btop/themes', 'yazi'):
+            self.assertFalse((self.home / '.config' / name).is_symlink(), name)
         for name in ('README.md', 'projects', '.stow-local-ignore'):
             self.assertFalse(os.path.lexists(self.home / name), name)
         before = snapshot(self.home)

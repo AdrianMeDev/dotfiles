@@ -1,0 +1,95 @@
+# Tokyo Night (Night) for yazi - self-contained, colors from theme/tokens.toml.
+# No bg colors except selection/mode highlights, so the terminal background shows through.
+
+[mgr]
+cwd = { fg = "#7dcfff" }
+hovered = { fg = "#c0caf5", bg = "#292e42" }
+preview_hovered = { bg = "#292e42" }
+find_keyword = { fg = "#e0af68", bold = true }
+find_position = { fg = "#bb9af7" }
+marker_selected = { fg = "#9ece6a", bg = "#9ece6a" }
+marker_copied = { fg = "#e0af68", bg = "#e0af68" }
+marker_cut = { fg = "#f7768e", bg = "#f7768e" }
+marker_marked = { fg = "#bb9af7", bg = "#bb9af7" }
+border_symbol = "│"
+border_style = { fg = "#414868" }
+
+[tabs]
+active = { fg = "#1a1b26", bg = "#7aa2f7", bold = true }
+inactive = { fg = "#a9b1d6", bg = "#292e42" }
+
+[mode]
+normal_main = { fg = "#1a1b26", bg = "#7aa2f7", bold = true }
+normal_alt = { fg = "#7aa2f7", bg = "#292e42" }
+select_main = { fg = "#1a1b26", bg = "#9ece6a", bold = true }
+select_alt = { fg = "#9ece6a", bg = "#292e42" }
+unset_main = { fg = "#1a1b26", bg = "#f7768e", bold = true }
+unset_alt = { fg = "#f7768e", bg = "#292e42" }
+
+[status]
+overall = { fg = "#a9b1d6" }
+sep_left = { open = "", close = "" }
+sep_right = { open = "", close = "" }
+perm_type = { fg = "#7aa2f7" }
+perm_read = { fg = "#e0af68" }
+perm_write = { fg = "#f7768e" }
+perm_exec = { fg = "#9ece6a" }
+perm_sep = { fg = "#565f89" }
+progress_label = { fg = "#c0caf5", bold = true }
+progress_normal = { fg = "#7aa2f7", bg = "#292e42" }
+progress_error = { fg = "#f7768e", bg = "#292e42" }
+
+[which]
+cols = 3
+mask = { bg = "#16161e" }
+cand = { fg = "#7dcfff" }
+rest = { fg = "#565f89" }
+desc = { fg = "#bb9af7" }
+separator = "  "
+separator_style = { fg = "#414868" }
+
+[confirm]
+border = { fg = "#7aa2f7" }
+title = { fg = "#7aa2f7" }
+body = { fg = "#c0caf5" }
+list = { fg = "#a9b1d6" }
+btn_yes = { fg = "#1a1b26", bg = "#9ece6a" }
+btn_no = { fg = "#a9b1d6" }
+btn_labels = ["  [Y]es  ", "  (N)o  "]
+
+[spot]
+border = { fg = "#7aa2f7" }
+title = { fg = "#7aa2f7" }
+
+[pick]
+border = { fg = "#7aa2f7" }
+active = { fg = "#bb9af7", bold = true }
+inactive = { fg = "#a9b1d6" }
+
+[input]
+border = { fg = "#7aa2f7" }
+title = { fg = "#7aa2f7" }
+value = { fg = "#c0caf5" }
+selected = { bg = "#292e42" }
+
+[completion]
+border = { fg = "#7aa2f7" }
+active = { fg = "#c0caf5", bg = "#292e42" }
+inactive = { fg = "#a9b1d6" }
+
+[tasks]
+border = { fg = "#7aa2f7" }
+title = { fg = "#7aa2f7" }
+hovered = { fg = "#bb9af7", bg = "#292e42" }
+
+[help]
+on = { fg = "#7dcfff" }
+run = { fg = "#bb9af7" }
+desc = { fg = "#a9b1d6" }
+hovered = { bg = "#292e42" }
+footer = { fg = "#a9b1d6", bg = "#292e42" }
+
+[notify]
+title_info = { fg = "#9ece6a" }
+title_warn = { fg = "#e0af68" }
+title_error = { fg = "#f7768e" }
