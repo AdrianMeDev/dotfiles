@@ -96,6 +96,168 @@ class DotCliTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         self.assertIn('Vorschau abgeschlossen', result.stdout)
 
+    # --- dot update -------------------------------------------------------
+
+    def setup_update(self, family='fedora', tools=('sudo', 'mise', 'flatpak', 'pacman', 'dnf', 'apt-get', 'paru', 'yay'),
+                     fail=None, mise_after='node 24.2.0'):
+        """Fake tools on PATH that only log their invocation."""
+        bindir = self.base / 'fakebin'
+        bindir.mkdir()
+        self.log = self.base / 'calls.log'
+        for tool in tools:
+            script = bindir / tool
+            body = f'#!/bin/sh\necho "{tool} $*" >> "{self.log}"\n'
+            if tool == 'mise':
+                state = self.base / 'mise-state'
+                body += (f'if [ "$1" = ls ]; then cat "{state}"; exit 0; fi\n'
+                         f'if [ "$1" = upgrade ]; then echo "{mise_after}" > "{state}"; fi\n')
+            if fail == tool:
+                body += 'exit 3\n'
+            script.write_text(body)
+            script.chmod(0o755)
+        (self.base / 'mise-state').write_text('node 24.1.0\n')
+        (self.base / 'sysroot/etc/os-release').write_text(f'ID={family}\n')
+        # Isolated PATH: host tools such as a real paru or flatpak must never be reachable.
+        for basic in ('bash', 'env', 'git', 'diff', 'awk', 'sort', 'sed', 'cat', 'mkdir', 'dirname',
+                      'readlink', 'uname', 'rm', 'mktemp', 'tr', 'grep', 'head', 'id'):
+            found = shutil.which(basic)
+            if found and not (bindir / basic).exists():
+                (bindir / basic).symlink_to(found)
+        self.env['PATH'] = str(bindir)
+        self.env.pop('WSL_DISTRO_NAME', None)
+        self.env.pop('WSL_INTEROP', None)
+
+    def calls(self):
+        return self.log.read_text().splitlines() if self.log.exists() else []
+
+    def make_plugin(self, name, advance=True):
+        """Local git clone of a local origin; optionally the origin gets a new commit."""
+        git = ['git', '-c', 'user.name=t', '-c', 'user.email=t@example.invalid', '-c', 'commit.gpgsign=false']
+        origin = self.base / f'origin-{name}'
+        origin.mkdir()
+        subprocess.run([*git, 'init', '-q', '-b', 'main', str(origin)], check=True, env=self.env)
+        (origin / 'a').write_text('1')
+        subprocess.run([*git, '-C', str(origin), 'add', 'a'], check=True, env=self.env)
+        subprocess.run([*git, '-C', str(origin), 'commit', '-qm', 'one'], check=True, env=self.env)
+        dest = self.home / '.local/share/zsh/plugins' / name
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        subprocess.run([*git, 'clone', '-q', str(origin), str(dest)], check=True, env=self.env)
+        if advance:
+            (origin / 'b').write_text('2')
+            subprocess.run([*git, '-C', str(origin), 'add', 'b'], check=True, env=self.env)
+            subprocess.run([*git, '-C', str(origin), 'commit', '-qm', 'two'], check=True, env=self.env)
+        return dest
+
+    def test_update_arch_with_aur_and_mise_diff(self):
+        self.setup_update('arch')
+        result = self.run_dot('update', '--profile', 'headless')
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertEqual(self.calls(), [
+            'sudo pacman -Syu --noconfirm', 'paru -Sua --noconfirm',
+            'mise ls --current --no-header', 'mise upgrade --yes', 'mise ls --current --no-header'])
+        self.assertIn('< node 24.1.0', result.stdout)
+        self.assertIn('> node 24.2.0', result.stdout)
+        self.assertIn('nvim-pack-lock.json', result.stdout)
+
+    def test_update_arch_without_aur_helper(self):
+        self.setup_update('arch', tools=('sudo', 'pacman', 'mise'))
+        result = self.run_dot('update', '--profile', 'headless')
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertEqual(self.calls()[0], 'sudo pacman -Syu --noconfirm')
+        self.assertFalse([c for c in self.calls() if c.startswith(('paru', 'yay'))])
+
+    def test_update_fedora_wsl_excludes_kernel(self):
+        self.setup_update('fedora')
+        self.env['WSL_DISTRO_NAME'] = 'Fedora'
+        result = self.run_dot('update')
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertEqual(self.calls()[0], 'sudo dnf upgrade --refresh -y --exclude=kernel*')
+        self.assertFalse([c for c in self.calls() if c.startswith('flatpak')])
+
+    def test_update_fedora_plain(self):
+        self.setup_update('fedora')
+        result = self.run_dot('update', '--profile', 'headless')
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertEqual(self.calls()[0], 'sudo dnf upgrade --refresh -y')
+
+    def test_update_debian(self):
+        self.setup_update('debian')
+        result = self.run_dot('update', '--profile', 'headless')
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertEqual(self.calls()[:2], [
+            'sudo env DEBIAN_FRONTEND=noninteractive apt-get update',
+            'sudo env DEBIAN_FRONTEND=noninteractive apt-get full-upgrade -y'])
+
+    def test_update_mise_without_changes(self):
+        self.setup_update('fedora', mise_after='node 24.1.0')
+        result = self.run_dot('update', '--profile', 'headless')
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn('keine Versionsänderungen', result.stdout)
+
+    def test_update_flatpak_desktop_and_headless(self):
+        self.setup_update('fedora')
+        desktop = self.run_dot('update', '--profile', 'desktop')
+        self.assertEqual(desktop.returncode, 0, desktop.stdout + desktop.stderr)
+        self.assertIn('flatpak update --user --noninteractive -y', self.calls())
+        self.log.unlink()
+        headless = self.run_dot('update', '--profile', 'headless')
+        self.assertEqual(headless.returncode, 0, headless.stdout + headless.stderr)
+        self.assertFalse([c for c in self.calls() if c.startswith('flatpak')])
+
+    def test_update_desktop_without_flatpak_installed(self):
+        self.setup_update('fedora', tools=('sudo', 'dnf', 'mise'))
+        result = self.run_dot('update', '--profile', 'desktop')
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+
+    def test_update_zsh_plugins_pull(self):
+        self.setup_update('fedora')
+        plugin = self.make_plugin('zsh-test')
+        (self.home / '.local/share/zsh/plugins/not-a-repo').mkdir()
+        result = self.run_dot('update', '--profile', 'headless')
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertTrue((plugin / 'b').exists())
+
+    def test_update_failure_propagates(self):
+        for tool in ('sudo', 'mise'):
+            with self.subTest(tool=tool):
+                self.setup_update('fedora', fail=tool)
+                result = self.run_dot('update', '--profile', 'headless')
+                self.assertEqual(result.returncode, 3, result.stdout + result.stderr)
+                shutil.rmtree(self.base / 'fakebin')
+                self.log.unlink()
+
+    def test_update_plugin_failure_propagates(self):
+        self.setup_update('fedora')
+        plugin = self.make_plugin('zsh-test', advance=False)
+        (plugin / 'local').write_text('x')
+        subprocess.run(['git', '-C', str(plugin), 'remote', 'set-url', 'origin', str(self.base / 'missing')],
+                       check=True, env=self.env)
+        result = self.run_dot('update', '--profile', 'headless')
+        self.assertNotEqual(result.returncode, 0)
+
+    def test_update_dry_run_writes_nothing(self):
+        self.setup_update('arch')
+        plugin = self.make_plugin('zsh-test')
+        head = subprocess.run(['git', '-C', str(plugin), 'rev-parse', 'HEAD'], capture_output=True,
+                              text=True, check=True, env=self.env).stdout
+        result = self.run_dot('update', '--dry-run', '--profile', 'desktop')
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertEqual(self.calls(), [])
+        for step in ('sudo pacman -Syu --noconfirm', 'paru -Sua --noconfirm', 'mise upgrade --yes',
+                     'flatpak update --user --noninteractive -y', 'pull --ff-only'):
+            self.assertIn(step, result.stdout)
+        self.assertIn('Vorschau abgeschlossen', result.stdout)
+        self.assertEqual(subprocess.run(['git', '-C', str(plugin), 'rev-parse', 'HEAD'], capture_output=True,
+                                        text=True, check=True, env=self.env).stdout, head)
+        self.assertFalse((plugin / 'b').exists())
+
+    def test_update_help_and_bad_option(self):
+        result = self.run_dot('update', '--help')
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn('dot update', result.stdout)
+        self.assertNotEqual(self.run_dot('update', '--bogus').returncode, 0)
+        self.assertNotEqual(self.run_dot('update', '--profile', 'x').returncode, 0)
+
     def test_unknown_subcommand_fails_cleanly(self):
         result = self.run_dot('unknown-cmd')
         self.assertNotEqual(result.returncode, 0)

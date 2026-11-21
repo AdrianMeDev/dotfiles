@@ -10,6 +10,8 @@ dot – Dotfiles CLI
 
 Verwendung:
   dot install [OPTIONEN...]   Führt install.sh mit den angegebenen Optionen aus.
+  dot update [OPTIONEN...]    Aktualisiert System, mise-Tools, Flatpaks und zsh-Plugins
+                              (--dry-run, --profile desktop|headless, --help).
   dot help | -h | --help     Zeigt diese Hilfe.
 EOF
 }
@@ -23,6 +25,18 @@ case "$1" in
     install)
         shift
         exec "$REPO_DIR/install.sh" "$@"
+        ;;
+    update)
+        shift
+        # shellcheck source=scripts/common.sh
+        source "$REPO_DIR/scripts/common.sh"
+        # shellcheck source=scripts/detect.sh
+        source "$REPO_DIR/scripts/detect.sh"
+        # shellcheck source=scripts/pkg.sh
+        source "$REPO_DIR/scripts/pkg.sh"
+        # shellcheck source=scripts/update.sh
+        source "$REPO_DIR/scripts/update.sh"
+        dot_update "$@"
         ;;
     help|-h|--help)
         usage

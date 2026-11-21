@@ -177,3 +177,11 @@ pkg_upgrade() {
         *) die "Unbekannte Distro-Familie: ${DISTRO_FAMILY:-<leer>}" ;;
     esac
 }
+
+# pkg_upgrade_aur: aktualisiert AUR-Pakete, wenn auf Arch ein AUR-Helfer vorhanden ist (sonst nichts zu tun).
+pkg_upgrade_aur() {
+    [[ ${DISTRO_FAMILY:-} == arch ]] || return 0
+    local helper
+    helper=$(pkg_aur_helper) || return 0
+    run "$helper" -Sua --noconfirm
+}

@@ -182,6 +182,22 @@ dump() { printf '%s\n' "${CALLS[@]}"; }
             ['sudo env DEBIAN_FRONTEND=noninteractive apt-get update',
              'sudo env DEBIAN_FRONTEND=noninteractive apt-get full-upgrade -y'])
 
+    def test_upgrade_aur(self):
+        self.assertEqual(
+            self.calls('DISTRO_FAMILY=arch; pkg_upgrade_aur >/dev/null; dump', {'HAVE': 'paru yay'}),
+            ['paru -Sua --noconfirm'])
+        self.assertEqual(
+            self.calls('DISTRO_FAMILY=arch; pkg_upgrade_aur >/dev/null; dump', {'HAVE': 'yay'}),
+            ['yay -Sua --noconfirm'])
+        self.assertEqual(self.calls('DISTRO_FAMILY=arch; pkg_upgrade_aur; dump', {'HAVE': ''}), [])
+        self.assertEqual(self.calls('DISTRO_FAMILY=fedora; pkg_upgrade_aur; dump', {'HAVE': 'paru'}), [])
+
+    def test_upgrade_aur_dry_run_executes_nothing(self):
+        res = self.run_pkg('DISTRO_FAMILY=arch; pkg_upgrade_aur; dump', {'HAVE': 'paru', 'DRY_RUN': '1'})
+        self.assertEqual(res.returncode, 0, res.stderr)
+        self.assertIn('+ paru -Sua --noconfirm', res.stdout)
+        self.assertEqual([l for l in res.stdout.splitlines() if l.startswith('paru ')], [])
+
     def test_aur_split_from_fixture_manifest(self):
         body = (
             'tmp=$(mktemp); printf "a\\tbase\\tgit\\tgit\\tgit\\nb\\tbase\\taur:foo-bin\\t-\\t-\\n" > "$tmp"; '
