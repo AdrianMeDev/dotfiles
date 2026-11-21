@@ -43,7 +43,7 @@ fullscreen	global	alt+f	toggle-fullscreen
 floating	global	alt+shift+space	toggle-floating --centered
 reload	global	alt+shift+r	wm-reload-config
 pause	global	alt+shift+p	wm-toggle-pause
-lock	global	ctrl+alt+l	os:win+l
+lock	global	alt+shift+x	os:win+l
 clipboard-history	global	alt+v	os:win+v
 screenshot	global	alt+shift+s	os:win+shift+s
 resize-width-shrink-h	resize	h	resize --width -2%

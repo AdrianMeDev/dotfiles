@@ -7,8 +7,14 @@ import unittest
 REPO = Path(__file__).resolve().parents[1]
 CONTRACT = REPO / 'manifests/keybindings.tsv'
 GLAZEWM = REPO / 'windows/glazewm/config.yaml'
+WEZTERM_CONFIGS = (
+    REPO / 'wezterm/.config/wezterm/wezterm.lua',
+    REPO / 'windows/wezterm/wezterm.lua',
+)
 COMBO = re.compile(r'^(win\+)?(ctrl\+)?(alt\+)?(shift\+)?[a-z0-9]+$')
 EXTERNAL = ('os:', 'flow:')
+MOD_ORDER = ('win', 'ctrl', 'alt', 'shift')
+WEZTERM_MODS = {'super': 'win', 'win': 'win', 'ctrl': 'ctrl', 'alt': 'alt', 'shift': 'shift'}
 
 
 def load_contract():
@@ -46,6 +52,27 @@ def parse_glazewm(text):
                 found[key] = command
             command = None
     return found
+
+
+def normalize_wezterm_combo(key, mods_text):
+    """Normalize a WezTerm key and pipe-separated mods string to the contract combo format."""
+    mods = {WEZTERM_MODS[m.strip().lower()] for m in mods_text.split('|') if m.strip()}
+    if len(key) == 1 and key.isupper():
+        mods.add('shift')
+    ordered = [m for m in MOD_ORDER if m in mods]
+    return '+'.join([*ordered, key.lower()])
+
+
+def parse_wezterm(text):
+    """Return normalized combos from `{ key = '…', mods = '…' }` entries in a WezTerm config."""
+    combos = []
+    for line in text.splitlines():
+        key_match = re.search(r"\bkey\s*=\s*['\"]([^'\"]+)['\"]", line)
+        if not key_match:
+            continue
+        mods_match = re.search(r"\bmods\s*=\s*['\"]([^'\"]+)['\"]", line)
+        combos.append(normalize_wezterm_combo(key_match.group(1), mods_match.group(1) if mods_match else ''))
+    return combos
 
 
 class KeybindingTests(unittest.TestCase):
@@ -93,6 +120,20 @@ class KeybindingTests(unittest.TestCase):
         for _, mode, combo, windows in load_contract():
             if windows.startswith(EXTERNAL):
                 self.assertNotIn((mode, combo), glaze)
+
+    def test_wezterm_no_collision_with_reserved_combos(self):
+        reserved = set()
+        for _, mode, combo, windows in load_contract():
+            if mode != 'global':
+                continue
+            reserved.add(combo)
+            if windows.startswith(EXTERNAL):
+                reserved.add(windows.split(':', 1)[1])
+
+        for path in WEZTERM_CONFIGS:
+            combos = parse_wezterm(path.read_text(encoding='utf-8'))
+            collisions = sorted(set(combos) & reserved)
+            self.assertEqual(collisions, [], f'{path.relative_to(REPO)} collides with reserved combos: {collisions}')
 
 
 if __name__ == '__main__':
