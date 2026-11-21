@@ -49,11 +49,30 @@ rebuild_bat_cache() {
     run "$bat_cmd" cache --build
 }
 
+offer_zsh_login_shell() {
+    local user current zsh_path answer
+    user=$(id -un)
+    current=$(getent passwd "$user" 2>/dev/null | cut -d: -f7 || true)
+    [[ -n $current ]] || current=${SHELL:-}
+    [[ ${current##*/} != zsh ]] || return 0
+    zsh_path=$(command -v zsh || true)
+    [[ -n $zsh_path ]] || return 0
+    grep -qxF -- "$zsh_path" "${SHELLS_FILE:-/etc/shells}" 2>/dev/null || return 0
+    if [[ ! -t 0 ]] || ! have chsh; then
+        log "Login-Shell ist nicht zsh; manuell wechseln: chsh -s $zsh_path"
+        return 0
+    fi
+    read -r -p "Login-Shell auf $zsh_path umstellen? [j/N] " answer || return 0
+    [[ $answer == [jJyY]* ]] || return 0
+    run chsh -s "$zsh_path" || log "chsh fehlgeschlagen; manuell wiederholen: chsh -s $zsh_path"
+}
+
 install_dotfiles() {
     if ((DRY_RUN)); then
         log 'Git-Identität lokal erfassen, ggf. Konflikte sichern und Stow-Pakete verlinken.'
         log "Stow-Ziel: $HOME (keine Verzeichnisfaltung)."
         log 'Nach erfolgreicher Verlinkung eigene alte Fish-Dateilinks entfernen.'
+        log 'Falls die Login-Shell nicht zsh ist: Wechsel per chsh -s anbieten (nur im Terminal, nach Bestätigung).'
         return
     fi
     capture_git_identity
@@ -67,6 +86,7 @@ install_dotfiles() {
     run stow --dir "$REPO_DIR" --target "$HOME" --no-folding "${packages[@]}"
     python3 "$REPO_DIR/scripts/links.py" --remove-legacy-fish-links
     rebuild_bat_cache
+    offer_zsh_login_shell
     chmod 700 "$HOME/.ssh"
     log 'Dotfiles verlinkt. Private Overrides bleiben außerhalb des Repos.'
 }

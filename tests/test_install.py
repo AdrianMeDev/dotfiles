@@ -374,8 +374,81 @@ printf 'cached theme\\n' > "$cache/themes.bin"
         self.install('--only', 'dotfiles')
         self.assertEqual(local.read_bytes(), before)
 
+    def prepare_login_shell(self, shell):
+        bin_dir = self.base / 'bin'
+        bin_dir.mkdir(exist_ok=True)
+        zsh = bin_dir / 'zsh'
+        zsh.write_text('#!/bin/sh\nexit 0\n')
+        getent = bin_dir / 'getent'
+        getent.write_text(f'#!/bin/sh\necho "user:x:1000:1000::/home/user:{shell}"\n')
+        chsh = bin_dir / 'chsh'
+        chsh.write_text('#!/bin/sh\nprintf \'%s\\n\' "$*" >> "$CHSH_TEST_LOG"\n')
+        for stub in (zsh, getent, chsh):
+            stub.chmod(0o755)
+        shells = self.base / 'shells'
+        shells.write_text(f'/bin/sh\n{zsh}\n')
+        self.env['PATH'] = str(bin_dir) + os.pathsep + self.env['PATH']
+        self.env['SHELLS_FILE'] = str(shells)
+        self.env['CHSH_TEST_LOG'] = str(self.base / 'chsh-calls')
+        return zsh
+
+    def run_pty(self, command, answers):
+        master, slave = pty.openpty()
+        process = subprocess.Popen(command, cwd=self.base, env=self.env, stdin=slave, stdout=slave, stderr=slave)
+        os.close(slave)
+        output = b''
+        try:
+            os.write(master, answers)
+            deadline = time.monotonic() + 30
+            while time.monotonic() < deadline:
+                if select.select([master], [], [], 0.1)[0]:
+                    try:
+                        output += os.read(master, 65536)
+                    except OSError:
+                        break
+                if process.poll() is not None:
+                    break
+            self.assertEqual(process.wait(timeout=3), 0, output.decode())
+        finally:
+            if process.poll() is None:
+                process.kill()
+                process.wait()
+            os.close(master)
+        return output.decode()
+
+    def test_zsh_login_shell_offer(self):
+        self.require_stow()
+        self.run_command(['git', 'config', '--global', 'user.name', 'Example Developer'])
+        self.run_command(['git', 'config', '--global', 'user.email', 'dev@example.com'])
+        zsh = self.prepare_login_shell('/bin/bash')
+        calls = Path(self.env['CHSH_TEST_LOG'])
+        installer = ['bash', str(REPO / 'install.sh'), '--only', 'dotfiles']
+
+        result = self.install('--only', 'dotfiles', '--dry-run')
+        self.assertIn('chsh -s', result.stdout)
+        self.assertFalse(calls.exists())
+
+        result = self.install('--only', 'dotfiles')
+        self.assertIn(f'chsh -s {zsh}', result.stdout)
+        self.assertFalse(calls.exists())
+
+        output = self.run_pty(installer, b'n\n')
+        self.assertIn('[j/N]', output)
+        self.assertFalse(calls.exists())
+
+        output = self.run_pty(installer, b'j\n')
+        self.assertEqual(output.count('[j/N]'), 1)
+        self.assertEqual(calls.read_text(), f'-s {zsh}\n')
+
+        calls.unlink()
+        self.prepare_login_shell('/usr/bin/zsh')
+        output = self.run_pty(installer, b'j\n')
+        self.assertNotIn('[j/N]', output)
+        self.assertFalse(calls.exists())
+
     def test_git_identity_interactive(self):
         self.require_stow()
+        self.prepare_login_shell('/usr/bin/zsh')
         master, slave = pty.openpty()
         process = subprocess.Popen(['bash', str(REPO / 'install.sh'), '--only', 'dotfiles'],
                                    cwd=self.base, env=self.env, stdin=slave, stdout=slave, stderr=slave)
