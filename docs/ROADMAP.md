@@ -71,67 +71,78 @@ alles wird in der neuesten Version installiert und mit `dot update` aktualisiert
 - **Goal:** `install.sh` läuft auf Arch/CachyOS, Fedora und Debian/Ubuntu statt nur auf Fedora.
 - **Includes:** `detect` (Familie, WSL, Profil desktop/headless), `pkg`-Abstraktion (paru bzw. yay vorhanden, sonst paru bootstrappen), `manifests/packages.tsv`, `system`-Modul pro Familie, Fedora-Sperre entfernen, Tests umbauen, Podman-Container-Matrix + GitHub-Actions-CI
 - **Done when:** `./install.sh --only system` läuft real in `archlinux`-, `fedora`- und `debian`-Containern grün; `--dry-run` auf diesem CachyOS zeigt einen Arch-Plan
-- **Depends on:** – · **Size:** L, ~7 commits
+- **Depends on:** –
+- **Size:** L, ~7 commits
 
 ### M2 [ ] Tools über mise + `dot`-Befehl
 - **Goal:** Alle Dev-Tools in neuester Version über mise; Installation, Update und Diagnose über `dot`.
 - **Includes:** globale mise-Config (Neovim, Node LTS, uv, Starship, tree-sitter, lazygit, ripgrep, fd, fzf, bat, delta …), Migration fnm → mise in zsh, `dot install|update|doctor`, Update-Pfad pro Familie
 - **Done when:** frischer Container → `dot install` → `nvim`, `node`, `uv` vorhanden; `dot update` aktualisiert System, mise und Plugins; `dot doctor` zeigt Versionen und Probleme
-- **Depends on:** M1 · **Size:** M, ~6 commits
+- **Depends on:** M1
+- **Size:** M, ~6 commits
 
 ### M3 [ ] Zed integrieren
 - **Goal:** Die neue Zed-Config ist Teil des Setups – Linux per Stow, Windows aus derselben Quelle.
 - **Includes:** `zed-config/` als einzige Quelle, `zed/` entfernen, eigenen Installer ablösen, `dot zed-template angular|django|dotnet PFAD`, Windows-Installer-Pfade anpassen, Zed-Paket je Distro
 - **Done when:** nach `dot install` sind die Zed-Dateien verlinkt, `dot zed-template dotnet /tmp/x` legt `.zed/` an, Windows-Tests grün
-- **Depends on:** M2 · **Size:** S, ~4 commits
+- **Depends on:** M2
+- **Size:** S, ~4 commits
 
 ### M4 [ ] Agent-Config integrieren
 - **Goal:** Claude Code, pi und Ollama werden installiert und mit der Agent-Config versorgt.
 - **Includes:** `agents`-Modul (Skills mit Claude-Frontmatter rendern, kopieren mit Backup, idempotent), Claude Code (nativer Installer), pi (npm über mise-Node), Ollama + Modelle optional, `dot update` aktualisiert die Agents, `dot doctor` meldet lokale Abweichungen
 - **Done when:** frischer Container → `~/.claude` und `~/.pi/agent` befüllt; zweiter Lauf erzeugt keine Backups; `claude --version` und `pi --version` laufen
-- **Depends on:** M2 · **Size:** M, ~5 commits
+- **Depends on:** M2
+- **Size:** M, ~5 commits
 
 ### M5 [ ] Einheitliches Theme: Terminal, Editoren, CLI
 - **Goal:** Ein Theme-Vertrag gilt für alle Terminal-, Editor- und CLI-Tools.
 - **Includes:** `theme/tokens.toml` (Palette, Fonts, Größen, Deckkraft, Blur, Rahmen/Radius), Theme-Paritätstest mit Ausnahmeliste, Zed zurück auf Tokyo Night + Ioskeley + Transparenz/Blur (neue Config nutzt One Dark/`.ZedMono`), WezTerm (0.75) und Zed auf einen Deckkraftwert, Neovim, tmux, Starship, fzf, bat/delta, lazygit, btop, yazi, Claude Code/pi
 - **Done when:** Paritätstest grün; WezTerm, Zed und Neovim nebeneinander mit gleichen Farben, Fonts und gleicher Deckkraft
-- **Depends on:** M2, M3 · **Size:** M, ~6 commits
+- **Depends on:** M2, M3
+- **Size:** M, ~6 commits
 
 ### M6 [ ] Keybinding-Vertrag + Hyprland-Desktop
 - **Goal:** Hyprland auf Arch/Fedora mit denselben Bindings wie GlazeWM und dem Theme aus M5.
 - **Includes:** `manifests/keybindings.tsv` + Paritätstest, Stow-Paket `hypr/` (Hyprland mit Blur/Rahmen aus Tokens, Waybar wie Zebar, Launcher auf `Alt+Space` wie Flow, Mako, Hyprlock/Hypridle, Clipboard-Verlauf, Screenshot), `theme`-Modul (GTK/Qt dunkel, Cursor, Icons, Wallpaper), `desktop`-Modul nur auf Desktop-Profil, GlazeWM-Bindings an den Vertrag angleichen
 - **Done when:** auf CachyOS in die Hyprland-Session einloggen, alle Vertrags-Bindings funktionieren, GTK-/Qt-Apps dunkel im Tokyo-Night-Look; beide Paritätstests grün; KDE-Session startet weiterhin
-- **Depends on:** M1, M5 · **Size:** L, ~8 commits
+- **Depends on:** M1, M5
+- **Size:** L, ~8 commits
 
 ### M7 [ ] Windows nativ neu aufbauen
 - **Goal:** `bootstrap.ps1` richtet Windows 11 mit einem Befehl ein, im selben Look, und hält es aktuell.
 - **Includes:** winget-Liste (WezTerm, Zed, GlazeWM, Zebar, Flow, PowerShell 7, Git, .NET SDK, Ollama, Claude Code), Extra `vs`, Zed- und Agent-Config nativ, Theme aus Tokens (Dark Mode, GlazeWM-Rahmen/Transparenz, Zebar, Flow-Theme, WezTerm-Acrylic), `dot.ps1 install|update|doctor` (gezieltes `winget upgrade`), Pester-Tests + Windows-CI-Runner
 - **Done when:** frische Win11-VM: `bootstrap.ps1` liefert die Windows-Seite komplett und optisch wie Linux; `dot.ps1 update` aktualisiert sie; CI grün
-- **Depends on:** M3, M4, M5, M6 · **Size:** L, ~8 commits
+- **Depends on:** M3, M4, M5, M6
+- **Size:** L, ~8 commits
 
 ### M8 [ ] WSL2-Arch-Integration
 - **Goal:** Der Windows-Bootstrap richtet WSL Arch ein und startet darin den Linux-Installer.
 - **Includes:** `wsl --install archlinux`, Benutzer + sudo, `.wslconfig` (mirrored networking für Ollama), WezTerm-Default-Domain Arch, Zed Remote-WSL, `dot.ps1 update` aktualisiert auch WSL
 - **Done when:** frische Win11-VM: ein Befehl → WezTerm öffnet zsh in Arch, Zed öffnet ein WSL-Projekt mit LSP, Claude läuft in WSL
-- **Depends on:** M2, M7 · **Size:** M, ~5 commits
+- **Depends on:** M2, M7
+- **Size:** M, ~5 commits
 
 ### M9 [ ] Ein-Befehl-Bootstrap + Zusatztools
 - **Goal:** Ein Befehl auf frischem CachyOS oder Windows, ohne vorher manuell zu klonen.
 - **Includes:** `bootstrap.sh` (curl|bash, HTTPS-Clone nach `~/dotfiles`, startet `dot install`), zsh als Login-Shell (mit Rückfrage), Zusatztools: eza, yazi, tealdeer, just, lazydocker/podman-tui
 - **Done when:** frischer Container und frische CachyOS-VM: ein Befehl → komplette Umgebung; zweiter Lauf ändert nichts
-- **Depends on:** M2–M6, M8 · **Size:** M, ~4 commits
+- **Depends on:** M2, M3, M4, M5, M6, M8
+- **Size:** M, ~4 commits
 
 ### M10 [ ] Corne
 - **Goal:** Vial installiert, Corne ohne root nutzbar, Layout zum Vertrag passend.
 - **Includes:** `corne`-Modul (Vial: AUR bzw. AppImage mit Digest-Prüfung, udev-Regel; Windows: Vial-Release), `corne_v4.vil` um Layer für WM-/Navigations-/Zahlen-Bindings ergänzen, Layer-Doku
 - **Done when:** Vial erkennt den Corne unter Linux ohne sudo und unter Windows; neues Layout geladen, alle Vertrags-Bindings mit dem Corne erreichbar
-- **Depends on:** M6 · **Size:** S, ~4 commits
+- **Depends on:** M6
+- **Size:** S, ~4 commits
 
 ### M11 [ ] Doku + Cheatsheet
 - **Goal:** README und CHEATSHEET beschreiben den neuen Stand vollständig.
 - **Includes:** README neu (Bootstrap, Distros, `dot`, Windows, Theme), `windows/README.md`/`MANUAL.md` aktualisieren, `zed-config/`/`agent-config/`-READMEs angleichen, CHEATSHEET: Hyprland = GlazeWM, `dot`, Zed/Agents, Corne-Layer
 - **Done when:** jedes Binding im CHEATSHEET steht im Vertrag (Test), Installationsanleitung auf frischer VM nachvollzogen
-- **Depends on:** M1–M10 · **Size:** S, ~3 commits
+- **Depends on:** M1, M2, M3, M4, M5, M6, M7, M8, M9, M10
+- **Size:** S, ~3 commits
 
 ## Definition of done (every milestone)
 - `bash scripts/check.sh` grün (ShellCheck, Syntax, Secret-Scan, Python-Tests; Pester, falls pwsh vorhanden)
@@ -143,3 +154,4 @@ alles wird in der neuesten Version installiert und mit `dot update` aktualisiert
 ## Changelog
 - 2026-11-21: roadmap created
 - 2026-11-21: einheitliches Theme ergänzt (Entscheidung #10, neuer M5, Theme-Anteile in M6/M7), Meilensteine neu nummeriert
+- 2026-11-21: Depends on/Size wieder als eigene Bullets, Abhängigkeiten ohne Bereiche (baton-kompatibel)
