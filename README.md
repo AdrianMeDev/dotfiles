@@ -28,6 +28,11 @@ cd ~/dotfiles
 ./install.sh
 ```
 
+Nach der Installation steht der Befehl `dot` (Stow-Paket `dot`, `~/.local/bin/dot`) bereit:
+`dot install [OPTIONEN]` ruft `install.sh` auf, `dot update [--dry-run] [--profile …]` aktualisiert
+Systempakete, mise-Tools, Flatpaks und zsh-Plugins, `dot doctor` prüft Tool-Versionen, mise,
+Stow-Links, Git-Identität und fnm-Überreste (read-only; Exit 1 bei `[FEHLER]`).
+
 Bestehende Konfigurationsdateien stoppen den Installer **vor** den Systemänderungen.
 Nach Prüfung der gemeldeten Pfade kannst du sie sichern und ersetzen lassen:
 
@@ -61,7 +66,8 @@ Fremde Verzeichnis-Symlinks müssen vorab manuell aufgelöst werden; der Install
 | Modul | Inhalt |
 | --- | --- |
 | `system` | System-Update (`pacman`/`dnf`/`apt-get`), Compiler/Build-Werkzeuge, Git/GitHub CLI, Stow, zsh, tmux, zoxide, direnv, fzf, ripgrep, fd, bat, jq, btop/htop, tree, ShellCheck, shfmt (Arch/Debian), Clipboard, Podman, Flatpak (bei `desktop`) sowie auf Arch der AUR-Helfer |
-| `development` | Starship, fnm + Node 24, tree-sitter CLI, mise, uv + Python 3.14, .NET SDK 10 (Arch/Fedora), Neovim >= 0.12, WezTerm und Zed |
+| `tools` | mise und alle Dev-CLI-Tools über mise in der neuesten Version (Neovim >= 0.12, Node LTS, uv, Starship, tree-sitter, lazygit, ripgrep, fd, fzf, bat, delta …; Konfiguration: `mise/config.toml`), Extras `java`/`rust` |
+| `apps` | .NET SDK 10 (Arch/Fedora), WezTerm und Zed |
 | `flatpak` | Flathub für den Benutzer; ausgewählte optionale Desktop-Apps (nur bei `--profile desktop`) |
 | `fonts` | Ioskeley Mono und Ioskeley Mono Term Nerd Font 2.1.0 im Benutzerverzeichnis |
 | `dotfiles` | Konfliktprüfung, Git-Identität, optionale Backups und Stow-Verlinkung |
@@ -75,7 +81,8 @@ Einzelne Module ziehen ihre Voraussetzungen nicht automatisch nach:
 
 ```bash
 ./install.sh --only system
-./install.sh --only development
+./install.sh --only tools
+./install.sh --only apps
 ./install.sh --profile headless --only system
 ./install.sh --extras java,rust,firefox,discord,spotify
 ./install.sh --only system --extras rpmfusion
@@ -86,13 +93,13 @@ auf Arch und Debian übersprungen), `firefox`, `discord`, `spotify`. Extras müs
 ausgewählten Modul passen. Es werden keine Apps ohne entsprechende Auswahl installiert. Podman läuft
 rootless; es wird kein Docker-Daemon eingerichtet. Container nicht mit `sudo` starten.
 
-Der Installer benutzt offizielle HTTPS-Installer für fnm, mise, uv, Starship und Zed.
+Der Installer benutzt offizielle HTTPS-Installer für mise und Zed; alle übrigen Dev-Tools lädt mise.
+Mit gesetztem `GITHUB_TOKEN` nutzt mise authentifizierte GitHub-Downloads (kein API-Rate-Limit).
 Diese werden zuerst in ein temporäres Verzeichnis geladen und dann als Benutzer ausgeführt.
 WezTerm wird aus einem verfügbaren Distro-Paket (Arch/Fedora) installiert; ohne solches Paket wird
 auf x86_64 das stabile Upstream-AppImage ohne FUSE entpackt. Auf aarch64 ohne passendes
 Paket stoppt dieses Modul mit einer Anleitung. Es gibt keinen automatischen Nightly-COPR-Wechsel.
-Neovim wird bei Bedarf aus dem stabilen offiziellen Linux-Archiv installiert;
-ein Release unter 0.12 wird für diese Konfiguration abgelehnt.
+Neovim kommt über mise; ein Release unter 0.12 wird für diese Konfiguration abgelehnt.
 GitHub-Release-Downloads werden gegen den Asset-Digest geprüft, sofern Upstream einen liefert.
 
 Wiederholungen erzeugen keine doppelten Links oder Shell-Initialisierungen. Der Systempaketmanager
@@ -144,13 +151,16 @@ Ignore-Regeln schützen nicht vor `git add -f` oder bereits versionierten Geheim
 
 ## Shell und Runtimes
 
-zsh initialisiert fnm nach mise und wechselt Node anhand von `.node-version`/`.nvmrc`
-auch in Unterverzeichnissen. mise aktiviert kein Node oder Python. uv wird ohne Shell-Hook
-verwendet; pyenv und der CachyOS-spezifische Shell-Loader sind entfernt.
+Node (LTS) und die übrigen Tools verwaltet mise; zsh aktiviert mise und beachtet
+`.node-version`/`.nvmrc` auch in Unterverzeichnissen. uv wird ohne Shell-Hook verwendet;
+pyenv, fnm und der CachyOS-spezifische Shell-Loader sind entfernt.
+**Migration fnm → mise:** Beim nächsten `dot install` installiert mise Node; ein altes fnm
+bleibt unangetastet, `dot doctor` meldet es als Überrest und kann manuell entfernt werden.
 
 ```zsh
-fnm install 24
-fnm use 24
+mise use node@24      # projektbezogen, schreibt mise.toml
+mise ls               # installierte Tools und Versionen
+dot doctor            # Versionen und Probleme
 uv init
 uv add django
 uv run python manage.py runserver
@@ -181,7 +191,7 @@ installiert. Damit bleibt sie auch beim Wechsel der Node-Version verfügbar.
 Die modulare zsh-Konfiguration basiert auf [radleylewis/zsh](https://github.com/radleylewis/zsh)
 (MIT; Lizenz liegt im zsh-Paket). Der bestehende Starship-Prompt und die Kürzel bleiben erhalten;
 frühere Fish-Abkürzungen sind jetzt Aliase. zoxide bietet `z`/`zi`.
-Programme werden nur initialisiert, wenn sie installiert sind. Runtime-Pfade, mise und fnm stehen
+Programme werden nur initialisiert, wenn sie installiert sind. Runtime-Pfade und mise stehen
 auch nichtinteraktiven Tasks zur Verfügung. Prompt, Plugins und Tasten werden nur interaktiv geladen.
 
 `~/.zshenv` setzt `ZDOTDIR` auf `~/.config/zsh`; eine Änderung an `/etc` ist nicht nötig.
@@ -351,8 +361,7 @@ bash scripts/check.sh
 Prüft Bash/ShellCheck, zsh, LuaJIT-Syntax, JSONC/TOML und den Secret-Scan. Python-Integrationstests
 verwenden temporäre Home-Verzeichnisse und prüfen echtes Stow, Backups, Wiederholungen,
 Symlink-Konflikte, Pfade mit Leerzeichen, Git-Abfrage und Paketmanager-Fehler.
-Fehlende optionale Prüfwerkzeuge werden als `SKIP` ausgewiesen. Mit vorhandenem fnm prüft die Suite
-auch den rekursiven Node-Versionswechsel; mit tmux dessen Konfiguration auf einem separaten Socket.
+Fehlende optionale Prüfwerkzeuge werden als `SKIP` ausgewiesen. Mit tmux dessen Konfiguration auf einem separaten Socket.
 zsh-Tests prüfen außerdem die Fish-Migration, Runtime-Reihenfolge, Sonderzeichen in Dateinamen,
 Tastenbelegung sowie Plugin-Installation und Updates mit lokalen Git-Repositories.
 `DOTFILES_ZSH_PLUGINS` kann auf einen Ordner mit den vier vorhandenen Plugin-Quellen zeigen:
@@ -370,13 +379,14 @@ CONTAINER_ENGINE=docker bash scripts/container-matrix.sh arch debian
 ```
 
 Ohne `CONTAINER_ENGINE` nutzt das Skript `podman` oder fällt auf `docker` zurück und führt
-`./install.sh --only system` als normaler Benutzer im jeweiligen Container aus.
+pro Container als normaler Benutzer aus: `dot install --dry-run` (Familie erkannt, nichts geschrieben),
+zweimal `dot install`, dann `dot`, `nvim` (>= 0.12), `node` und `uv` über `zsh -c`, `dot update --dry-run`,
+`dot update` und `dot doctor`. Ist `GITHUB_TOKEN` gesetzt, wird er an die Container durchgereicht.
 Die GitHub-Actions-CI (`.github/workflows/ci.yml`) führt sowohl `scripts/check.sh` als auch
 die Container-Matrix für `arch`, `fedora` und `debian` automatisch aus.
 Grafische Editor- und Clipboard-Tests erfolgen weiterhin auf dem jeweiligen Zielsystem.
 
-Installationsreferenzen: [fnm](https://github.com/Schniz/fnm),
-[mise](https://mise.jdx.dev/installing-mise.html), [uv](https://docs.astral.sh/uv/getting-started/installation/),
+Installationsreferenzen: [mise](https://mise.jdx.dev/installing-mise.html), [uv](https://docs.astral.sh/uv/getting-started/installation/),
 [Starship](https://starship.rs/guide/), [WezTerm](https://wezterm.org/install/linux.html),
 [Zed](https://zed.dev/docs/linux), [Neovim](https://neovim.io/doc/user/pack/),
 [.NET auf Fedora](https://learn.microsoft.com/en-us/dotnet/core/install/linux-fedora).
