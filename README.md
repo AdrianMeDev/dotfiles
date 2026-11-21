@@ -1,15 +1,25 @@
-# Linux Developer Dotfiles
+# Developer Dotfiles (Linux, WSL2 und Windows 11)
 
-Persönliches Developer-Setup mit GNU Stow und einem modularen Bash-Installer.
-Die vorhandenen Vim-Keybindings und das reduzierte Terminal-Layout bleiben erhalten.
-Unterstützt werden **Arch/CachyOS, Fedora und Debian/Ubuntu** (inklusive WSL2),
-keine Atomic-/rpm-ostree-Systeme.
-Der Desktop selbst, Treiber und Monitor-/Theme-Einstellungen werden nicht umgestellt.
+Persönliches Developer-Setup mit GNU Stow und einem modularen Bash-Installer. Ein Befehl richtet
+Shell, Dev-Tools, Editoren, Terminal, einheitliches Tokyo-Night-Theme, Agent-Config und (auf
+Desktop-Systemen) Hyprland samt Corne-Tastatur ein. Vim-Keybindings und das reduzierte
+Terminal-Layout bleiben erhalten. Keine Atomic-/rpm-ostree-Systeme.
 
-Für **Windows 11 mit Arch Linux unter WSL2** gibt es ein separates
-[Windows-Setup mit `bootstrap.ps1`, `windows/dot.ps1`, WezTerm, Zed, GlazeWM, Zebar und Flow Launcher](windows/README.md).
+| Plattform | Umfang | Einstieg |
+| --- | --- | --- |
+| **Arch / CachyOS** | alles, inkl. Hyprland-Desktop, Theme und Corne (Profil `desktop`) | `bootstrap.sh` |
+| **Fedora** | alles, inkl. Hyprland (COPR `solopasha/hyprland`), Theme und Corne | `bootstrap.sh` |
+| **Debian / Ubuntu** | nur CLI: kein `desktop`-/`theme`-Modul; Corne/Vial nur als AppImage | `bootstrap.sh` |
+| **WSL2 Arch** (unter Windows 11) | Profil `headless`, kein systemd nötig; wird vom Windows-Bootstrap eingerichtet | `bootstrap.ps1` |
+| **Windows 11** | WezTerm, Zed, GlazeWM, Zebar, Flow Launcher, Vial; plus WSL2 Arch | `bootstrap.ps1` |
+
+Die Windows-Seite ist in [`windows/README.md`](windows/README.md) beschrieben
+(manuelle Variante: [`windows/MANUAL.md`](windows/MANUAL.md)).
+Tastenbelegung und Befehle auf einen Blick: [`CHEATSHEET.md`](CHEATSHEET.md).
 
 ## Installation
+
+### Linux
 
 Auf einem frischen Linux als normaler Benutzer mit sudo, Bash, curl und Internetzugang starten.
 Git und Python werden bei Bedarf installiert, das Repository per HTTPS nach `~/dotfiles`
@@ -33,13 +43,30 @@ Nach erfolgreicher Verlinkung fragt der Installer im Terminal:
 `chsh -s` aus; danach neu anmelden. Ohne Terminal erscheint stattdessen der manuelle
 Befehl. Ist zsh bereits Login-Shell, entfällt die Rückfrage.
 
-Nach der Installation steht der Befehl `dot` (Stow-Paket `dot`, `~/.local/bin/dot`) bereit:
-`dot install [OPTIONEN]` ruft `install.sh` auf, `dot update [--dry-run] [--profile …]` aktualisiert
-Systempakete, mise-Tools, Flatpaks, zsh-Plugins sowie Claude Code, pi und die Agent-Config,
-`dot doctor` prüft Tool-Versionen, mise, Stow-Links, Hyprland/Waybar (Version, Lua-Config, fehlende Desktop-Tools), Git-Identität, fnm-Überreste und lokale
-Abweichungen der Agent-Config (read-only; Exit 1 bei `[FEHLER]`), und
-`dot zed-template [--dry-run] [--backup] angular|django|dotnet <PFAD>` kopiert eine
-Zed-Projektvorlage nach `<PFAD>/.zed/`.
+### Windows 11
+
+In Windows PowerShell 5.1 oder PowerShell 7, ohne vorheriges Klonen:
+
+```powershell
+irm https://raw.githubusercontent.com/AdrianMeDev/dotfiles/main/bootstrap.ps1 | iex
+```
+
+`bootstrap.ps1` installiert Git bei Bedarf, klont nach `$env:USERPROFILE\dotfiles`, richtet die
+nativen Windows-Anwendungen ein und installiert per `wsl --install archlinux` eine Arch-WSL2-Instanz,
+in der danach der Linux-Installer (`dot install`) läuft. Optionen (`-DryRun`, `-Backup`,
+`-Extra vs`, `-NoWsl`, `-WslUser`) und die Vorschau stehen in [`windows/README.md`](windows/README.md);
+danach heißt der Befehl `windows\dot.ps1 install|update|doctor`.
+
+### Der `dot`-Befehl
+
+Nach der Installation steht `dot` (Stow-Paket `dot`, `~/.local/bin/dot`) bereit:
+
+| Befehl | Wirkung |
+| --- | --- |
+| `dot install [OPTIONEN]` | ruft `install.sh` mit den Optionen auf |
+| `dot update [--dry-run] [--profile …]` | aktualisiert Systempakete, mise-Tools, Flatpaks, zsh-Plugins sowie Claude Code, pi und die Agent-Config |
+| `dot doctor` | read-only; prüft Tool-Versionen, mise, Stow-Links, Hyprland/Waybar (Version, Lua-Config, fehlende Desktop-Tools), Vial/udev, Git-Identität, fnm-Überreste und Abweichungen der Agent-Config; Exit 1 bei `[FEHLER]` |
+| `dot zed-template [--dry-run] [--backup] angular\|django\|dotnet <PFAD>` | kopiert eine Zed-Projektvorlage nach `<PFAD>/.zed/` |
 
 Bestehende Konfigurationsdateien stoppen den Installer **vor** den Systemänderungen.
 Nach Prüfung der gemeldeten Pfade kannst du sie sichern und ersetzen lassen:
@@ -74,15 +101,15 @@ Fremde Verzeichnis-Symlinks müssen vorab manuell aufgelöst werden; der Install
 | Modul | Inhalt |
 | --- | --- |
 | `system` | System-Update (`pacman`/`dnf`/`apt-get`), Compiler/Build-Werkzeuge, Git/GitHub CLI, Stow, zsh, tmux, zoxide, direnv, fzf, ripgrep, fd, bat, jq, btop/htop, tree, ShellCheck, shfmt (Arch/Debian), Clipboard, Podman, Flatpak (bei `desktop`) sowie auf Arch der AUR-Helfer |
+| `desktop` | Hyprland-Stack aus der Manifest-Gruppe `hypr` (Hyprland, Waybar, fuzzel, mako, hyprlock, hypridle, hyprpaper, cliphist, grim, slurp, Portal, Polkit-Agent); nur Arch/Fedora, nur Profil `desktop`, nicht unter WSL (Fedora über COPR `solopasha/hyprland`) |
 | `tools` | mise und alle Dev-CLI-Tools über mise in der neuesten Version (Neovim >= 0.12, Node LTS, uv, Starship, tree-sitter, lazygit, ripgrep, fd, fzf, bat, delta, eza, yazi, tealdeer, just, lazydocker; Konfiguration: `mise/.config/mise/config.toml`), Extras `java`/`rust` |
 | `apps` | .NET SDK 10 (Arch/Fedora), WezTerm, Zed, Claude Code (nativer Installer), pi (npm über mise-Node), optional Ollama (Extras `ollama`, `ollama-models`) |
-| `agents` | rendert `agent-config/` nach `~/.claude` und `~/.pi/agent` (Claude-Frontmatter der Skills wird eingefügt, `claude-frontmatter.txt` nicht kopiert); abweichende Dateien nur mit `--backup` ersetzt, idempotent |
-| `desktop` | Hyprland-Stack aus der Manifest-Gruppe `hypr` (Hyprland, Waybar, fuzzel, mako, hyprlock, hypridle, hyprpaper, cliphist, grim, slurp, Portal, Polkit-Agent); nur Arch/Fedora, nur Profil `desktop`, nicht unter WSL (Fedora über COPR `solopasha/hyprland`) |
-| `theme` | GTK/Qt dunkel, Cursor, Icons und Wallpaper (siehe [Theme-Modul](#theme-modul)); gleiche Bedingungen wie `desktop` |
-| `corne` | Vial-GUI (Arch: `vial-appimage` aus dem AUR; Fedora/Debian x86_64: entpacktes AppImage mit SHA-256-Prüfung nach `~/.local/opt/vial`) und `/etc/udev/rules.d/99-vial.rules`; nur Profil `desktop`, nicht unter WSL (siehe [Corne-Doku](docs/CORNE.md)) |
 | `flatpak` | Flathub für den Benutzer; ausgewählte optionale Desktop-Apps (nur bei `--profile desktop`) |
 | `fonts` | Ioskeley Mono und Ioskeley Mono Term Nerd Font 2.1.0 im Benutzerverzeichnis |
-| `dotfiles` | Konfliktprüfung, Git-Identität, optionale Backups und Stow-Verlinkung |
+| `theme` | GTK/Qt dunkel, Cursor, Icons und Wallpaper (siehe [Theme-Modul](#theme-modul)); gleiche Bedingungen wie `desktop` |
+| `corne` | Vial-GUI (Arch: `vial-appimage` aus dem AUR; Fedora/Debian x86_64: entpacktes AppImage mit SHA-256-Prüfung nach `~/.local/opt/vial`) und `/etc/udev/rules.d/99-vial.rules`; nur Profil `desktop`, nicht unter WSL (siehe [Corne-Doku](docs/CORNE.md)) |
+| `dotfiles` | Konfliktprüfung, Git-Identität, optionale Backups, Stow-Verlinkung und Login-Shell-Rückfrage |
+| `agents` | rendert `agent-config/` nach `~/.claude` und `~/.pi/agent` (Claude-Frontmatter der Skills wird eingefügt, `claude-frontmatter.txt` nicht kopiert); abweichende Dateien nur mit `--backup` ersetzt, idempotent |
 
 Die zentrale Paketliste liegt in `manifests/packages.tsv` (Gruppen `base` immer, `desktop` nur
 bei `--profile desktop`, `dev` für gezielte Abfragen wie `.NET SDK` oder `wezterm`).
@@ -143,8 +170,9 @@ gemeldet. `hyprlock.conf`, `hypridle.conf` und `hyprpaper.conf` bleiben dagegen 
 < 0.57 und prüft die Konfiguration mit `hyprland --verify-config` (falls vorhanden, sonst in einer
 laufenden Session mit `hyprctl configerrors`). Fehlende Desktop-Tools werden als `[WARN]` gelistet.
 
-Anmelden: im Display-Manager die Session **Hyprland** wählen. Die KDE-Session bleibt unverändert
-installiert und startet weiterhin (Fallback: im Display-Manager wieder „Plasma“ wählen).
+Anmelden: im Display-Manager die Session **Hyprland** wählen. Eine vorhandene KDE-Session wird nicht
+angetastet (Fallback: im Display-Manager wieder „Plasma“ wählen). Treiber und Monitoreinstellungen
+verwaltet das Setup nicht.
 
 ### Keybinding-Vertrag
 
@@ -164,6 +192,7 @@ Dunkelmodus, `adw-gtk3-dark`, `Papirus-Dark` und den Cursor. Das Wallpaper wird 
 `theme/tokens.toml` nach `~/.local/share/dotfiles/wallpaper.png` erzeugt (vorhandene Dateien bleiben).
 GTK-/Qt-Konfiguration (`gtk-3.0`, `gtk-4.0`, `qt5ct`, `qt6ct`), Waybar, mako, fuzzel und Hyprland
 beziehen Farben, Fonts, Deckkraft, Blur und Rahmen aus denselben Tokens; `tests/test_theme.py` prüft das.
+Der Gesamtüberblick steht unter [Einheitliches Theme](#einheitliches-theme-themetokenstoml).
 
 ### Corne & Vial
 
@@ -293,8 +322,9 @@ unvollständiges Plugin-Verzeichnis muss vorher manuell beiseitegeschoben werden
 fzf nutzt fd und bat, sofern vorhanden; ohne sie gibt es Dateisuche mit verfügbaren Ersatzwerkzeugen
 und ohne Vorschau. Eigene Bindings werden nach der Vi-Plugin-Initialisierung gesetzt.
 
-WezTerm (Linux), tmux, Zed und das Neovim-Terminal verwenden zsh. Die Login-Shell wird nicht geändert.
-Optional selbst umstellen: `chsh -s "$(command -v zsh)"`.
+WezTerm (Linux), tmux, Zed und das Neovim-Terminal verwenden zsh. Die Login-Shell stellt das
+`dotfiles`-Modul nur nach ausdrücklicher Bestätigung im Terminal um (siehe [Installation](#linux));
+ohne Terminal oder bei Ablehnung manuell: `chsh -s "$(command -v zsh)"`.
 
 ### Bestehende Fish-Installation umstellen
 
@@ -315,12 +345,20 @@ terminaloptimierte Nerd Font im integrierten Terminal. Vim-Modus, Space-Leader u
 Die Oberfläche nutzt einen 75-%-Tokyo-Night-Fensterhintergrund mit transparenten Editor- und Panel-Flächen.
 Lokale Edit Predictions verwenden Ollama mit `qwen2.5-coder:7b-base`; das Modell muss
 lokal geladen sein (`ollama pull qwen2.5-coder:7b-base`).
-TypeScript/JavaScript behalten ESLint statt Prettier. Python nutzt basedpyright/Ruff,
-C# die C#-Extension mit Roslyn. `Space r r` bietet npm-, pytest-, Django- und dotnet-Tasks an.
-Tasks starten nur manuell und erwarten passende Projektdateien/Abhängigkeiten im Worktree-Root.
-Projektvorlagen (`.zed/`) lassen sich mit `dot zed-template angular|django|dotnet <PFAD>` anlegen;
-in Monorepos `.zed/tasks.json` mit passendem `cwd` im Projekt anpassen.
-Claude wird nicht automatisch gestartet; vorhandene Agent-Keybindings bleiben für manuelle Nutzung.
+Web-Dateien (TS/JS/HTML/CSS) formatiert Prettier, TypeScript wendet zusätzlich ESLint-Fixes an;
+Python nutzt basedpyright/Ruff, C# die C#-Extension mit Roslyn.
+Die globale `tasks.json` enthält Claude Code, pi, lazygit, Git-Log, TODO-Suche und Ollama-Modelle.
+Die Projekt-Tasks (`dev: run/build/test/lint/format` plus Angular-, Django-/pytest- bzw. dotnet-/EF-Aufgaben)
+kommen mit `dot zed-template angular|django|dotnet <PFAD>` nach `<PFAD>/.zed/`; sie starten nur manuell und
+erwarten passende Projektdateien im Worktree-Root (in Monorepos `cwd` anpassen).
+Claude Code und pi laufen als ACP-Agents im Editor (Befehlspalette `zed: acp registry`);
+sie starten nie automatisch. Details: [`zed-config/README.md`](zed-config/README.md).
+
+**Agents (`agent-config/`):** das `agents`-Modul rendert die Konfiguration nach `~/.claude` (Claude Code,
+Arbeit) und `~/.pi/agent` (pi, privat, lokal über Ollama). Beide teilen die Befehle `/plan-roadmap`,
+`/plan-commits`, `/next`, `/explain`, `/explain-project`. `dot update` aktualisiert Claude Code, pi und die
+Config, `dot doctor` meldet lokale Abweichungen. Anmeldung bei Claude einmalig mit `claude`.
+Details: [`agent-config/README.md`](agent-config/README.md).
 
 **Neovim:** eigenständige, deutsch kommentierte
 [`init.lua`](nvim/.config/nvim/init.lua), konzeptionell an
@@ -403,11 +441,14 @@ anderweitig installierte Fonts werden nicht entfernt. `fc-match 'Ioskeley Mono'`
 `r` Reload, `S` Statusleiste umschalten. Statusleiste und Maus bleiben standardmäßig aus.
 Copy-Mode: Prefix + `[`, `v` auswählen, `y` kopieren; unter Wayland mit `wl-copy`.
 
-**Einheitliches Theme (`theme/tokens.toml`):** Palette (Tokyo Night, Variante Night),
-Ioskeley-Fonts, 75-%-Deckkraft, Blur und Rahmen liegen zentral in [`theme/tokens.toml`](theme/tokens.toml).
-Neben WezTerm, Zed, Neovim, tmux, Starship, fzf/zsh, Claude Code und pi werden auch die
-CLI-Tools über eigene Stow-Pakete abgestimmt: `bat` (`tokyonight_night`-Theme mit automatischem
-`bat cache --build`), `lazygit`, `btop` (`tokyo-night`-Theme) und `yazi`.
+### Einheitliches Theme (`theme/tokens.toml`)
+
+Palette (Tokyo Night, Variante Night), Ioskeley-Fonts, 75-%-Deckkraft, Blur und Rahmen liegen zentral in
+[`theme/tokens.toml`](theme/tokens.toml). Neben WezTerm, Zed, Neovim, tmux, Starship, fzf/zsh, Claude Code und
+pi werden auch die CLI-Tools über eigene Stow-Pakete abgestimmt: `bat` (`tokyonight_night`-Theme mit
+automatischem `bat cache --build`), `lazygit`, `btop` (`tokyo-night`-Theme) und `yazi`. Auf dem Desktop kommen
+Hyprland, Waybar, mako, fuzzel, GTK/Qt und das Wallpaper hinzu; unter Windows folgen GlazeWM/Zebar den
+gleichen Werten. Neue Farben zuerst in die Tokens eintragen.
 
 ## Backups und Wiederherstellung
 
@@ -474,21 +515,27 @@ Installationsänderungen werden nicht mitgeklont. Bei Git-Worktrees bindet die M
 auch das externe Git-Verzeichnis schreibgeschützt ein.
 Grafische Editor- und Clipboard-Tests erfolgen weiterhin auf dem jeweiligen Zielsystem.
 
-### Manuelle Abnahme auf einer frischen CachyOS-VM (noch offen)
+### Manuelle Abnahme auf einer frischen VM (noch offen)
 
-1. VM-Snapshot erstellen; als normaler Benutzer ohne `~/dotfiles` die obige
-   `curl | bash`-Vorschau und anschließend die Installation ausführen.
+Pro Zielsystem mit VM-Snapshot als normaler Benutzer; Ergebnis und VM-Version manuell festhalten.
+
+**Linux (CachyOS; Fedora und Debian ohne Schritte 5–6):**
+
+1. Ohne `~/dotfiles` die `curl | bash`-Vorschau (`--dry-run`) und danach die Installation ausführen.
 2. Git-Identität eingeben, zsh-Rückfrage bestätigen, ab- und anmelden.
    `getent passwd "$USER"` muss zsh als Login-Shell zeigen.
 3. In zsh `eza --version`, `yazi --version`, `tldr --version`, `just --version`,
-   `lazydocker --version` und `dot doctor` ausführen; `ls`/`ll`/`lt` prüfen.
-4. `git -C ~/dotfiles status --short` und vorhandene Backups notieren, denselben
-   Bootstrap erneut starten: keine neuen Backups, keine Repo-Änderungen.
-   Danach `dot update` und `dot doctor` prüfen.
+   `lazydocker --version`, `claude --version`, `pi --version` und `dot doctor` ausführen; `ls`/`ll`/`lt` prüfen.
+4. `git -C ~/dotfiles status --short` und vorhandene Backups notieren, denselben Bootstrap erneut starten:
+   keine neuen Backups, keine Repo-Änderungen. Danach `dot update` und `dot doctor` prüfen.
 5. Hyprland und KDE anmelden; Bindings, Zwischenablage, Fonts und Tokyo-Night-Theme
-   in WezTerm, Zed und Neovim prüfen. Ergebnis und VM-Version manuell festhalten.
+   in WezTerm, Zed und Neovim prüfen.
 6. Corne anschließen, `vial` ohne `sudo` starten, `corne_v4.vil` laden und alle
    Vertrags-Bindings über die Layer aus [`docs/CORNE.md`](docs/CORNE.md) testen.
+
+**Windows 11:** `bootstrap.ps1` ausführen (zuerst `-DryRun`); WezTerm öffnet zsh in Arch-WSL, Zed öffnet ein
+WSL-Projekt mit LSP, Claude läuft in WSL, GlazeWM-Bindings und Vial prüfen. Zweiter Lauf ändert nichts;
+`windows\dot.ps1 update` und `doctor` laufen sauber (Details: [`windows/README.md`](windows/README.md)).
 
 Installationsreferenzen: [mise](https://mise.jdx.dev/installing-mise.html), [uv](https://docs.astral.sh/uv/getting-started/installation/),
 [Starship](https://starship.rs/guide/), [WezTerm](https://wezterm.org/install/linux.html),

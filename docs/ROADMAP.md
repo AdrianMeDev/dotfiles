@@ -137,7 +137,7 @@ alles wird in der neuesten Version installiert und mit `dot update` aktualisiert
 - **Depends on:** M6
 - **Size:** S, ~4 commits
 
-### M11 [ ] Doku + Cheatsheet
+### M11 [~] Doku + Cheatsheet
 - **Goal:** README und CHEATSHEET beschreiben den neuen Stand vollständig.
 - **Includes:** README neu (Bootstrap, Distros, `dot`, Windows, Theme), `windows/README.md`/`MANUAL.md` aktualisieren, `zed-config/`/`agent-config/`-READMEs angleichen, CHEATSHEET: Hyprland = GlazeWM, `dot`, Zed/Agents, Corne-Layer
 - **Done when:** jedes Binding im CHEATSHEET steht im Vertrag (Test), Installationsanleitung auf frischer VM nachvollzogen
