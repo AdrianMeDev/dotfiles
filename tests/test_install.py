@@ -622,7 +622,8 @@ class ConfigTests(unittest.TestCase):
             tomllib.loads(path.read_text())
         settings = jsonc((REPO / 'zed/.config/zed/settings.json').read_text())
         self.assertNotIn('terminal_init_command', settings.get('agent', {}))
-        self.assertFalse(settings['languages']['TypeScript']['prettier']['allowed'])
+        # Angular projects format with their own Prettier config; ESLint fixes still run on format.
+        self.assertTrue(settings['languages']['TypeScript']['prettier']['allowed'])
         self.assertEqual(settings['theme'], 'Tokyo Night')
         self.assertEqual(settings['buffer_font_family'], 'Ioskeley Mono')
         self.assertEqual(settings['terminal']['font_family'], 'IoskeleyMonoTerm Nerd Font Mono')
@@ -644,6 +645,33 @@ class ConfigTests(unittest.TestCase):
         token = 'gh' + 'p_' + 'x' * 36
         self.assertEqual(module.scan_bytes(Path('config'), token.encode()), ['access token'])
         self.assertIn('private filename', module.scan_bytes(Path('id_ed25519'), b'test'))
+
+    def test_secret_scanner_history_allowlist(self):
+        spec = importlib.util.spec_from_file_location('scanner', REPO / 'scripts/check-secrets.py')
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        temp = tempfile.TemporaryDirectory(prefix='dotfiles-secrets-')
+        self.addCleanup(temp.cleanup)
+        base = Path(temp.name)
+        repo = base / 'repo'
+        repo.mkdir()
+        env = dict(os.environ, HOME=str(base), GIT_CONFIG_NOSYSTEM='1', GIT_CONFIG_GLOBAL=os.devnull)
+        git = ['git', '-C', str(repo), '-c', 'user.name=Test', '-c', 'user.email=test@example.invalid']
+        subprocess.run(git + ['init', '-q'], check=True, env=env)
+        # Split literal: this test file must not trigger the scanner itself.
+        (repo / 'rc').write_text('export PATH="/home/' + 'someone/bin:$PATH"\n')
+        subprocess.run(git + ['add', 'rc'], check=True, env=env)
+        subprocess.run(git + ['commit', '-q', '-m', 'add rc'], check=True, env=env)
+        oid = subprocess.check_output(git + ['rev-parse', 'HEAD:rc'], env=env, text=True).strip()
+        self.assertEqual(list(module.scan_history(repo, set())), [('rc', 'machine-specific home')])
+        allowlist = base / 'allowlist.txt'
+        allowlist.write_text(f'# reviewed\n\n{oid}  # rc: test fixture\n')
+        self.assertEqual(module.load_allowlist(allowlist), {oid})
+        self.assertEqual(list(module.scan_history(repo, module.load_allowlist(allowlist))), [])
+        allowlist.write_text('not-a-blob-id\n')
+        with self.assertRaises(SystemExit):
+            module.load_allowlist(allowlist)
+        self.assertEqual(module.load_allowlist(base / 'missing.txt'), set())
 
 
 if __name__ == '__main__':

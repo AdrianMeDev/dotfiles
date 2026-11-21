@@ -25,9 +25,40 @@ def scan_bytes(path, data):
     return findings
 
 
+def load_allowlist(path):
+    """Reviewed historical blob IDs: one 40-hex Git object ID per line, then an optional note."""
+    allowed = set()
+    if not path.is_file():
+        return allowed
+    for number, line in enumerate(path.read_text().splitlines(), 1):
+        fields = line.split('#', 1)[0].split()
+        if not fields:
+            continue
+        oid = fields[0]
+        if len(fields) != 1 or not re.fullmatch(r'[0-9a-f]{40}', oid):
+            raise SystemExit(f'{path.name}:{number}: ungültige Blob-ID')
+        allowed.add(oid)
+    return allowed
+
+
+def scan_history(root, allowed):
+    """Yield (path, finding) for every reachable blob that is not on the allowlist."""
+    objects = subprocess.check_output(['git', '-C', str(root), 'rev-list', '--objects', '--all']).splitlines()
+    for entry in objects:
+        oid, _, raw_name = entry.partition(b' ')
+        if not raw_name or oid.decode() in allowed:
+            continue
+        kind = subprocess.check_output(['git', '-C', str(root), 'cat-file', '-t', oid.decode()]).strip()
+        if kind != b'blob':
+            continue
+        data = subprocess.check_output(['git', '-C', str(root), 'cat-file', 'blob', oid.decode()])
+        for finding in scan_bytes(Path(raw_name.decode()), data):
+            yield raw_name.decode(), finding
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--history', action='store_true', help='Also scan all reachable Git blobs; does not rewrite history.')
+    parser.add_argument('--history', action='store_true', help='Also scan all reachable Git blobs except reviewed ones in scripts/secret-scan-allowlist.txt; does not rewrite history.')
     args = parser.parse_args()
     root = Path(__file__).resolve().parents[1]
     paths = subprocess.check_output(['git', '-C', str(root), 'ls-files', '-z', '--cached', '--others', '--exclude-standard']).split(b'\0')
@@ -43,18 +74,10 @@ def main():
             print(f'{relative}: {kind}')
             failed = True
     if args.history:
-        objects = subprocess.check_output(['git', '-C', str(root), 'rev-list', '--objects', '--all']).splitlines()
-        for entry in objects:
-            oid, _, raw_name = entry.partition(b' ')
-            if not raw_name:
-                continue
-            kind = subprocess.check_output(['git', '-C', str(root), 'cat-file', '-t', oid.decode()]).strip()
-            if kind != b'blob':
-                continue
-            data = subprocess.check_output(['git', '-C', str(root), 'cat-file', 'blob', oid.decode()])
-            for finding in scan_bytes(Path(raw_name.decode()), data):
-                print(f'History {raw_name.decode()}: {finding}')
-                failed = True
+        allowed = load_allowlist(root / 'scripts/secret-scan-allowlist.txt')
+        for name, finding in scan_history(root, allowed):
+            print(f'History {name}: {finding}')
+            failed = True
     if not failed:
         print('Secret-Scan: keine Treffer in den geprüften Dateien (heuristisch, keine Garantie).')
     return int(failed)
