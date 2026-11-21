@@ -11,12 +11,13 @@
 ```
 agent-config/
 ├── pi/                     → ~/.pi/agent/
-│   ├── settings.json       Standard: Ollama + qwen3-coder:30b, Projekt-Vertrauen fragen
+│   ├── settings.json       Standard: Ollama + qwen3-coder:30b, Theme tokyo-night, Projekt-Vertrauen fragen
 │   ├── models.json         Ollama-Modelle (Kontext, Tokens)
 │   ├── AGENTS.md           globale Anweisungen (privat)
+│   ├── themes/             tokyo-night.json (Tokyo Night)
 │   └── prompts/            /plan-roadmap /plan-commits /next /explain /explain-project /review /commit
 ├── claude/                 → ~/.claude/
-│   ├── settings.json       Modell, Vim, Erklär-Stil, Berechtigungen
+│   ├── settings.json       Modell, Theme (dark-ansi), Vim, Erklär-Stil, Berechtigungen
 │   └── CLAUDE.md           globale Anweisungen (Arbeit)
 ├── skills/                 → in beide Tools (Englisch, antworten in deiner Sprache)
 │   ├── plan-roadmap/       großes Feature / ganze App → Meilensteine (docs/ROADMAP.md)

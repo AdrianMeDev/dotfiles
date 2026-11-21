@@ -74,7 +74,7 @@ ist daher nicht vorgesehen.
 
 WezTerm verwendet Tokyo Night, die vorhandene Transparenz, Ioskeley Mono Term Nerd Font
 und die bestehenden Tastenkürzel. Zed nutzt Tokyo Night und die normale Ioskeley-Mono-Familie.
-Zeds Fenster erhält einen schwarzen Hintergrund mit 50 % Deckkraft; Editor, Terminal,
+Zeds Fenster erhält einen Tokyo-Night-Hintergrund mit 75 % Deckkraft; Editor, Terminal,
 Agent-, Git- und Projekt-Panel bleiben darüber transparent. Edit Predictions nutzen
 lokal Ollama mit `qwen2.5-coder:7b-base`. Das Modell muss in Ollama vorhanden sein
 (`ollama pull qwen2.5-coder:7b-base`); automatische Vorschläge sind aktiviert.

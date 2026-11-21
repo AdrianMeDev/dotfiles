@@ -252,7 +252,7 @@ Konflikt-/Backup-Ablauf behandelt. `--dry-run` verändert auch bei der Migration
 **Zed:** Konfiguration aus dem Stow-Paket [`zed-config/`](zed-config/README.md) (`~/.config/zed/{settings,keymap,tasks,debug}.json`).
 Tokyo Night mit vorhandener Transparenz, Ioskeley Mono im Editor und die
 terminaloptimierte Nerd Font im integrierten Terminal. Vim-Modus, Space-Leader und Dock-Navigation bleiben.
-Die Oberfläche nutzt einen 50-%-Fensterhintergrund mit transparenten Editor- und Panel-Flächen.
+Die Oberfläche nutzt einen 75-%-Tokyo-Night-Fensterhintergrund mit transparenten Editor- und Panel-Flächen.
 Lokale Edit Predictions verwenden Ollama mit `qwen2.5-coder:7b-base`; das Modell muss
 lokal geladen sein (`ollama pull qwen2.5-coder:7b-base`).
 TypeScript/JavaScript behalten ESLint statt Prettier. Python nutzt basedpyright/Ruff,
@@ -343,6 +343,12 @@ anderweitig installierte Fonts werden nicht entfernt. `fc-match 'Ioskeley Mono'`
 `r` Reload, `S` Statusleiste umschalten. Statusleiste und Maus bleiben standardmäßig aus.
 Copy-Mode: Prefix + `[`, `v` auswählen, `y` kopieren; unter Wayland mit `wl-copy`.
 
+**Einheitliches Theme (`theme/tokens.toml`):** Palette (Tokyo Night, Variante Night),
+Ioskeley-Fonts, 75-%-Deckkraft, Blur und Rahmen liegen zentral in [`theme/tokens.toml`](theme/tokens.toml).
+Neben WezTerm, Zed, Neovim, tmux, Starship, fzf/zsh, Claude Code und pi werden auch die
+CLI-Tools über eigene Stow-Pakete abgestimmt: `bat` (`tokyonight_night`-Theme mit automatischem
+`bat cache --build`), `lazygit`, `btop` (`tokyo-night`-Theme) und `yazi`.
+
 ## Backups und Wiederherstellung
 
 Kollidierende Dateien werden bei `--backup` nach
@@ -354,7 +360,7 @@ Zum Entfernen der Links im Repo ausführen:
 
 ```bash
 stow --dir "$PWD" --target "$HOME" --no-folding --delete \
-  nvim zed-config wezterm zsh tmux starship git ssh mise dot
+  nvim zed-config wezterm zsh tmux starship git ssh mise dot bat lazygit btop yazi
 ```
 
 Anschließend die benötigten Dateien aus dem gemeldeten Backup an ihre ursprünglichen Pfade
@@ -371,6 +377,8 @@ bash scripts/check.sh
 Prüft Bash/ShellCheck, zsh, LuaJIT-Syntax, JSONC/TOML und den Secret-Scan. Python-Integrationstests
 verwenden temporäre Home-Verzeichnisse und prüfen echtes Stow, Backups, Wiederholungen,
 Symlink-Konflikte, Pfade mit Leerzeichen, Git-Abfrage und Paketmanager-Fehler.
+Theme-Paritätstests (`tests/test_theme.py`) prüfen alle Tools (Zed, WezTerm, Neovim, tmux,
+Starship, fzf/zsh, bat/delta, lazygit, btop, yazi, Claude Code, pi) gegen `theme/tokens.toml`.
 Fehlende optionale Prüfwerkzeuge werden als `SKIP` ausgewiesen. Mit tmux dessen Konfiguration auf einem separaten Socket.
 zsh-Tests prüfen außerdem die Fish-Migration, Runtime-Reihenfolge, Sonderzeichen in Dateinamen,
 Tastenbelegung sowie Plugin-Installation und Updates mit lokalen Git-Repositories.

@@ -95,7 +95,7 @@ alles wird in der neuesten Version installiert und mit `dot update` aktualisiert
 - **Depends on:** M2
 - **Size:** M, ~5 commits
 
-### M5 [~] Einheitliches Theme: Terminal, Editoren, CLI
+### M5 [x] Einheitliches Theme: Terminal, Editoren, CLI
 - **Goal:** Ein Theme-Vertrag gilt für alle Terminal-, Editor- und CLI-Tools.
 - **Includes:** `theme/tokens.toml` (Palette, Fonts, Größen, Deckkraft, Blur, Rahmen/Radius), Theme-Paritätstest mit Ausnahmeliste, Zed zurück auf Tokyo Night + Ioskeley + Transparenz/Blur (neue Config nutzt One Dark/`.ZedMono`), WezTerm (0.75) und Zed auf einen Deckkraftwert, Neovim, tmux, Starship, fzf, bat/delta, lazygit, btop, yazi, Claude Code/pi
 - **Done when:** Paritätstest grün; WezTerm, Zed und Neovim nebeneinander mit gleichen Farben, Fonts und gleicher Deckkraft
@@ -159,3 +159,4 @@ alles wird in der neuesten Version installiert und mit `dot update` aktualisiert
 - 2026-11-21: M2 Tools über mise + `dot`-Befehl abgeschlossen (Container-Matrix prüft install → update → doctor)
 - 2026-11-21: M3 Zed integrieren abgeschlossen (Zed-Config via Stow `zed-config`, `dot zed-template`, Distro-Paket auf Arch, Windows-Pfade und Container-Matrix aktualisiert)
 - 2026-11-21: M4 Agent-Config integrieren abgeschlossen (`agents`-Modul, Claude Code, pi, optional Ollama, `dot update`/`dot doctor`, Container-Matrix prüft Agents und Idempotenz)
+- 2026-11-21: M5 Einheitliches Theme: Terminal, Editoren, CLI abgeschlossen (`theme/tokens.toml`, Theme-Paritätstests, Zed/WezTerm/Neovim/tmux/Starship/fzf/bat/delta/lazygit/btop/yazi/Claude Code/pi, Container-Matrix prüft Theme-Links, `bat`-Cache und pi-Theme)
