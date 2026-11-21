@@ -130,7 +130,7 @@ alles wird in der neuesten Version installiert und mit `dot update` aktualisiert
 - **Depends on:** M2, M3, M4, M5, M6, M8
 - **Size:** M, ~4 commits
 
-### M10 [~] Corne
+### M10 [x] Corne
 - **Goal:** Vial installiert, Corne ohne root nutzbar, Layout zum Vertrag passend.
 - **Includes:** `corne`-Modul (Vial: AUR bzw. AppImage mit Digest-Prüfung, udev-Regel; Windows: Vial-Release), `corne_v4.vil` um Layer für WM-/Navigations-/Zahlen-Bindings ergänzen, Layer-Doku
 - **Done when:** Vial erkennt den Corne unter Linux ohne sudo und unter Windows; neues Layout geladen, alle Vertrags-Bindings mit dem Corne erreichbar
@@ -164,3 +164,4 @@ alles wird in der neuesten Version installiert und mit `dot update` aktualisiert
 - 2026-11-21: M7 done (Native Windows 11 setup with bootstrap.ps1 and dot.ps1)
 - 2026-11-21: M8 WSL2-Arch-Integration abgeschlossen (`wsl --install archlinux`, `windows/wsl-bootstrap.sh`, `.wslconfig` mit `networkingMode=mirrored`, WezTerm-Arch-Domain, Zed Remote-WSL, `dot.ps1 update`/`doctor` für WSL, Arch-Container-Check)
 - 2026-11-21: M9 Ein-Befehl-Bootstrap + Zusatztools implementiert (Linux `curl | bash`, Windows `irm | iex`, zsh-Rückfrage, eza/yazi/tealdeer/just/lazydocker, Bootstrap-Containerprüfungen); frische CachyOS-VM-Abnahme siehe README, manuelle Freigabe offen.
+- 2026-11-21: M10 Corne abgeschlossen (`corne`-Modul mit Vial + udev-Regel, Windows-Vial-Release in `%LOCALAPPDATA%\Vial` + `dot.ps1 update`/`doctor`, `corne_v4.vil` mit 6 Layern und Vertragsparität in `tests/test_corne_layout.py`, Doku in `docs/CORNE.md`, `README.md` und `windows/README.md`).
