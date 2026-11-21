@@ -59,6 +59,13 @@ try {
     Assert ($zedText.Contains('"show_edit_predictions": true')) 'Zed edit predictions disabled'
     Assert ($zedText.Contains('"provider": "ollama"') -and $zedText.Contains('"model": "qwen2.5-coder:7b-base"')) 'Zed Ollama edit prediction missing'
     Assert ($zedText.Contains('"panel.background": "#00000000"') -and $zedText.Contains('"surface.background": "#00000000"')) 'Zed panels are not transparent'
+    foreach ($name in 'keymap.json', 'tasks.json', 'debug.json') {
+        $path = Join-Path $env:APPDATA "Zed/$name"
+        $staged = @($entries | Where-Object Path -eq $path)
+        Assert ($staged.Count -eq 1) "Expected one staged Zed/$name"
+        $expected = [IO.File]::ReadAllBytes((Join-Path $source "../zed-config/.config/zed/$name"))
+        Assert ([Convert]::ToBase64String($staged[0].Bytes) -ceq [Convert]::ToBase64String($expected)) "Zed/$name differs from source"
+    }
     $plan = @(Get-FilePlan $entries)
     Write-FilePlan $plan
     $second = @(Get-FilePlan $entries)

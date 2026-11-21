@@ -103,6 +103,12 @@ class InstallerTests(unittest.TestCase):
         self.assertTrue((self.home / '.zshenv').is_symlink())
         self.assertFalse((self.home / '.config').is_symlink())
         self.assertFalse((self.home / '.config/nvim').is_symlink())
+        for name in ('settings.json', 'keymap.json', 'tasks.json', 'debug.json'):
+            link = self.home / '.config/zed' / name
+            self.assertTrue(link.is_symlink(), link)
+            self.assertEqual(link.resolve(strict=True), REPO / 'zed-config/.config/zed' / name)
+        for name in ('README.md', 'projects', '.stow-local-ignore'):
+            self.assertFalse(os.path.lexists(self.home / name), name)
         before = snapshot(self.home)
         self.install('--only', 'dotfiles')
         self.assertEqual(snapshot(self.home), before)
@@ -671,7 +677,9 @@ class ConfigTests(unittest.TestCase):
                 jsonc(path.read_text())
         for path in REPO.rglob('*.toml'):
             tomllib.loads(path.read_text())
-        settings = jsonc((REPO / 'zed/.config/zed/settings.json').read_text())
+        for path in ('zed', 'zed-config/install.sh', 'zed-config/install.ps1'):
+            self.assertFalse(os.path.lexists(REPO / path), path)
+        settings = jsonc((REPO / 'zed-config/.config/zed/settings.json').read_text())
         self.assertNotIn('terminal_init_command', settings.get('agent', {}))
         # Angular projects format with their own Prettier config; ESLint fixes still run on format.
         self.assertTrue(settings['languages']['TypeScript']['prettier']['allowed'])
@@ -687,7 +695,7 @@ class ConfigTests(unittest.TestCase):
         self.assertEqual(starship['palettes']['tokyo_night']['background'], '#1a1b26')
         fzf = (REPO / 'zsh/.config/zsh/fzf.zsh').read_text()
         self.assertIn('bg:#1a1b26', fzf)
-        self.assertFalse((REPO / 'zed/.config/zed/themes/Neovim-custom.json').exists())
+        self.assertFalse((REPO / 'zed-config/.config/zed/themes/Neovim-custom.json').exists())
         mise = tomllib.loads((REPO / 'mise/.config/mise/config.toml').read_text())
         self.assertEqual(mise['settings']['disable_tools'], ['python'])
         self.assertEqual(mise['settings']['idiomatic_version_file_enable_tools'], ['node'])
