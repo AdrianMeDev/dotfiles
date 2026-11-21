@@ -144,9 +144,10 @@ Zed einmal starten und wieder beenden. Unter `%APPDATA%\Zed` diese Dateien ableg
 
 | Quelle im Repository | Ziel relativ zu `%APPDATA%\Zed` |
 | --- | --- |
-| `zed/.config/zed/settings.json` | `settings.json` |
-| `zed/.config/zed/keymap.json` | `keymap.json` |
-| `zed/.config/zed/tasks.json` | `tasks.json` |
+| `zed-config/.config/zed/settings.json` | `settings.json` |
+| `zed-config/.config/zed/keymap.json` | `keymap.json` |
+| `zed-config/.config/zed/tasks.json` | `tasks.json` |
+| `zed-config/.config/zed/debug.json` | `debug.json` |
 
 In der kopierten `settings.json` innerhalb des `terminal`-Objekts diesen Eintrag suchen:
 

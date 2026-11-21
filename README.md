@@ -31,7 +31,9 @@ cd ~/dotfiles
 Nach der Installation steht der Befehl `dot` (Stow-Paket `dot`, `~/.local/bin/dot`) bereit:
 `dot install [OPTIONEN]` ruft `install.sh` auf, `dot update [--dry-run] [--profile …]` aktualisiert
 Systempakete, mise-Tools, Flatpaks und zsh-Plugins, `dot doctor` prüft Tool-Versionen, mise,
-Stow-Links, Git-Identität und fnm-Überreste (read-only; Exit 1 bei `[FEHLER]`).
+Stow-Links, Git-Identität und fnm-Überreste (read-only; Exit 1 bei `[FEHLER]`), und
+`dot zed-template [--dry-run] [--backup] angular|django|dotnet <PFAD>` kopiert eine
+Zed-Projektvorlage nach `<PFAD>/.zed/`.
 
 Bestehende Konfigurationsdateien stoppen den Installer **vor** den Systemänderungen.
 Nach Prüfung der gemeldeten Pfade kannst du sie sichern und ersetzen lassen:
@@ -93,7 +95,8 @@ auf Arch und Debian übersprungen), `firefox`, `discord`, `spotify`. Extras müs
 ausgewählten Modul passen. Es werden keine Apps ohne entsprechende Auswahl installiert. Podman läuft
 rootless; es wird kein Docker-Daemon eingerichtet. Container nicht mit `sudo` starten.
 
-Der Installer benutzt offizielle HTTPS-Installer für mise und Zed; alle übrigen Dev-Tools lädt mise.
+Der Installer benutzt offizielle HTTPS-Installer für mise sowie für Zed auf Fedora und Debian (auf Arch
+wird das Distro-Paket `zed` verwendet); alle übrigen Dev-Tools lädt mise.
 Mit gesetztem `GITHUB_TOKEN` nutzt mise authentifizierte GitHub-Downloads (kein API-Rate-Limit).
 Diese werden zuerst in ein temporäres Verzeichnis geladen und dann als Benutzer ausgeführt.
 WezTerm wird aus einem verfügbaren Distro-Paket (Arch/Fedora) installiert; ohne solches Paket wird
@@ -241,7 +244,8 @@ Konflikt-/Backup-Ablauf behandelt. `--dry-run` verändert auch bei der Migration
 
 ## Editoren und Terminal
 
-**Zed:** Tokyo Night mit vorhandener Transparenz, Ioskeley Mono im Editor und die
+**Zed:** Konfiguration aus dem Stow-Paket [`zed-config/`](zed-config/README.md) (`~/.config/zed/{settings,keymap,tasks,debug}.json`).
+Tokyo Night mit vorhandener Transparenz, Ioskeley Mono im Editor und die
 terminaloptimierte Nerd Font im integrierten Terminal. Vim-Modus, Space-Leader und Dock-Navigation bleiben.
 Die Oberfläche nutzt einen 50-%-Fensterhintergrund mit transparenten Editor- und Panel-Flächen.
 Lokale Edit Predictions verwenden Ollama mit `qwen2.5-coder:7b-base`; das Modell muss
@@ -249,7 +253,8 @@ lokal geladen sein (`ollama pull qwen2.5-coder:7b-base`).
 TypeScript/JavaScript behalten ESLint statt Prettier. Python nutzt basedpyright/Ruff,
 C# die C#-Extension mit Roslyn. `Space r r` bietet npm-, pytest-, Django- und dotnet-Tasks an.
 Tasks starten nur manuell und erwarten passende Projektdateien/Abhängigkeiten im Worktree-Root.
-In Monorepos `.zed/tasks.json` mit passendem `cwd` im Projekt anlegen.
+Projektvorlagen (`.zed/`) lassen sich mit `dot zed-template angular|django|dotnet <PFAD>` anlegen;
+in Monorepos `.zed/tasks.json` mit passendem `cwd` im Projekt anpassen.
 Claude wird nicht automatisch gestartet; vorhandene Agent-Keybindings bleiben für manuelle Nutzung.
 
 **Neovim:** eigenständige, deutsch kommentierte
@@ -344,7 +349,7 @@ Zum Entfernen der Links im Repo ausführen:
 
 ```bash
 stow --dir "$PWD" --target "$HOME" --no-folding --delete \
-  nvim zed wezterm zsh tmux starship git ssh mise
+  nvim zed-config wezterm zsh tmux starship git ssh mise dot
 ```
 
 Anschließend die benötigten Dateien aus dem gemeldeten Backup an ihre ursprünglichen Pfade

@@ -66,7 +66,7 @@ ist daher nicht vorgesehen.
 | --- | --- |
 | `%USERPROFILE%\.wezterm.lua` | Einstiegspunkt, berücksichtigt die höhere Priorität dieser Datei |
 | `%USERPROFILE%\.config\wezterm\` | Kopierte gemeinsame Basis, Windows-Anpassung und ausgewählte Distribution |
-| `%APPDATA%\Zed\` | Theme, Vim-Keymap, Editor-Einstellungen und Tasks ohne erzwungenes `zsh` |
+| `%APPDATA%\Zed\` | Aus `zed-config/.config/zed/`: Theme, Vim-Keymap, Editor-Einstellungen, Tasks und `debug.json` ohne erzwungenes `zsh` |
 | `%USERPROFILE%\.glzr\glazewm\` | Tiling-Konfiguration und Startskripte |
 | `%USERPROFILE%\.glzr\zebar\` | Zebar-Einstellungen und eigenes `dotfiles`-Widget-Paket |
 | `%LOCALAPPDATA%\Microsoft\Windows\Fonts\` | Benutzer-Fonts; Registrierung unter `HKCU\Software\Microsoft\Windows NT\CurrentVersion\Fonts` |
