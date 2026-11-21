@@ -655,7 +655,7 @@ function Update-WindowsDesktop {
         return $packages
     }
     Assert-WindowsPrerequisites
-    $selected = Select-WslDistro $Distro
+    $selected = if ($NoWsl) { $null } else { Select-WslDistro $Distro }
     foreach ($package in $packages) { Update-WingetPackage $package }
     if ((Get-VialState -Backup:$Backup).Version) {
         $temp = Join-Path ([IO.Path]::GetTempPath()) ('dotfiles-' + [guid]::NewGuid().ToString('N'))
@@ -707,7 +707,7 @@ function Get-DoctorReport {
     } catch { [pscustomobject]@{ Problem = $true; Message = "Vial: $_" } }
 
     try {
-        $selected = Select-WslDistro $Distro
+        $selected = if ($NoWsl) { $null } else { Select-WslDistro $Distro }
         Get-ConfigEntries $SourceRoot $selected -NoAutostart:$NoAutostart -NoWsl:$NoWsl | ForEach-Object {
             $path = $_.Path
             try {

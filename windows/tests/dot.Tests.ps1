@@ -11,7 +11,11 @@ Describe 'Windows dot commands' {
             [Environment]::SetEnvironmentVariable($name, (Join-Path $TestDrive $name))
         }
         function Assert-WindowsPrerequisites {}
-        function Select-WslDistro { return $script:wslDistro }
+        function Select-WslDistro {
+            param([string]$Requested)
+            if ($Requested -and $Requested -ne $script:wslDistro) { throw "WSL-Distribution nicht gefunden: $Requested" }
+            return $script:wslDistro
+        }
         function Invoke-NativeLive {
             param($Program, $Arguments)
             $Program | Should -Be 'wsl.exe'
@@ -127,17 +131,25 @@ Describe 'Windows dot commands' {
         $script:wslCalls.Count | Should -Be 0
         [IO.File]::ReadAllText((Join-Path $env:USERPROFILE '.config/wezterm/distro.lua')) | Should -Be "return nil`n"
     }
+    It 'never looks up WSL with -NoWsl, even for a distro that does not exist' {
+        $script:wslDistro = 'archlinux'
+        { Update-WindowsDesktop $script:source -NoWsl -Distro 'Missing' 6>$null } | Should -Not -Throw
+        [IO.File]::ReadAllText((Join-Path $env:USERPROFILE '.config/wezterm/distro.lua')) | Should -Be "return nil`n"
+        $report = @(Get-DoctorReport $script:source -NoWsl -Distro 'Missing')
+        $report.Message | Should -Contain 'WSL2: uebersprungen (-NoWsl)'
+        $script:wslCalls.Count | Should -Be 0
+    }
     It 'replaces distro.lua on distro change without -Backup while wezterm.lua still conflicts' {
         $script:wslDistro = 'archlinux'
-        Update-WindowsDesktop $script:source -NoWsl 6>$null
+        Update-WindowsDesktop $script:source 6>$null
         $distroPath = Join-Path $env:USERPROFILE '.config/wezterm/distro.lua'
         [IO.File]::ReadAllText($distroPath) | Should -Be "return `"archlinux`"`n"
         $script:wslDistro = 'Arch'
-        Update-WindowsDesktop $script:source -NoWsl 6>$null
+        Update-WindowsDesktop $script:source 6>$null
         [IO.File]::ReadAllText($distroPath) | Should -Be "return `"Arch`"`n"
         $weztermPath = Join-Path $env:USERPROFILE '.config/wezterm/wezterm.lua'
         [IO.File]::WriteAllText($weztermPath, 'custom')
-        { Update-WindowsDesktop $script:source -NoWsl 6>$null } | Should -Throw '*Dateikonflikt*'
+        { Update-WindowsDesktop $script:source 6>$null } | Should -Throw '*Dateikonflikt*'
     }
     It 'fails when dot update in WSL fails' {
         $script:wslDistro = 'archlinux'
