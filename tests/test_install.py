@@ -103,6 +103,12 @@ class InstallerTests(unittest.TestCase):
         self.assertTrue((self.home / '.zshenv').is_symlink())
         self.assertFalse((self.home / '.config').is_symlink())
         self.assertFalse((self.home / '.config/nvim').is_symlink())
+        for name in ('settings.json', 'keymap.json', 'tasks.json', 'debug.json'):
+            link = self.home / '.config/zed' / name
+            self.assertTrue(link.is_symlink(), link)
+            self.assertEqual(link.resolve(strict=True), REPO / 'zed-config/.config/zed' / name)
+        for name in ('README.md', 'projects', '.stow-local-ignore'):
+            self.assertFalse(os.path.lexists(self.home / name), name)
         before = snapshot(self.home)
         self.install('--only', 'dotfiles')
         self.assertEqual(snapshot(self.home), before)
@@ -151,6 +157,53 @@ class InstallerTests(unittest.TestCase):
     def test_private_file_symlinks_are_rejected(self):
         (self.home / '.gitconfig-local').symlink_to(REPO / 'README.md')
         self.install('--only', 'dotfiles', '--backup', success=False)
+
+    def test_stow_local_ignore_skips_ignored_paths_and_foreign_targets(self):
+        spec = importlib.util.spec_from_file_location('links', REPO / 'scripts/links.py')
+        links = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(links)
+
+        repo = self.base / 'repo'
+        (repo / 'manifests').mkdir(parents=True)
+        (repo / 'manifests/stow.txt').write_text('pkg\n')
+
+        pkg = repo / 'pkg'
+        (pkg / 'projects/dotnet').mkdir(parents=True)
+        (pkg / 'nested/local-only').mkdir(parents=True)
+        (pkg / '.config/app').mkdir(parents=True)
+        (pkg / '.stow-local-ignore').write_text(
+            '# comment\n'
+            '\n'
+            '/README\\.md\n'
+            '/projects/\n'
+            'local-only\n'
+            '\\.bak$\n'
+        )
+        (pkg / 'README.md').write_text('package readme\n')
+        (pkg / 'projects/dotnet/settings.json').write_text('{}\n')
+        (pkg / 'nested/README.md').write_text('not root-anchored\n')
+        (pkg / 'nested/local-only/secret.txt').write_text('ignored subtree\n')
+        (pkg / '.config/app/notes.bak').write_text('ignored suffix\n')
+        (pkg / '.config/app/settings.json').write_text('{}\n')
+
+        external = self.base / 'external'
+        external.mkdir()
+        (self.home / '.stow-local-ignore').write_text('existing\n')
+        (self.home / 'README.md').write_text('home readme\n')
+        (self.home / 'projects').symlink_to(external, target_is_directory=True)
+        (self.home / 'nested/local-only').parent.mkdir(parents=True)
+        (self.home / 'nested/local-only').symlink_to(external, target_is_directory=True)
+        (self.home / '.config/app').mkdir(parents=True)
+        (self.home / '.config/app/notes.bak').write_text('home backup\n')
+
+        self.assertEqual(links.conflicts(repo, self.home), [])
+
+        (self.home / 'nested/README.md').write_text('conflict\n')
+        (self.home / '.config/app/settings.json').write_text('conflict\n')
+        self.assertEqual(
+            links.conflicts(repo, self.home),
+            [self.home / '.config/app/settings.json', self.home / 'nested/README.md'],
+        )
 
     def test_existing_git_identity_survives_backup_and_repeat(self):
         self.require_stow()
@@ -624,7 +677,9 @@ class ConfigTests(unittest.TestCase):
                 jsonc(path.read_text())
         for path in REPO.rglob('*.toml'):
             tomllib.loads(path.read_text())
-        settings = jsonc((REPO / 'zed/.config/zed/settings.json').read_text())
+        for path in ('zed', 'zed-config/install.sh', 'zed-config/install.ps1'):
+            self.assertFalse(os.path.lexists(REPO / path), path)
+        settings = jsonc((REPO / 'zed-config/.config/zed/settings.json').read_text())
         self.assertNotIn('terminal_init_command', settings.get('agent', {}))
         # Angular projects format with their own Prettier config; ESLint fixes still run on format.
         self.assertTrue(settings['languages']['TypeScript']['prettier']['allowed'])
@@ -640,7 +695,7 @@ class ConfigTests(unittest.TestCase):
         self.assertEqual(starship['palettes']['tokyo_night']['background'], '#1a1b26')
         fzf = (REPO / 'zsh/.config/zsh/fzf.zsh').read_text()
         self.assertIn('bg:#1a1b26', fzf)
-        self.assertFalse((REPO / 'zed/.config/zed/themes/Neovim-custom.json').exists())
+        self.assertFalse((REPO / 'zed-config/.config/zed/themes/Neovim-custom.json').exists())
         mise = tomllib.loads((REPO / 'mise/.config/mise/config.toml').read_text())
         self.assertEqual(mise['settings']['disable_tools'], ['python'])
         self.assertEqual(mise['settings']['idiomatic_version_file_enable_tools'], ['node'])

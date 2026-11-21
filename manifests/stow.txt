@@ -1,5 +1,5 @@
 nvim
-zed
+zed-config
 wezterm
 zsh
 tmux

@@ -64,10 +64,27 @@ desktop = '[Desktop Entry]\nType=Application\nName=WezTerm\nExec="' + exe + '" s
 PY
 }
 
+install_zed() {
+    if have zed || have zeditor; then
+        log 'Zed ist vorhanden.'
+        return
+    fi
+    local resolved pkgs=()
+    resolved=$(pkg_names zed)
+    if [[ -n $resolved ]]; then
+        mapfile -t pkgs <<< "$resolved"
+        pkg_install "${pkgs[@]}"
+        if ((!DRY_RUN)); then
+            have zed || have zeditor ||
+                die 'Zed-Paket enthält kein ausführbares zed oder zeditor.'
+        fi
+        return
+    fi
+    upstream_installer zed https://zed.dev/install.sh sh
+}
+
 install_apps() {
     if [[ ${PROFILE:-desktop} == headless ]]; then log 'Profil headless: GUI-Apps (WezTerm, Zed) werden übersprungen.'; return; fi
     install_wezterm
-    if ! command -v zed >/dev/null 2>&1; then
-        upstream_installer zed https://zed.dev/install.sh sh
-    fi
+    install_zed
 }

@@ -14,6 +14,8 @@ Verwendung:
                               (--dry-run, --profile desktop|headless, --help).
   dot doctor                  Prüft Umgebung, Tool-Versionen, mise, Stow-Links, Git-Identität
                               und fnm-Überreste (read-only; Exit 1 bei [FEHLER]).
+  dot zed-template [--dry-run] [--backup] angular|django|dotnet <PFAD>
+                              Kopiert die Zed-Projektvorlage (.zed/*.json) in ein Projekt.
   dot help | -h | --help     Zeigt diese Hilfe.
 EOF
 }
@@ -49,6 +51,14 @@ case "$1" in
         # shellcheck source=scripts/doctor.sh
         source "$REPO_DIR/scripts/doctor.sh"
         dot_doctor "$@"
+        ;;
+    zed-template)
+        shift
+        # shellcheck source=scripts/common.sh
+        source "$REPO_DIR/scripts/common.sh"
+        # shellcheck source=scripts/zed-template.sh
+        source "$REPO_DIR/scripts/zed-template.sh"
+        dot_zed_template "$@"
         ;;
     help|-h|--help)
         usage

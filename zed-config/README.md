@@ -4,12 +4,11 @@ Komplette, tastaturzentrierte Zed-Konfiguration für Windows (inkl. WSL) und Lin
 
 ```
 zed-config/
-├── settings.json   global: Vim, UI, Sprachen, LSP, Ollama, Agents, Edit Predictions
-├── keymap.json     global: Leader-Tasten (Leertaste), Panels, Debugger, KI
-├── tasks.json      global: Claude Code, pi, lazygit, Suche …
-├── debug.json      global: Python-/Node-Datei debuggen
-├── install.sh      Linux/WSL-Installer (+ Projektvorlagen)
-├── install.ps1     Windows-Installer
+├── .config/zed/
+│   ├── settings.json   global: Vim, UI, Sprachen, LSP, Ollama, Agents, Edit Predictions
+│   ├── keymap.json     global: Leader-Tasten (Leertaste), Panels, Debugger, KI
+│   ├── tasks.json      global: Claude Code, pi, lazygit, Suche …
+│   └── debug.json      global: Python-/Node-Datei debuggen
 └── projects/
     ├── angular/.zed/{settings,tasks,debug}.json
     ├── django/.zed/{settings,tasks,debug}.json
@@ -20,17 +19,18 @@ zed-config/
 
 | System | Globale Dateien landen in |
 |---|---|
-| Linux | `~/.config/zed/` → `./install.sh` |
-| Windows | `%APPDATA%\Zed\` → `.\install.ps1` |
+| Linux | `~/.config/zed/` → `dot install` (bzw. `./install.sh` aus dem Repo-Root) |
+| Windows | `%APPDATA%\Zed\` → `.\windows\install.ps1` (aus dem Repo-Root) |
 
 **Windows + WSL:** Zed läuft unter Windows, WSL-Ordner werden als Remote-Projekt geöffnet
 (`<space> p w` = *projects: open wsl*). Deshalb gehören die globalen Dateien nach
-`%APPDATA%\Zed`. Die Projektvorlagen (`.zed/`) kopierst du **in WSL** ins Projekt:
+`%APPDATA%\Zed`. Die Projektvorlagen (`.zed/`) kopierst du **unter Linux/WSL** mit `dot zed-template`
+ins Projekt (optional mit `--dry-run` und `--backup`):
 
 ```bash
-./install.sh angular ~/code/mein-frontend
-./install.sh django  ~/code/mein-backend
-./install.sh dotnet  ~/code/meine-api
+dot zed-template angular ~/code/mein-frontend
+dot zed-template django  ~/code/mein-backend
+dot zed-template dotnet  ~/code/meine-api
 ```
 
 Alle Werkzeuge, die im Projekt laufen (node, python/venv, dotnet, claude, pi, lazygit, ruff),

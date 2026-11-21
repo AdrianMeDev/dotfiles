@@ -64,7 +64,7 @@ git push
 
 ## Zed
 
-Die folgenden Kürzel kommen direkt aus `zed/.config/zed/keymap.json`.
+Die folgenden Kürzel kommen direkt aus `zed-config/.config/zed/keymap.json`.
 
 ### Dateien, Suche und Buffer
 

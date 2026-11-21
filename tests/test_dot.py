@@ -363,6 +363,81 @@ class DotCliTests(unittest.TestCase):
         self.assertEqual(self.run_dot('doctor', '--help').returncode, 0)
         self.assertNotEqual(self.run_dot('doctor', '--bogus').returncode, 0)
 
+    # --- dot zed-template -------------------------------------------------
+
+    ZED_FILES = ('settings.json', 'tasks.json', 'debug.json')
+
+    def test_zed_template_creates_files(self):
+        for name in ('angular', 'django', 'dotnet'):
+            with self.subTest(template=name):
+                dest = self.base / f'proj {name}' / 'nested'
+                result = self.run_dot('zed-template', name, str(dest))
+                self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+                for f in self.ZED_FILES:
+                    self.assertEqual((dest / '.zed' / f).read_bytes(),
+                                     (REPO / 'zed-config/projects' / name / '.zed' / f).read_bytes())
+
+    def test_zed_template_idempotent(self):
+        dest = self.base / 'x'
+        self.assertEqual(self.run_dot('zed-template', 'dotnet', str(dest)).returncode, 0)
+        before = {f: (dest / '.zed' / f).stat().st_mtime_ns for f in self.ZED_FILES}
+        result = self.run_dot('zed-template', '--backup', 'dotnet', str(dest))
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertEqual(sorted(p.name for p in (dest / '.zed').iterdir()), sorted(self.ZED_FILES))
+        self.assertEqual(before, {f: (dest / '.zed' / f).stat().st_mtime_ns for f in self.ZED_FILES})
+
+    def test_zed_template_dry_run_writes_nothing(self):
+        dest = self.base / 'x'
+        result = self.run_dot('zed-template', '--dry-run', 'django', str(dest))
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn('Vorschau abgeschlossen', result.stdout)
+        self.assertFalse(dest.exists())
+        (dest / '.zed').mkdir(parents=True)
+        (dest / '.zed/settings.json').write_text('mine')
+        result = self.run_dot('zed-template', '--dry-run', '--backup', 'django', str(dest))
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertEqual(sorted(p.name for p in (dest / '.zed').iterdir()), ['settings.json'])
+        self.assertEqual((dest / '.zed/settings.json').read_text(), 'mine')
+
+    def test_zed_template_conflict_and_backup(self):
+        dest = self.base / 'x'
+        (dest / '.zed').mkdir(parents=True)
+        (dest / '.zed/tasks.json').write_text('mine')
+        result = self.run_dot('zed-template', 'angular', str(dest))
+        self.assertNotEqual(result.returncode, 0)
+        self.assertEqual(sorted(p.name for p in (dest / '.zed').iterdir()), ['tasks.json'])
+        self.assertEqual((dest / '.zed/tasks.json').read_text(), 'mine')
+        result = self.run_dot('zed-template', '--backup', 'angular', str(dest))
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        backups = list((dest / '.zed').glob('tasks.json.bak-*'))
+        self.assertEqual([b.read_text() for b in backups], ['mine'])
+        self.assertEqual((dest / '.zed/tasks.json').read_bytes(),
+                         (REPO / 'zed-config/projects/angular/.zed/tasks.json').read_bytes())
+        self.assertTrue((dest / '.zed/settings.json').is_file())
+
+    def test_zed_template_rejects_symlinks_and_non_directories(self):
+        dest = self.base / 'x'
+        (dest / '.zed').mkdir(parents=True)
+        (dest / '.zed/settings.json').symlink_to(self.base / 'elsewhere')
+        result = self.run_dot('zed-template', '--backup', 'dotnet', str(dest))
+        self.assertNotEqual(result.returncode, 0)
+        self.assertEqual(sorted(p.name for p in (dest / '.zed').iterdir()), ['settings.json'])
+        link = self.base / 'y'
+        (link).mkdir()
+        (link / '.zed').symlink_to(self.base)
+        self.assertNotEqual(self.run_dot('zed-template', 'dotnet', str(link)).returncode, 0)
+        afile = self.base / 'file'
+        afile.write_text('')
+        self.assertNotEqual(self.run_dot('zed-template', 'dotnet', str(afile)).returncode, 0)
+
+    def test_zed_template_invalid_arguments(self):
+        self.assertIn('dot zed-template', self.run_dot('--help').stdout)
+        self.assertEqual(self.run_dot('zed-template', '--help').returncode, 0)
+        for args in [(), ('dotnet',), ('rails', 'x'), ('--bogus', 'dotnet', 'x'), ('dotnet', 'x', 'y')]:
+            with self.subTest(args=args):
+                self.assertNotEqual(self.run_dot('zed-template', *args).returncode, 0)
+        self.assertFalse((self.base / 'x').exists())
+
     def test_unknown_subcommand_fails_cleanly(self):
         result = self.run_dot('unknown-cmd')
         self.assertNotEqual(result.returncode, 0)

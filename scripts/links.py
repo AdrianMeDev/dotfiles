@@ -4,6 +4,7 @@ import argparse
 import datetime
 import os
 from pathlib import Path
+import re
 import shutil
 import sys
 import tempfile
@@ -28,14 +29,58 @@ def remove_legacy_fish_links(repo, home):
             target.unlink()
 
 
+def load_ignore_patterns(base):
+    """Load optional GNU Stow .stow-local-ignore regex patterns for a package."""
+    ignore_file = base / '.stow-local-ignore'
+    if ignore_file.is_symlink():
+        raise ValueError(f'Symlink in Quellpaket nicht erlaubt: {ignore_file.relative_to(base.parent)}')
+    if not ignore_file.is_file():
+        return []
+    patterns = []
+    for raw in ignore_file.read_text().splitlines():
+        line = raw.strip()
+        if not line or line.startswith('#'):
+            continue
+        anchored = line.startswith('^/') or '/' in line
+        if anchored:
+            pat = line.removeprefix('^')
+            if not pat.startswith('/'):
+                pat = '/' + pat
+            if len(pat) > 1:
+                pat = pat.rstrip('/')
+            patterns.append((True, re.compile(pat)))
+        else:
+            patterns.append((False, re.compile(line)))
+    return patterns
+
+
+def is_ignored(relative, patterns):
+    """Return True if relative path is .stow-local-ignore or matches a package ignore rule."""
+    if relative == Path('.stow-local-ignore'):
+        return True
+    prefixes = ['/' + p.as_posix() for p in (relative, *relative.parents) if p != Path('.')]
+    for anchored, regex in patterns:
+        if anchored:
+            if any(regex.fullmatch(prefix) for prefix in prefixes):
+                return True
+        else:
+            matcher = regex.search if regex.pattern.startswith('^') or regex.pattern.endswith('$') else regex.fullmatch
+            if any(matcher(part) for part in relative.parts):
+                return True
+    return False
+
+
 def conflicts(repo, home):
     found = set()
     for package in packages(repo):
         base = repo / package
+        patterns = load_ignore_patterns(base)
         for source in sorted(base.rglob('*')):
             if source.is_symlink():
                 raise ValueError(f'Symlink in Quellpaket nicht erlaubt: {source.relative_to(repo)}')
             relative = source.relative_to(base)
+            if is_ignored(relative, patterns):
+                continue
             target = home / relative
             for ancestor in reversed(target.parents):
                 if ancestor == home or home not in ancestor.parents:

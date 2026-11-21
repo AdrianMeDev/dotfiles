@@ -222,15 +222,15 @@ function Get-ConfigEntries {
     New-CopyEntry (Join-Path $wezterm 'wezterm.lua') (Join-Path $SourceRoot 'wezterm/wezterm.lua')
     # WezTerm prefers this file to .config/wezterm; treat it as part of the conflict plan.
     New-TextEntry (Join-Path $env:USERPROFILE '.wezterm.lua') "return dofile(require('wezterm').home_dir .. '/.config/wezterm/wezterm.lua')`n"
-    $settings = [IO.File]::ReadAllText((Join-Path $repo 'zed/.config/zed/settings.json'))
+    $zedSource = Join-Path $repo 'zed-config/.config/zed'
+    $settings = [IO.File]::ReadAllText((Join-Path $zedSource 'settings.json'))
     $needle = '"shell": { "program": "zsh" }'
     if (-not $settings.Contains($needle)) { throw 'Zed-Basiskonfiguration geaendert: Terminal-Anpassung pruefen.' }
     $settings = $settings.Replace($needle, '"shell": { "program": "pwsh.exe", "args": ["-NoLogo"] }')
     New-TextEntry (Join-Path $zed 'settings.json') $settings
-    New-CopyEntry (Join-Path $zed 'keymap.json') (Join-Path $repo 'zed/.config/zed/keymap.json')
-    $tasks = @(Get-Content -LiteralPath (Join-Path $repo 'zed/.config/zed/tasks.json') -Raw | ConvertFrom-Json)
-    foreach ($task in $tasks) { $task.PSObject.Properties.Remove('shell') }
-    New-TextEntry (Join-Path $zed 'tasks.json') (ConvertTo-Json -InputObject $tasks -Depth 30)
+    foreach ($name in 'keymap.json', 'tasks.json', 'debug.json') {
+        New-CopyEntry (Join-Path $zed $name) (Join-Path $zedSource $name)
+    }
     foreach ($name in 'config.yaml', 'start-zebar.ps1', 'start-glazewm.ps1') {
         New-CopyEntry (Join-Path $glaze $name) (Join-Path $SourceRoot "glazewm/$name")
     }

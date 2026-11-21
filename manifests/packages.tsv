@@ -30,3 +30,4 @@ mesa-egl	desktop	mesa	mesa-libEGL	libegl1
 mesa-gl	desktop	mesa	mesa-libGL	libgl1
 dotnet-sdk	dev	dotnet-sdk	dotnet-sdk-10.0	-
 wezterm	dev	wezterm	wezterm	-
+zed	dev	zed	-	-

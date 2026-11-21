@@ -40,6 +40,43 @@ nvim_version=$(as_dev 'zsh -c "nvim --version"')
 [[ $nvim_version =~ NVIM\ v([0-9]+)\.([0-9]+) ]] || { printf 'nvim-Version nicht lesbar.\n' >&2; exit 1; }
 ((BASH_REMATCH[1] > 0 || BASH_REMATCH[2] >= 12)) || { printf 'nvim >= 0.12 erwartet, gefunden: %s.%s\n' "${BASH_REMATCH[1]}" "${BASH_REMATCH[2]}" >&2; exit 1; }
 
+printf '==> Zed-Links prüfen\n'
+sudo --preserve-env=GITHUB_TOKEN -u dev -i bash -s <<'EOF'
+    set -euo pipefail
+    for f in settings.json keymap.json tasks.json debug.json; do
+        link="$HOME/.config/zed/$f"
+        [[ -L $link ]] || { printf 'Zed-Link ist kein Symlink: %s\n' "$link" >&2; exit 1; }
+        target=$(readlink -f "$link")
+        [[ $target == "/dotfiles/zed-config/.config/zed/$f" ]] || {
+            printf 'Zed-Link zeigt falsch: %s -> %s\n' "$link" "$target" >&2
+            exit 1
+        }
+    done
+    [[ ! -e "$HOME/README.md" && ! -e "$HOME/projects" ]] || {
+        printf 'Unerwartete zed-config-Artefakte im HOME.\n' >&2
+        exit 1
+    }
+EOF
+
+printf '==> dot zed-template prüfen\n'
+sudo --preserve-env=GITHUB_TOKEN -u dev -i bash -s <<'EOF'
+    set -euo pipefail
+    rm -rf /tmp/x
+    zsh -c "dot zed-template dotnet /tmp/x"
+    for f in settings.json tasks.json debug.json; do
+        cmp -s "/tmp/x/.zed/$f" "/dotfiles/zed-config/projects/dotnet/.zed/$f" || {
+            printf 'Zed-Vorlage fehlt oder weicht ab: %s\n' "$f" >&2
+            exit 1
+        }
+    done
+    out=$(zsh -c "dot zed-template dotnet /tmp/x")
+    grep -qF "bereits aktuell" <<< "$out" || {
+        printf 'dot zed-template nicht idempotent: %s\n' "$out" >&2
+        exit 1
+    }
+    rm -rf /tmp/x
+EOF
+
 printf '==> dot update\n'
 as_dev 'zsh -c "dot update --dry-run"'
 as_dev 'zsh -c "dot update"'
