@@ -29,10 +29,10 @@ try {
             Install-WindowsDesktop $PSScriptRoot -DryRun:$DryRun -Backup:$Backup -Extra $Extra -Distro $Distro -NoAutostart:$NoAutostart -NoWsl:$NoWsl -WslUser $WslUser
         }
         'update' {
-            Update-WindowsDesktop $PSScriptRoot -DryRun:$DryRun -Backup:$Backup -Distro $Distro -NoAutostart:$NoAutostart
+            Update-WindowsDesktop $PSScriptRoot -DryRun:$DryRun -Backup:$Backup -Distro $Distro -NoAutostart:$NoAutostart -NoWsl:$NoWsl
         }
         'doctor' {
-            $report = @(Get-DoctorReport $PSScriptRoot -Extra $Extra -Distro $Distro -NoAutostart:$NoAutostart)
+            $report = @(Get-DoctorReport $PSScriptRoot -Extra $Extra -Distro $Distro -NoAutostart:$NoAutostart -NoWsl:$NoWsl)
             $report.Message
             if ($report.Problem -contains $true) { exit 1 }
         }

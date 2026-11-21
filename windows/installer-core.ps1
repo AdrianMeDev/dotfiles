@@ -548,21 +548,40 @@ function Update-WingetPackage {
     Invoke-Native 'winget.exe' @('upgrade', '--exact', '--id', $Package, '--source', 'winget', '--accept-package-agreements', '--accept-source-agreements', '--disable-interactivity') @(0, -1978335189) | Out-Host
 }
 
+# Runs the Linux `dot` as the distro's default user (created by wsl-bootstrap.sh).
+function Get-WslDotArguments {
+    param([string]$Distro, [string]$Verb)
+    return @('-d', $Distro, '--cd', '~', '--', 'bash', '-c', "exec `"`$HOME/.local/bin/dot`" $Verb")
+}
+
 function Update-WindowsDesktop {
-    param([string]$SourceRoot, [switch]$DryRun, [switch]$Backup, [string]$Distro, [switch]$NoAutostart)
+    param([string]$SourceRoot, [switch]$DryRun, [switch]$Backup, [string]$Distro, [switch]$NoAutostart, [switch]$NoWsl)
     $packages = Get-WingetPackages (Split-Path -Parent $SourceRoot) -All
-    if ($DryRun) { return $packages }
+    if ($DryRun) {
+        if (-not $NoWsl) {
+            $planned = Select-WslDistro $Distro
+            if ($planned) { Write-Host "WSL: dot update wuerde in $planned laufen" }
+        }
+        return $packages
+    }
     Assert-WindowsPrerequisites
     $selected = Select-WslDistro $Distro
     foreach ($package in $packages) { Update-WingetPackage $package }
-    $plan = @(Get-FilePlan @(Get-ConfigEntries $SourceRoot $selected -NoAutostart:$NoAutostart) -Backup:$Backup)
+    $plan = @(Get-FilePlan @(Get-ConfigEntries $SourceRoot $selected -NoAutostart:$NoAutostart -NoWsl:$NoWsl) -Backup:$Backup)
     $flowPath = Join-Path $env:APPDATA 'FlowLauncher/Settings/Settings.json'
     Assert-FlowConfigWritable @($plan | Where-Object Path -eq $flowPath)
     Write-FilePlan $plan
+    if ($NoWsl) { Write-Host 'WSL2: uebersprungen (-NoWsl).' }
+    elseif (-not $selected) { Write-Host 'WSL2: keine Arch-Distribution, uebersprungen.' }
+    else {
+        Write-Host "WSL: dot update in $selected"
+        $code = Invoke-NativeLive 'wsl.exe' (Get-WslDotArguments $selected 'update')
+        if ($code -ne 0) { throw "WSL dot update (Exit $code)" }
+    }
 }
 
 function Get-DoctorReport {
-    param([string]$SourceRoot, [string[]]$Extra = @(), [string]$Distro, [switch]$NoAutostart)
+    param([string]$SourceRoot, [string[]]$Extra = @(), [string]$Distro, [switch]$NoAutostart, [switch]$NoWsl)
     $repo = Split-Path -Parent $SourceRoot
     $required = Get-WingetPackages $repo $Extra
     foreach ($package in Get-WingetPackages $repo -All) {
@@ -579,7 +598,7 @@ function Get-DoctorReport {
 
     try {
         $selected = Select-WslDistro $Distro
-        Get-ConfigEntries $SourceRoot $selected -NoAutostart:$NoAutostart | ForEach-Object {
+        Get-ConfigEntries $SourceRoot $selected -NoAutostart:$NoAutostart -NoWsl:$NoWsl | ForEach-Object {
             $path = $_.Path
             try {
                 $item = Get-FilePlan @($_) -Backup
@@ -589,6 +608,22 @@ function Get-DoctorReport {
             } catch { [pscustomobject]@{ Problem = $true; Message = "${path}: $_" } }
         }
     } catch { [pscustomobject]@{ Problem = $true; Message = "Konfiguration: $_" } }
+
+    if ($NoWsl) {
+        [pscustomobject]@{ Problem = $false; Message = 'WSL2: uebersprungen (-NoWsl)' }
+    } else {
+        try {
+            $wsl = Select-WslDistro $Distro
+            if (-not $wsl) {
+                [pscustomobject]@{ Problem = $true; Message = 'WSL2 Arch: nicht installiert' }
+            } else {
+                [pscustomobject]@{ Problem = $false; Message = "WSL2 Arch: $wsl (WSL2)" }
+                $result = Invoke-NativeResult 'wsl.exe' (Get-WslDotArguments $wsl 'doctor')
+                $text = ($result.Output -join "`n") -replace "`0", ''
+                [pscustomobject]@{ Problem = $result.Code -ne 0; Message = "WSL dot doctor (Exit $($result.Code)):`n$text".TrimEnd() }
+            }
+        } catch { [pscustomobject]@{ Problem = $true; Message = "WSL2: $_" } }
+    }
 
     try {
         foreach ($item in Get-DarkModePlan) {
