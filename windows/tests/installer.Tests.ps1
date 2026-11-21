@@ -12,9 +12,14 @@ Describe 'Windows installer' {
         $script:temporary = Join-Path ([IO.Path]::GetTempPath()) ('windows-tests-' + [guid]::NewGuid())
         $script:previous = @{}
         foreach ($name in 'USERPROFILE', 'APPDATA', 'LOCALAPPDATA') { $script:previous[$name] = [Environment]::GetEnvironmentVariable($name) }
-        $env:USERPROFILE = Join-Path $script:temporary 'User with spaces'
-        $env:APPDATA = Join-Path $env:USERPROFILE 'AppData/Roaming'
-        $env:LOCALAPPDATA = Join-Path $env:USERPROFILE 'AppData/Local'
+        # Every Context gets its own profile (created lazily by the code under test), so files written by an
+        # earlier Context (distro.lua, .wslconfig, Flow settings) cannot conflict with the plan of the next one.
+        function Use-TestProfile {
+            $env:USERPROFILE = Join-Path $script:temporary ([guid]::NewGuid().ToString('N') + '/User with spaces')
+            $env:APPDATA = Join-Path $env:USERPROFILE 'AppData/Roaming'
+            $env:LOCALAPPDATA = Join-Path $env:USERPROFILE 'AppData/Local'
+        }
+        Use-TestProfile
         $script:names = @('archlinux')
         $script:version = 2
         $script:packageCalls = 0
@@ -48,6 +53,7 @@ Describe 'Windows installer' {
     }
 
     Context 'dry run and distro selection' {
+        BeforeAll { Use-TestProfile }
         It 'dry run creates no files and installs no packages' {
             Install-WindowsDesktop $script:source -DryRun
             Test-Path $script:temporary | Should -BeFalse
@@ -120,6 +126,7 @@ Describe 'Windows installer' {
 
     Context 'wsl arch install and bootstrap' {
         BeforeAll {
+            Use-TestProfile
             $script:wslCalls = @()
             $script:installCode = 0
             $script:installOutput = @('Installing')
@@ -230,6 +237,7 @@ Describe 'Windows installer' {
     }
 
     Context 'wslconfig' {
+        BeforeAll { Use-TestProfile }
         BeforeEach {
             $script:wslPath = Join-Path $env:USERPROFILE '.wslconfig'
             Remove-Item -LiteralPath $script:wslPath -ErrorAction SilentlyContinue
@@ -259,7 +267,7 @@ Describe 'Windows installer' {
     }
 
     Context 'winget packages' {
-        BeforeAll { $script:repo = Split-Path -Parent $script:source }
+        BeforeAll { Use-TestProfile; $script:repo = Split-Path -Parent $script:source }
         It 'returns the ten base packages' {
             $ids = @(Get-WingetPackages $script:repo)
             $ids.Count | Should -Be 10
@@ -280,6 +288,7 @@ Describe 'Windows installer' {
 
     Context 'config entries and file plan' {
         BeforeAll {
+            Use-TestProfile
             $script:entries = @(Get-ConfigEntries $script:source 'archlinux')
         }
         It 'NoAutostart removes exactly one entry' {
@@ -367,6 +376,7 @@ Describe 'Windows installer' {
 
     Context 'agent config' {
         BeforeAll {
+            Use-TestProfile
             $script:repo = Split-Path -Parent $script:source
             $script:savedDirs = @($env:CLAUDE_CONFIG_DIR, $env:PI_CODING_AGENT_DIR)
             $env:CLAUDE_CONFIG_DIR = $null
@@ -439,6 +449,7 @@ Describe 'Windows installer' {
 
     Context 'full installation' {
         BeforeAll {
+            Use-TestProfile
             $script:entries = @(Get-ConfigEntries $script:source 'archlinux')
             $script:target = $script:entries[0].Path
             function Invoke-WebRequest { param($Uri, $OutFile, [switch]$UseBasicParsing) [IO.File]::WriteAllText($OutFile, 'mock archive') }

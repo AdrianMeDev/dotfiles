@@ -218,7 +218,7 @@ function Install-WslArch {
         throw "WSL verlangt einen Neustart. $rerun"
     }
     if ($result.Code -ne 0) { throw "wsl.exe --install $Name (Exit $($result.Code)): $text" }
-    $selected = Select-WslDistro $Name
+    $selected = try { Select-WslDistro $Name } catch { $null }
     if (-not $selected) { throw "Die Distribution '$Name' ist nach der Installation nicht registriert. $rerun" }
     return $selected
 }

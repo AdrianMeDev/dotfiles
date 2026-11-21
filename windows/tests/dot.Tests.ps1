@@ -44,6 +44,11 @@ Describe 'Windows dot commands' {
         }
     }
     BeforeEach {
+        # Fresh profile per case: generated files (distro.lua, .wslconfig, Zed settings) depend on the selected distro.
+        $script:run = [guid]::NewGuid().ToString('N')
+        foreach ($name in 'USERPROFILE', 'APPDATA', 'LOCALAPPDATA', 'CLAUDE_CONFIG_DIR', 'PI_CODING_AGENT_DIR') {
+            [Environment]::SetEnvironmentVariable($name, (Join-Path $TestDrive "$script:run/$name"))
+        }
         $script:listed = @()
         $script:upgraded = @()
         $script:wslDistro = $null
@@ -123,7 +128,7 @@ Describe 'Windows dot commands' {
         $script:wslDistro = 'archlinux'
         $script:wslCode = 1
         $report = @(Get-DoctorReport $script:source)
-        ($report | Where-Object Problem).Message | Should -Match 'WSL dot doctor \(Exit 1\)'
+        @($report | Where-Object { $_.Problem -and $_.Message -like 'WSL dot doctor*' }).Message | Should -Match 'WSL dot doctor \(Exit 1\)'
         $script:wslCalls = @()
         $report = @(Get-DoctorReport $script:source -NoWsl)
         $report.Message | Should -Contain 'WSL2: uebersprungen (-NoWsl)'
