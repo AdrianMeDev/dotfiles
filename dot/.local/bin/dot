@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+SCRIPT_PATH=$(readlink -f -- "${BASH_SOURCE[0]}")
+REPO_DIR=$(cd -- "$(dirname -- "$SCRIPT_PATH")/../../.." && pwd -P)
+
+usage() {
+    cat <<'EOF'
+dot – Dotfiles CLI
+
+Verwendung:
+  dot install [OPTIONEN...]   Führt install.sh mit den angegebenen Optionen aus.
+  dot help | -h | --help     Zeigt diese Hilfe.
+EOF
+}
+
+if (($# == 0)); then
+    usage
+    exit 0
+fi
+
+case "$1" in
+    install)
+        shift
+        exec "$REPO_DIR/install.sh" "$@"
+        ;;
+    help|-h|--help)
+        usage
+        ;;
+    *)
+        printf 'Fehler: Unbekannter Befehl: %s\n' "$1" >&2
+        usage >&2
+        exit 1
+        ;;
+esac

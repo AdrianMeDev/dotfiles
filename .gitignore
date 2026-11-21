@@ -4,6 +4,8 @@
 !.env.example
 *.local
 *.local.*
+# Stow package directory that targets ~/.local/bin, not a private override.
+!/dot/.local/
 .gitconfig-local
 config.local
 local.zsh
