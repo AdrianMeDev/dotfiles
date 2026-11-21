@@ -5,8 +5,8 @@
 update_usage() {
     cat <<'USAGE'
 dot update [--dry-run] [--profile desktop|headless]
-  Aktualisiert Systempakete (inkl. AUR auf Arch), mise-Tools, Flatpaks (nur desktop)
-  und installierte zsh-Plugins.
+  Aktualisiert Systempakete (inkl. AUR auf Arch), mise-Tools, installierte Agenten
+  (Claude Code, pi, Ollama), Flatpaks (nur desktop) und installierte zsh-Plugins.
 --dry-run    Zeigt Schritte ohne Schreibzugriffe oder sudo.
 --profile    Wählt desktop oder headless. Standard ist die automatische Erkennung.
 --help       Zeigt diese Hilfe.
@@ -34,6 +34,21 @@ _update_mise() {
         printf 'mise: Versionsänderungen (alt -> neu):\n'
         diff <(printf '%s\n' "$before") <(printf '%s\n' "$after") | sed -n 's/^[<>] /  &/p' || true
     fi
+}
+
+# Claude Code, pi and upstream-installed Ollama (Arch packages come with the system upgrade).
+_update_agents() {
+    local pi_before=$1 rc=0
+    if have claude; then run claude update || rc=$?; fi
+    if ((pi_before)) || have pi; then
+        run mise exec -- npm install -g @earendil-works/pi-coding-agent@latest || rc=$?
+        run mise reshim || rc=$?
+    fi
+    if have ollama && [[ $DISTRO_FAMILY != arch ]]; then
+        upstream_installer ollama https://ollama.com/install.sh sh || rc=$?
+        if [[ -n ${WORK_DIR:-} ]]; then rm -rf -- "$WORK_DIR"; WORK_DIR=''; fi
+    fi
+    return "$rc"
 }
 
 _update_zsh_plugins() {
@@ -78,7 +93,12 @@ dot_update() {
     pkg_upgrade_aur || return $?
 
     log 'Update: mise-Tools'
+    local pi_before=0
+    if have pi; then pi_before=1; fi
     _update_mise || return $?
+
+    log 'Update: Agenten'
+    _update_agents "$pi_before" || return $?
 
     if [[ $profile == desktop ]] && have flatpak; then
         log 'Update: Flatpaks (user)'

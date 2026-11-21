@@ -58,6 +58,8 @@ class InstallerTests(unittest.TestCase):
                 del self.env[key]
         self.env.pop('TMUX', None)
         self.env.pop('ZDOTDIR', None)
+        self.env.pop('CLAUDE_CONFIG_DIR', None)
+        self.env.pop('PI_CODING_AGENT_DIR', None)
 
     def tearDown(self):
         self.temp.cleanup()
@@ -87,6 +89,8 @@ class InstallerTests(unittest.TestCase):
         result = self.install('--dry-run', '--profile', 'desktop', '--extras', 'java,rust,rpmfusion,firefox,discord,spotify')
         self.assertEqual(snapshot(self.home), before)
         self.assertIn('mise install', result.stdout)
+        self.assertIn('Modul: agents', result.stdout)
+        self.assertIn('Vorschau:', result.stdout)
         self.assertNotIn('fnm', result.stdout)
         self.assertNotIn('mise use', result.stdout)
 
@@ -134,6 +138,56 @@ class InstallerTests(unittest.TestCase):
         self.assertFalse(legacy.exists())
         self.install('--only', 'dotfiles', '--backup')
         self.assertEqual(len(list(backups[0].parent.iterdir())), 1)
+
+    def test_agents_install_and_repeat(self):
+        result = self.install('--only', 'agents')
+        self.assertIn('Agent-Config geschrieben:', result.stdout)
+        self.assertEqual(
+            (self.home / '.claude/settings.json').read_bytes(),
+            (REPO / 'agent-config/claude/settings.json').read_bytes(),
+        )
+        self.assertTrue((self.home / '.claude/skills/next/SKILL.md').is_file())
+        self.assertEqual(
+            (self.home / '.pi/agent/AGENTS.md').read_bytes(),
+            (REPO / 'agent-config/pi/AGENTS.md').read_bytes(),
+        )
+        self.assertTrue((self.home / '.pi/agent/prompts/next.md').is_file())
+        before = snapshot(self.home)
+        repeat = self.install('--only', 'agents')
+        self.assertIn('Agent-Config: bereits aktuell.', repeat.stdout)
+        self.assertEqual(snapshot(self.home), before)
+
+    def test_agents_conflicts_stop_before_changes_and_backup(self):
+        claude_settings = self.home / '.claude/settings.json'
+        claude_settings.parent.mkdir(parents=True)
+        claude_settings.write_text('custom claude\n')
+        legacy = self.home / '.pi/agent/prompts/plan.md'
+        legacy.parent.mkdir(parents=True)
+        legacy.write_text('legacy prompt\n')
+        before = snapshot(self.home)
+        self.install('--only', 'agents', success=False)
+        self.assertEqual(snapshot(self.home), before)
+        self.install('--only', 'agents', '--backup', '--dry-run')
+        self.assertEqual(snapshot(self.home), before)
+        self.install('--only', 'agents', '--backup')
+        backups = list((self.home / '.local/state/dotfiles/backups').iterdir())
+        self.assertEqual(len(backups), 1)
+        self.assertEqual((backups[0] / 'claude/settings.json').read_text(), 'custom claude\n')
+        self.assertEqual((backups[0] / 'pi/prompts/plan.md').read_text(), 'legacy prompt\n')
+        self.assertEqual(backups[0].stat().st_mode & 0o777, 0o700)
+        self.assertFalse(legacy.exists())
+        self.assertEqual(
+            claude_settings.read_bytes(),
+            (REPO / 'agent-config/claude/settings.json').read_bytes(),
+        )
+        self.install('--only', 'agents', '--backup')
+        self.assertEqual(len(list(backups[0].parent.iterdir())), 1)
+
+    def test_agents_dry_run_writes_nothing(self):
+        before = snapshot(self.home)
+        result = self.install('--only', 'agents', '--dry-run')
+        self.assertIn('Vorschau:', result.stdout)
+        self.assertEqual(snapshot(self.home), before)
 
     def test_directory_symlink_is_never_followed(self):
         external = self.base / 'external'
@@ -677,7 +731,7 @@ class ConfigTests(unittest.TestCase):
                 jsonc(path.read_text())
         for path in REPO.rglob('*.toml'):
             tomllib.loads(path.read_text())
-        for path in ('zed', 'zed-config/install.sh', 'zed-config/install.ps1'):
+        for path in ('zed', 'zed-config/install.sh', 'zed-config/install.ps1', 'agent-config/install.sh'):
             self.assertFalse(os.path.lexists(REPO / path), path)
         settings = jsonc((REPO / 'zed-config/.config/zed/settings.json').read_text())
         self.assertNotIn('terminal_init_command', settings.get('agent', {}))

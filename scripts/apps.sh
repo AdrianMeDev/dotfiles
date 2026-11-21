@@ -83,7 +83,48 @@ install_zed() {
     upstream_installer zed https://zed.dev/install.sh sh
 }
 
+install_claude() {
+    if have claude; then log 'Claude Code ist vorhanden.'; return; fi
+    upstream_installer claude https://claude.ai/install.sh bash
+}
+
+install_pi() {
+    if have pi; then log 'pi ist vorhanden.'; return; fi
+    # Node comes from mise; the repo config is read before the Stow links exist.
+    local -x MISE_GLOBAL_CONFIG_FILE="$REPO_DIR/mise/.config/mise/config.toml"
+    run mise exec -- npm install -g @earendil-works/pi-coding-agent
+    run mise reshim
+}
+
+install_ollama() {
+    has_extra ollama || has_extra ollama-models || return 0
+    if have ollama; then log 'Ollama ist vorhanden.'; return; fi
+    if [[ ${DISTRO_FAMILY:-} == arch ]]; then
+        local resolved pkgs=()
+        resolved=$(pkg_names ollama)
+        mapfile -t pkgs <<< "$resolved"
+        pkg_install "${pkgs[@]}"
+        return
+    fi
+    upstream_installer ollama https://ollama.com/install.sh sh
+}
+
+# Models pulled by the ollama-models extra; override with OLLAMA_MODELS (space separated).
+install_ollama_models() {
+    has_extra ollama-models || return 0
+    local model
+    for model in ${OLLAMA_MODELS:-qwen2.5-coder:7b-base}; do
+        run ollama pull "$model"
+    done
+}
+
 install_apps() {
+    # Upstream installers also invoke mise shims before the Stow links exist.
+    local -x MISE_GLOBAL_CONFIG_FILE="$REPO_DIR/mise/.config/mise/config.toml"
+    install_claude
+    install_pi
+    install_ollama
+    install_ollama_models
     if [[ ${PROFILE:-desktop} == headless ]]; then log 'Profil headless: GUI-Apps (WezTerm, Zed) werden übersprungen.'; return; fi
     install_wezterm
     install_zed

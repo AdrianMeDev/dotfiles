@@ -14,8 +14,8 @@ usage() {
     cat <<'EOF'
 Linux Developer Setup (als normaler Benutzer starten)
   ./install.sh [--dry-run] [--backup] [--only MODULE] [--extras LISTE] [--profile desktop|headless]
-Module: system, tools, apps, flatpak, fonts, dotfiles
-Extras (kommagetrennt): java, rust, rpmfusion, firefox, discord, spotify
+Module: system, tools, apps, flatpak, fonts, dotfiles, agents
+Extras (kommagetrennt): java, rust, rpmfusion, firefox, discord, spotify, ollama, ollama-models
 --dry-run    Zeigt Schritte ohne Downloads, Schreibzugriffe oder sudo.
 --backup     Sichert kollidierende Dateien vor dem Verlinken außerhalb des Repos.
 --only       Führt genau ein Modul aus; Voraussetzungen müssen installiert sein.
@@ -46,15 +46,15 @@ while (($#)); do
     esac
     shift
 done
-MODULES=(system tools apps flatpak fonts dotfiles)
+MODULES=(system tools apps flatpak fonts dotfiles agents)
 if [[ -n $ONLY ]]; then
     [[ " ${MODULES[*]} " == *" $ONLY "* ]] || die "Unbekanntes Modul: $ONLY"
     MODULES=("$ONLY")
 fi
 IFS=',' read -r -a EXTRA_LIST <<< "$EXTRAS"
 for extra in "${EXTRA_LIST[@]}"; do
-    case "$extra" in java|rust|rpmfusion|firefox|discord|spotify) ;; *) die "Unbekanntes Extra: $extra" ;; esac
-    case "$extra" in java|rust) owner=tools ;; rpmfusion) owner=system ;; *) owner=flatpak ;; esac
+    case "$extra" in java|rust|rpmfusion|firefox|discord|spotify|ollama|ollama-models) ;; *) die "Unbekanntes Extra: $extra" ;; esac
+    case "$extra" in java|rust) owner=tools ;; ollama|ollama-models) owner=apps ;; rpmfusion) owner=system ;; *) owner=flatpak ;; esac
     [[ -z $ONLY || $ONLY == "$owner" ]] || die "Extra $extra benötigt Modul $owner."
 done
 
@@ -69,16 +69,16 @@ trap 'if [[ -n ${WORK_DIR:-} ]]; then rm -rf -- "$WORK_DIR"; fi' EXIT
 
 [[ -d $HOME && $HOME != / ]] || die 'HOME muss ein bestehendes Benutzerverzeichnis sein.'
 [[ ${XDG_CONFIG_HOME:-$HOME/.config} == "$HOME/.config" ]] || die "Dieses Stow-Layout benötigt XDG_CONFIG_HOME=$HOME/.config."
-if [[ $ONLY == dotfiles ]]; then
+if [[ $ONLY == dotfiles || $ONLY == agents ]]; then
     DISTRO_FAMILY=$(detect_family 2>/dev/null) || DISTRO_FAMILY=unbekannt
 else
-    DISTRO_FAMILY=$(detect_family) || die 'Für reine Dotfiles: --only dotfiles.'
+    DISTRO_FAMILY=$(detect_family) || die 'Für reine Dotfiles oder Agent-Config: --only dotfiles oder --only agents.'
 fi
 [[ -n $PROFILE ]] || PROFILE=$(detect_profile)
 if is_wsl; then wsl=ja; else wsl=nein; fi
 log "Distro-Familie: $DISTRO_FAMILY · Profil: $PROFILE · WSL: $wsl"
 
-if [[ $ONLY != dotfiles ]]; then
+if [[ $ONLY != dotfiles && $ONLY != agents ]]; then
     case "$(uname -m)" in x86_64|aarch64) ;; *) die 'Unterstützte Architekturen: x86_64, aarch64.' ;; esac
     if ((!DRY_RUN)); then
         ((EUID != 0)) || die 'Bitte ohne sudo starten; Paketverwaltungsschritte verwenden sudo.'
@@ -94,6 +94,13 @@ if [[ " ${MODULES[*]} " == *' dotfiles '* ]]; then
     python3 "$REPO_DIR/scripts/links.py" "${flags[@]}"
 fi
 
+if [[ " ${MODULES[*]} " == *' agents '* ]]; then
+    need python3
+    flags=(--check)
+    ((BACKUP)) && flags+=(--backup)
+    python3 "$REPO_DIR/scripts/agents.py" "${flags[@]}"
+fi
+
 # Dependencies for individually selected modules; the system module installs these.
 if [[ -n $ONLY && $ONLY != system ]] && ((!DRY_RUN)); then
     case "$ONLY" in
@@ -102,6 +109,7 @@ if [[ -n $ONLY && $ONLY != system ]] && ((!DRY_RUN)); then
         fonts) for cmd in curl unzip fc-cache; do need "$cmd"; done ;;
         flatpak) if [[ $PROFILE == desktop ]]; then need flatpak; fi ;;
         dotfiles) need stow; need git ;;
+        agents) need python3 ;;
     esac
 fi
 

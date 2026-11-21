@@ -25,17 +25,20 @@ agent-config/
 │   ├── explain/            Implementiertes verständlich erklären
 │   └── explain-project/    ganzes Projekt erklären (Onboarding)
 ├── templates/PROJEKT-ANWEISUNGEN.md   Vorlage für CLAUDE.md / AGENTS.md im Projekt
-├── install.sh              Linux / WSL
-└── install.ps1             Windows nativ
+└── install.ps1             Windows nativ (Linux / WSL: `dot install`, siehe unten)
 ```
 
 ## 1. Installieren
 
 ```bash
-./install.sh            # beides  (oder: ./install.sh pi  /  ./install.sh claude)
+dot install --only agents            # Linux / WSL: Config nach ~/.claude und ~/.pi/agent
+dot install --only agents --backup   # abweichende Dateien sichern und ersetzen
+dot install                          # alles, inkl. Claude Code und pi (Modul apps)
 ```
+Das Modul `agents` rendert die Skills (Claude-Frontmatter aus `claude-frontmatter.txt`) und ist
+idempotent; `dot doctor` meldet lokale Abweichungen. Ollama: `dot install --only apps --extras ollama,ollama-models`.
 Windows nativ: `.\install.ps1`. **Arbeitest du in WSL** (auch über Zed), installiere in WSL –
-dort laufen pi und Claude Code. Bestehende Dateien werden als `*.bak.<zeit>` gesichert.
+dort laufen pi und Claude Code. Backups liegen unter `~/.local/state/dotfiles/backups/`.
 
 ## 2. pi lokal einrichten
 

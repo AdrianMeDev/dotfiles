@@ -88,7 +88,7 @@ alles wird in der neuesten Version installiert und mit `dot update` aktualisiert
 - **Depends on:** M2
 - **Size:** S, ~4 commits
 
-### M4 [ ] Agent-Config integrieren
+### M4 [x] Agent-Config integrieren
 - **Goal:** Claude Code, pi und Ollama werden installiert und mit der Agent-Config versorgt.
 - **Includes:** `agents`-Modul (Skills mit Claude-Frontmatter rendern, kopieren mit Backup, idempotent), Claude Code (nativer Installer), pi (npm über mise-Node), Ollama + Modelle optional, `dot update` aktualisiert die Agents, `dot doctor` meldet lokale Abweichungen
 - **Done when:** frischer Container → `~/.claude` und `~/.pi/agent` befüllt; zweiter Lauf erzeugt keine Backups; `claude --version` und `pi --version` laufen
@@ -158,3 +158,4 @@ alles wird in der neuesten Version installiert und mit `dot update` aktualisiert
 - 2026-11-21: M1 Multi-Distro-Kern abgeschlossen
 - 2026-11-21: M2 Tools über mise + `dot`-Befehl abgeschlossen (Container-Matrix prüft install → update → doctor)
 - 2026-11-21: M3 Zed integrieren abgeschlossen (Zed-Config via Stow `zed-config`, `dot zed-template`, Distro-Paket auf Arch, Windows-Pfade und Container-Matrix aktualisiert)
+- 2026-11-21: M4 Agent-Config integrieren abgeschlossen (`agents`-Modul, Claude Code, pi, optional Ollama, `dot update`/`dot doctor`, Container-Matrix prüft Agents und Idempotenz)

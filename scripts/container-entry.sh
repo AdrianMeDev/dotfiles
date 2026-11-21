@@ -32,10 +32,41 @@ grep -qF "Distro-Familie: $family" <<< "$preview" || { printf 'dot install --dry
 for run in 1 2; do
     printf '==> dot install (Lauf %s)\n' "$run"
     as_dev "$dot install"
+    # The second run must be a no-op: no backup directory may have been created.
+    if ((run == 1)); then
+        # shellcheck disable=SC2016 # expanded by the inner shell on purpose
+        as_dev 'rm -rf "$HOME/.local/state/dotfiles/backups"'
+    fi
 done
+# shellcheck disable=SC2016 # expanded by the inner shell on purpose
+backups=$(as_dev 'ls -A "$HOME/.local/state/dotfiles/backups" 2>/dev/null || true')
+[[ -z $backups ]] || { printf 'Zweiter dot install hat Backups erzeugt: %s\n' "$backups" >&2; exit 1; }
 
 printf '==> Werkzeuge prüfen\n'
 as_dev 'zsh -c "command -v dot && node --version && uv --version"'
+as_dev 'zsh -c "claude --version && pi --version"'
+
+printf '==> Agent-Config prüfen\n'
+sudo --preserve-env=GITHUB_TOKEN -u dev -i bash -s <<'EOF'
+    set -euo pipefail
+    for f in .claude/CLAUDE.md .claude/settings.json .claude/skills/next/SKILL.md \
+        .pi/agent/AGENTS.md .pi/agent/settings.json .pi/agent/models.json \
+        .pi/agent/prompts/next.md .pi/agent/skills/next/SKILL.md; do
+        [[ -f $HOME/$f ]] || { printf 'Agent-Datei fehlt: %s\n' "$f" >&2; exit 1; }
+    done
+    grep -qx 'context: fork' "$HOME/.claude/skills/next/SKILL.md" || {
+        printf 'Claude-Frontmatter nicht gerendert.\n' >&2
+        exit 1
+    }
+    ! grep -q 'context: fork' "$HOME/.pi/agent/skills/next/SKILL.md" || {
+        printf 'Claude-Frontmatter im pi-Skill gefunden.\n' >&2
+        exit 1
+    }
+    [[ -z $(find "$HOME/.claude" "$HOME/.pi" -name claude-frontmatter.txt) ]] || {
+        printf 'claude-frontmatter.txt wurde mitkopiert.\n' >&2
+        exit 1
+    }
+EOF
 nvim_version=$(as_dev 'zsh -c "nvim --version"')
 [[ $nvim_version =~ NVIM\ v([0-9]+)\.([0-9]+) ]] || { printf 'nvim-Version nicht lesbar.\n' >&2; exit 1; }
 ((BASH_REMATCH[1] > 0 || BASH_REMATCH[2] >= 12)) || { printf 'nvim >= 0.12 erwartet, gefunden: %s.%s\n' "${BASH_REMATCH[1]}" "${BASH_REMATCH[2]}" >&2; exit 1; }

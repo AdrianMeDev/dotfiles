@@ -30,8 +30,9 @@ cd ~/dotfiles
 
 Nach der Installation steht der Befehl `dot` (Stow-Paket `dot`, `~/.local/bin/dot`) bereit:
 `dot install [OPTIONEN]` ruft `install.sh` auf, `dot update [--dry-run] [--profile …]` aktualisiert
-Systempakete, mise-Tools, Flatpaks und zsh-Plugins, `dot doctor` prüft Tool-Versionen, mise,
-Stow-Links, Git-Identität und fnm-Überreste (read-only; Exit 1 bei `[FEHLER]`), und
+Systempakete, mise-Tools, Flatpaks, zsh-Plugins sowie Claude Code, pi und die Agent-Config,
+`dot doctor` prüft Tool-Versionen, mise, Stow-Links, Git-Identität, fnm-Überreste und lokale
+Abweichungen der Agent-Config (read-only; Exit 1 bei `[FEHLER]`), und
 `dot zed-template [--dry-run] [--backup] angular|django|dotnet <PFAD>` kopiert eine
 Zed-Projektvorlage nach `<PFAD>/.zed/`.
 
@@ -69,7 +70,8 @@ Fremde Verzeichnis-Symlinks müssen vorab manuell aufgelöst werden; der Install
 | --- | --- |
 | `system` | System-Update (`pacman`/`dnf`/`apt-get`), Compiler/Build-Werkzeuge, Git/GitHub CLI, Stow, zsh, tmux, zoxide, direnv, fzf, ripgrep, fd, bat, jq, btop/htop, tree, ShellCheck, shfmt (Arch/Debian), Clipboard, Podman, Flatpak (bei `desktop`) sowie auf Arch der AUR-Helfer |
 | `tools` | mise und alle Dev-CLI-Tools über mise in der neuesten Version (Neovim >= 0.12, Node LTS, uv, Starship, tree-sitter, lazygit, ripgrep, fd, fzf, bat, delta …; Konfiguration: `mise/config.toml`), Extras `java`/`rust` |
-| `apps` | .NET SDK 10 (Arch/Fedora), WezTerm und Zed |
+| `apps` | .NET SDK 10 (Arch/Fedora), WezTerm, Zed, Claude Code (nativer Installer), pi (npm über mise-Node), optional Ollama (Extras `ollama`, `ollama-models`) |
+| `agents` | rendert `agent-config/` nach `~/.claude` und `~/.pi/agent` (Claude-Frontmatter der Skills wird eingefügt, `claude-frontmatter.txt` nicht kopiert); abweichende Dateien nur mit `--backup` ersetzt, idempotent |
 | `flatpak` | Flathub für den Benutzer; ausgewählte optionale Desktop-Apps (nur bei `--profile desktop`) |
 | `fonts` | Ioskeley Mono und Ioskeley Mono Term Nerd Font 2.1.0 im Benutzerverzeichnis |
 | `dotfiles` | Konfliktprüfung, Git-Identität, optionale Backups und Stow-Verlinkung |
@@ -91,7 +93,10 @@ Einzelne Module ziehen ihre Voraussetzungen nicht automatisch nach:
 ```
 
 Extras: `java` (21 über mise), `rust` (stable über rustup), `rpmfusion` (free/nonfree, nur Fedora;
-auf Arch und Debian übersprungen), `firefox`, `discord`, `spotify`. Extras müssen bei `--only` zum
+auf Arch und Debian übersprungen), `firefox`, `discord`, `spotify`, `ollama` (Ollama installieren) und
+`ollama-models` (zusätzlich die Modelle ziehen, Liste per `OLLAMA_MODELS` überschreibbar):
+`./install.sh --only apps --extras ollama,ollama-models`. Die Agent-Config allein:
+`dot install --only agents` (mit `--backup`, falls Dateien abweichen). Extras müssen bei `--only` zum
 ausgewählten Modul passen. Es werden keine Apps ohne entsprechende Auswahl installiert. Podman läuft
 rootless; es wird kein Docker-Daemon eingerichtet. Container nicht mit `sudo` starten.
 
@@ -385,7 +390,9 @@ CONTAINER_ENGINE=docker bash scripts/container-matrix.sh arch debian
 
 Ohne `CONTAINER_ENGINE` nutzt das Skript `podman` oder fällt auf `docker` zurück und führt
 pro Container als normaler Benutzer aus: `dot install --dry-run` (Familie erkannt, nichts geschrieben),
-zweimal `dot install`, dann `dot`, `nvim` (>= 0.12), `node` und `uv` über `zsh -c`, `dot update --dry-run`,
+zweimal `dot install` (der zweite Lauf darf keine Backups erzeugen), dann `dot`, `nvim` (>= 0.12), `node`,
+`uv`, `claude --version` und `pi --version` über `zsh -c`, die Dateien unter `~/.claude` und `~/.pi/agent`
+(gerendertes Claude-Frontmatter, keine `claude-frontmatter.txt`), `dot update --dry-run`,
 `dot update` und `dot doctor`. Ist `GITHUB_TOKEN` gesetzt, wird er an die Container durchgereicht.
 Die GitHub-Actions-CI (`.github/workflows/ci.yml`) führt sowohl `scripts/check.sh` als auch
 die Container-Matrix für `arch`, `fedora` und `debian` automatisch aus.

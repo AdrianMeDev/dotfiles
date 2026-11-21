@@ -9,8 +9,8 @@ _doc_err() { printf '[FEHLER]  %s\n' "$*"; _doc_errors=$((_doc_errors + 1)); }
 
 # Core tools as "label:binary[|alternative]". Missing ones are errors, except optional ones.
 _DOC_TOOLS=(mise nvim node uv starship tree-sitter lazygit rg 'fd:fd|fdfind' fzf 'bat:bat|batcat'
-    delta shfmt shellcheck zsh tmux git stow podman)
-_DOC_OPTIONAL=' podman '
+    delta shfmt shellcheck zsh tmux git stow podman claude pi ollama)
+_DOC_OPTIONAL=' podman ollama '
 
 _doc_version() {
     local bin=$1 out
@@ -84,9 +84,34 @@ _doc_fnm() {
     fi
 }
 
+_doc_agents() {
+    local out line bad=() mod=() rc=0
+    out=$(python3 "$REPO_DIR/scripts/agents.py" --status 2>&1) || rc=$?
+    if ((rc)); then
+        _doc_err 'Agent-Config: Prüfung fehlgeschlagen:'
+        printf '%s\n' "$out" | sed 's/^/            /'
+        return
+    fi
+    while IFS= read -r line; do
+        case $line in
+            '[missing]'*) bad+=("$line") ;;
+            '[modified]'*|'[legacy]'*) mod+=("$line") ;;
+        esac
+    done <<< "$out"
+    if ((${#bad[@]})); then
+        _doc_err 'Agent-Config: Dateien fehlen (dot install --only agents ausführen):'
+        printf '            %s\n' "${bad[@]}"
+    fi
+    if ((${#mod[@]})); then
+        _doc_warn 'Agent-Config: lokal abweichende Dateien:'
+        printf '            %s\n' "${mod[@]}"
+    fi
+    if ((!${#bad[@]} && !${#mod[@]})); then _doc_ok 'Agent-Config: stimmt mit dem Repo überein.'; fi
+}
+
 dot_doctor() {
     (($# == 0)) || { case "$1" in
-        -h|--help) printf 'dot doctor\n  Read-only Diagnose: Umgebung, Tool-Versionen, mise, Stow-Links, Git-Identität, fnm.\n'; return 0 ;;
+        -h|--help) printf 'dot doctor\n  Read-only Diagnose: Umgebung, Tool-Versionen, mise, Stow-Links, Agent-Config, Git-Identität, fnm.\n'; return 0 ;;
         *) die "Unbekannte Option: $1" ;;
     esac; }
     _doc_errors=0
@@ -123,6 +148,7 @@ dot_doctor() {
         printf '%s\n' "$out" | sed 's/^/            /'
     fi
 
+    _doc_agents
     _doc_git_identity
     _doc_fnm
 
