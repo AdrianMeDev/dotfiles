@@ -3,8 +3,8 @@ Describe 'bootstrap.ps1' {
         $script:bootstrap = [IO.Path]::GetFullPath("$PSScriptRoot/../../bootstrap.ps1")
         $script:fake = Join-Path $TestDrive 'dot.ps1'
         Set-Content -LiteralPath $script:fake -Value @'
-param([string]$Verb, [switch]$DryRun, [switch]$Backup, [string[]]$Extra, [string]$Distro, [switch]$NoAutostart)
-[pscustomobject]@{ Verb = $Verb; DryRun = [bool]$DryRun; Backup = [bool]$Backup; Extra = @($Extra); Distro = $Distro; NoAutostart = [bool]$NoAutostart } |
+param([string]$Verb, [switch]$DryRun, [switch]$Backup, [string[]]$Extra, [string]$Distro, [switch]$NoAutostart, [switch]$NoWsl, [string]$WslUser)
+[pscustomobject]@{ Verb = $Verb; DryRun = [bool]$DryRun; Backup = [bool]$Backup; Extra = @($Extra); Distro = $Distro; NoAutostart = [bool]$NoAutostart; NoWsl = [bool]$NoWsl; WslUser = $WslUser } |
     ConvertTo-Json -Compress | Set-Content -LiteralPath (Join-Path $PSScriptRoot 'args.json')
 '@
         $script:argsFile = Join-Path $TestDrive 'args.json'
@@ -22,11 +22,19 @@ param([string]$Verb, [switch]$DryRun, [switch]$Backup, [string[]]$Extra, [string
         $forwarded.Distro | Should -Be 'Arch'
         $forwarded.NoAutostart | Should -BeTrue
     }
+    It 'forwards -NoWsl and -WslUser' {
+        & $script:bootstrap -DotScript $script:fake -NoWsl -WslUser ada *> $null
+        $forwarded = Get-Content -LiteralPath $script:argsFile -Raw | ConvertFrom-Json
+        $forwarded.NoWsl | Should -BeTrue
+        $forwarded.WslUser | Should -Be 'ada'
+    }
     It 'forwards no flags by default' {
         & $script:bootstrap -DotScript $script:fake *> $null
         $forwarded = Get-Content -LiteralPath $script:argsFile -Raw | ConvertFrom-Json
         $forwarded.DryRun | Should -BeFalse
         $forwarded.Backup | Should -BeFalse
+        $forwarded.NoWsl | Should -BeFalse
+        $forwarded.WslUser | Should -BeNullOrEmpty
     }
     It 'fails with a clear error when winget is missing' {
         function Test-Winget { $false }

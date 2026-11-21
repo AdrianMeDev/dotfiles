@@ -3,7 +3,7 @@ local directory = wezterm.home_dir .. '/.config/wezterm'
 local config = dofile(directory .. '/base.lua')
 local distro = dofile(directory .. '/distro.lua')
 if distro then
-  config.wsl_domains = { { name = 'WSL:' .. distro, distribution = distro } }
+  config.wsl_domains = { { name = 'WSL:' .. distro, distribution = distro, default_cwd = '~' } }
   config.default_domain = 'WSL:' .. distro
   config.default_prog = nil
 else

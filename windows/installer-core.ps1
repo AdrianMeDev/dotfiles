@@ -1,4 +1,4 @@
-# Functions are kept separate so tests can replace Windows boundaries without installing anything.
+﻿# Functions are kept separate so tests can replace Windows boundaries without installing anything.
 function Invoke-NativeResult {
     param([string]$Program, [string[]]$Arguments)
 
@@ -153,16 +153,29 @@ function Select-WslDistro {
         if ($Requested) { throw "WSL-Distribution nicht gefunden: $Requested (wsl.exe fehlt)" }
         return $null
     }
-    $names = @((Invoke-Native 'wsl.exe' @('--list', '--quiet')) -join "`n" -split "`n" |
+    $rawList = $null
+    try {
+        $rawList = Invoke-Native 'wsl.exe' @('--list', '--quiet')
+    } catch {
+        if ($Requested) { throw "WSL-Distribution nicht gefunden: $Requested ($_)" }
+        return $null
+    }
+    $names = @(($rawList -join "`n") -split "`n" |
         ForEach-Object { ($_ -replace "`0", '').Trim() } | Where-Object { $_ })
     if ($Requested) {
         if ($Requested -notin $names) { throw "WSL-Distribution nicht gefunden: $Requested" }
         $selected = $names | Where-Object { $_ -eq $Requested } | Select-Object -First 1
     } else {
         if ($names.Count -eq 0) { return $null }
-        $candidates = @($names | Where-Object { $_ -match '(?i)fedora' })
-        if ($candidates.Count -ne 1) { throw "Fedora nicht eindeutig erkannt ($($candidates -join ', ')). -Distro <Name> angeben." }
-        $selected = $candidates[0]
+        $exact = @($names | Where-Object { $_ -ieq 'archlinux' })
+        if ($exact.Count -eq 1) {
+            $selected = $exact[0]
+        } else {
+            $candidates = @($names | Where-Object { $_ -match '(?i)arch' })
+            if ($candidates.Count -eq 0) { return $null }
+            if ($candidates.Count -gt 1) { throw "Arch nicht eindeutig erkannt ($($candidates -join ', ')). -Distro <Name> angeben." }
+            $selected = $candidates[0]
+        }
     }
     $verboseList = (Invoke-Native 'wsl.exe' @('--list', '--verbose')) -join "`n" -replace "`0", ''
     if ($verboseList -notmatch ('(?m)^\s*\*?\s*' + [regex]::Escape($selected) + '\s+.+\s+2\s*$')) {
@@ -171,9 +184,75 @@ function Select-WslDistro {
     return $selected
 }
 
+# Streams straight to the console so interactive prompts (git identity) stay visible.
+function Invoke-NativeLive {
+    param([string]$Program, [string[]]$Arguments)
+    $resolved = Get-Command $Program -CommandType Application -ErrorAction Stop | Select-Object -First 1
+    & $resolved.Source @Arguments | Out-Host
+    return $LASTEXITCODE
+}
+
+function Get-WslUserName {
+    param([string]$Requested)
+    $raw = if ($Requested) { $Requested } else { $env:USERNAME }
+    $name = ("$raw".ToLowerInvariant() -replace '[^a-z0-9_-]', '_')
+    if ($name -notmatch '^[a-z_]') { $name = "_$name" }
+    if ($name.Length -gt 32) { $name = $name.Substring(0, 32) }
+    if ($name -eq 'root') { throw 'WSL-Benutzer darf nicht root sein. -WslUser <Name> angeben.' }
+    return $name
+}
+
+function Install-WslArch {
+    param([string]$Name = 'archlinux')
+    $selected = Select-WslDistro
+    if ($selected) { return $selected }
+    $rerun = 'Bitte Windows neu starten und bootstrap.ps1 erneut ausfuehren.'
+    if (-not (Get-Command 'wsl.exe' -ErrorAction SilentlyContinue)) {
+        throw "wsl.exe fehlt (WSL-Feature nicht aktiv). $rerun"
+    }
+    Write-Host "WSL: installiere $Name (wsl.exe --install $Name --no-launch)"
+    $result = Invoke-NativeResult 'wsl.exe' @('--install', $Name, '--no-launch')
+    $text = ($result.Output -join "`n") -replace "`0", ''
+    $text | Out-Host
+    if ($result.Code -eq 3010 -or $text -match '(?i)restart|reboot|neustart|neu gestartet') {
+        throw "WSL verlangt einen Neustart. $rerun"
+    }
+    if ($result.Code -ne 0) { throw "wsl.exe --install $Name (Exit $($result.Code)): $text" }
+    $selected = try { Select-WslDistro $Name } catch { $null }
+    if (-not $selected) { throw "Die Distribution '$Name' ist nach der Installation nicht registriert. $rerun" }
+    return $selected
+}
+
+function ConvertTo-WslPath {
+    param([string]$Distro, [string]$Path)
+    $out = Invoke-Native 'wsl.exe' @('-d', $Distro, '-u', 'root', '--', 'wslpath', '-u', $Path.Replace('\', '/'))
+    return ((($out -join "`n") -replace "`0", '').Trim())
+}
+
+function Invoke-WslBootstrap {
+    param([string]$SourceRoot, [string]$Distro, [string]$WslUser, [switch]$Backup)
+    $user = Get-WslUserName $WslUser
+    $repo = ConvertTo-WslPath $Distro (Split-Path -Parent $SourceRoot)
+    $script = ConvertTo-WslPath $Distro (Join-Path $SourceRoot 'wsl-bootstrap.sh')
+    $arguments = @('-d', $Distro, '-u', 'root', '--', 'bash', $script, '--user', $user, '--repo', $repo)
+    if ($Backup) { $arguments += '--backup' }
+    Write-Host "WSL: richte Benutzer '$user' in $Distro ein (wsl-bootstrap.sh)"
+    $output = (Invoke-Native 'wsl.exe' $arguments) -join "`n" -replace "`0", ''
+    $output | Out-Host
+    # The script reports a rewritten /etc/wsl.conf; it only takes effect after the distro restarts.
+    if ($output -match '(?m)^geschrieben: \S*/etc/wsl\.conf$') {
+        Write-Host "WSL: /etc/wsl.conf geaendert, starte $Distro neu."
+        Invoke-Native 'wsl.exe' @('--terminate', $Distro) | Out-Null
+    }
+    $install = @('-d', $Distro, '-u', $user, '--cd', '~', '--', 'bash', './dotfiles/install.sh')
+    if ($Backup) { $install += '--backup' }
+    $code = Invoke-NativeLive 'wsl.exe' $install
+    if ($code -ne 0) { throw "WSL install.sh (Exit $code)" }
+}
+
 function New-TextEntry {
-    param([string]$Path, [string]$Text)
-    return [pscustomobject]@{ Path = $Path; Bytes = [Text.UTF8Encoding]::new($false).GetBytes($Text) }
+    param([string]$Path, [string]$Text, [switch]$Generated)
+    return [pscustomobject]@{ Path = $Path; Bytes = [Text.UTF8Encoding]::new($false).GetBytes($Text); Generated = [bool]$Generated }
 }
 function New-CopyEntry {
     param([string]$Path, [string]$Source)
@@ -197,7 +276,7 @@ function Get-FilePlan {
             if (-not (Test-Path -LiteralPath $entry.Path -PathType Leaf)) { throw "Zieldatei ist ein Verzeichnis: $($entry.Path)" }
             $existing = [IO.File]::ReadAllBytes($entry.Path)
             if ([Convert]::ToBase64String($existing) -ceq [Convert]::ToBase64String($entry.Bytes)) { $action = 'Skip' }
-            elseif ($Backup) { $action = 'Replace' }
+            elseif ($Backup -or $entry.Generated) { $action = 'Replace' }
             else { throw "Dateikonflikt: $($entry.Path). Mit -Backup sichern und ersetzen." }
         }
         [pscustomobject]@{ Path = $entry.Path; Bytes = $entry.Bytes; Action = $action }
@@ -280,8 +359,35 @@ function Get-AgentConfigEntries {
     }
 }
 
+# Mirrored networking lets WSL2 reach Windows services (Ollama) on localhost. Other sections/keys stay untouched.
+function Get-WslConfigEntry {
+    $path = Join-Path $env:USERPROFILE '.wslconfig'
+    $text = if (Test-Path -LiteralPath $path -PathType Leaf) { [IO.File]::ReadAllText($path) } else { '' }
+    $eol = if ($text.Contains("`r`n") -or -not $text) { "`r`n" } else { "`n" }
+    $lines = [Collections.Generic.List[string]]::new()
+    if ($text) { $lines.AddRange([string[]]($text -split '\r?\n')) }
+    if ($lines.Count -gt 0 -and $lines[$lines.Count - 1] -eq '') { $lines.RemoveAt($lines.Count - 1) }
+    $header = -1
+    for ($i = 0; $i -lt $lines.Count; $i++) {
+        if ($lines[$i].Trim() -ieq '[wsl2]') { $header = $i; break }
+    }
+    if ($header -lt 0) {
+        if ($lines.Count -gt 0 -and $lines[$lines.Count - 1].Trim()) { $lines.Add('') }
+        $lines.Add('[wsl2]')
+        $lines.Add('networkingMode=mirrored')
+    } else {
+        $key = -1
+        for ($i = $header + 1; $i -lt $lines.Count -and $lines[$i].TrimStart() -notmatch '^\['; $i++) {
+            if ($lines[$i] -match '^\s*networkingMode\s*=') { $key = $i; break }
+        }
+        if ($key -lt 0) { $lines.Insert($header + 1, 'networkingMode=mirrored') }
+        elseif ($lines[$key] -notmatch '^\s*networkingMode\s*=\s*mirrored\s*$') { $lines[$key] = 'networkingMode=mirrored' }
+    }
+    New-TextEntry $path (($lines -join $eol) + $eol)
+}
+
 function Get-ConfigEntries {
-    param([string]$SourceRoot, [string]$SelectedDistro, [switch]$NoAutostart)
+    param([string]$SourceRoot, [string]$SelectedDistro, [switch]$NoAutostart, [switch]$NoWsl)
     $repo = Split-Path -Parent $SourceRoot
     $wezterm = Join-Path $env:USERPROFILE '.config/wezterm'
     $zed = Join-Path $env:APPDATA 'Zed'
@@ -290,9 +396,9 @@ function Get-ConfigEntries {
     # JSON quoted strings are also Lua strings for WSL distro names, except Unicode escapes.
     if ($SelectedDistro) {
         $luaName = $SelectedDistro.Replace('\', '\\').Replace('"', '\"').Replace("`r", '\r').Replace("`n", '\n')
-        New-TextEntry (Join-Path $wezterm 'distro.lua') "return `"$luaName`"`n"
+        New-TextEntry (Join-Path $wezterm 'distro.lua') "return `"$luaName`"`n" -Generated
     } else {
-        New-TextEntry (Join-Path $wezterm 'distro.lua') "return nil`n"
+        New-TextEntry (Join-Path $wezterm 'distro.lua') "return nil`n" -Generated
     }
     New-CopyEntry (Join-Path $wezterm 'base.lua') (Join-Path $repo 'wezterm/.config/wezterm/wezterm.lua')
     New-CopyEntry (Join-Path $wezterm 'wezterm.lua') (Join-Path $SourceRoot 'wezterm/wezterm.lua')
@@ -303,6 +409,13 @@ function Get-ConfigEntries {
     $needle = '"shell": { "program": "zsh" }'
     if (-not $settings.Contains($needle)) { throw 'Zed-Basiskonfiguration geaendert: Terminal-Anpassung pruefen.' }
     $settings = $settings.Replace($needle, '"shell": { "program": "pwsh.exe", "args": ["-NoLogo"] }')
+    # Pre-register the WSL distro for Zed Remote-WSL; the shared source file stays untouched.
+    if ($SelectedDistro -and -not $NoWsl) {
+        $name = (ConvertTo-Json -InputObject $SelectedDistro -Compress).Replace('$', '$$')
+        $opening = [regex]::new('(?m)^\{[ \t]*\r?$')
+        if (-not $opening.IsMatch($settings)) { throw 'Zed-Basiskonfiguration geaendert: wsl_connections nicht einfuegbar.' }
+        $settings = $opening.Replace($settings, "{`n  // Remote-WSL (generated by the Windows installer)`n  `"wsl_connections`": [{ `"distro_name`": $name }],", 1)
+    }
     New-TextEntry (Join-Path $zed 'settings.json') $settings
     foreach ($name in 'keymap.json', 'tasks.json', 'debug.json') {
         New-CopyEntry (Join-Path $zed $name) (Join-Path $zedSource $name)
@@ -323,6 +436,7 @@ function Get-ConfigEntries {
     }
     Get-AgentConfigEntries $repo
     Get-FlowConfigEntry -NoAutostart:$NoAutostart
+    if (-not $NoWsl) { Get-WslConfigEntry }
 }
 
 function Get-WingetPackages {
@@ -350,16 +464,26 @@ function Assert-FlowConfigWritable {
 }
 
 function Install-WindowsDesktop {
-    param([string]$SourceRoot, [switch]$DryRun, [switch]$Backup, [string]$Distro, [switch]$NoAutostart, [string[]]$Extra = @())
+    param([string]$SourceRoot, [switch]$DryRun, [switch]$Backup, [string]$Distro, [switch]$NoAutostart, [string[]]$Extra = @(), [switch]$NoWsl, [string]$WslUser)
     $packages = Get-WingetPackages (Split-Path -Parent $SourceRoot) $Extra
     Assert-WindowsPrerequisites
     $selected = Select-WslDistro $Distro
-    if ($selected) { Write-Host "WSL2: $selected" } else { Write-Host 'WSL2: keine Distribution, nur native Windows-Konfiguration.' }
-    $entries = @(Get-ConfigEntries $SourceRoot $selected -NoAutostart:$NoAutostart)
+    # Without a distro the Arch instance is installed below; plan its name now so distro.lua is final.
+    $installWsl = -not $NoWsl -and -not $selected
+    $wslName = if ($installWsl) { 'archlinux' } else { $selected }
+    if ($NoWsl) { Write-Host 'WSL2: uebersprungen (-NoWsl).' }
+    elseif ($installWsl) { Write-Host "WSL2: keine Distribution, $wslName wird installiert." }
+    elseif ($selected) { Write-Host "WSL2: $selected" }
+    $entries = @(Get-ConfigEntries $SourceRoot $wslName -NoAutostart:$NoAutostart -NoWsl:$NoWsl)
     $plan = @(Get-FilePlan $entries -Backup:$Backup)
     $darkPlan = @(Get-DarkModePlan)
     if ($DryRun) {
         Write-FilePlan $plan -DryRun
+        if (-not $NoWsl) {
+            $user = Get-WslUserName $WslUser
+            if ($installWsl) { Write-Host "WSL: wsl.exe --install $wslName --no-launch (falls fehlend)" }
+            Write-Host "WSL: wsl-bootstrap.sh als root (Benutzer $user, sudo, /etc/wsl.conf, ~/dotfiles), dann install.sh$(if ($Backup) { ' --backup' })"
+        }
         foreach ($entry in $darkPlan) { Write-Host "$($entry.Action): HKCU\$(Get-DarkModeSubKey)\$($entry.Name) = $($entry.Value) (Dark Mode)" }
         foreach ($package in $packages) { Write-Host "Winget (falls fehlend): $package" }
         Write-Host 'Fonts: Ioskeley Mono und Ioskeley Mono Term Nerd Font v2.1.0 (Download und Inhalts-/Registry-Konfliktpruefung erst ohne -DryRun).'
@@ -406,6 +530,10 @@ function Install-WindowsDesktop {
         Write-DarkModePlan $darkPlan (Get-DarkModeSubKey) (Join-Path $env:LOCALAPPDATA 'dotfiles/backup')
         Write-FilePlan $plan
         Write-FilePlan $fontPlan
+        if (-not $NoWsl) {
+            $distroName = if ($installWsl) { Install-WslArch $wslName } else { $selected }
+            Invoke-WslBootstrap $SourceRoot $distroName $WslUser -Backup:$Backup
+        }
         Write-Host 'Flow Launcher einmal im Startmenue starten; danach Alt+Leertaste. Autostart wird beim Flow-Start uebernommen.'
         Write-Host 'Fertig. Ab-/Anmelden aktiviert Fonts, neuen PATH und (falls eingerichtet) GlazeWM.'
     } finally {
@@ -420,21 +548,40 @@ function Update-WingetPackage {
     Invoke-Native 'winget.exe' @('upgrade', '--exact', '--id', $Package, '--source', 'winget', '--accept-package-agreements', '--accept-source-agreements', '--disable-interactivity') @(0, -1978335189) | Out-Host
 }
 
+# Runs the Linux `dot` as the distro's default user (created by wsl-bootstrap.sh).
+function Get-WslDotArguments {
+    param([string]$Distro, [string]$Verb)
+    return @('-d', $Distro, '--cd', '~', '--', 'bash', '-c', "exec `"`$HOME/.local/bin/dot`" $Verb")
+}
+
 function Update-WindowsDesktop {
-    param([string]$SourceRoot, [switch]$DryRun, [switch]$Backup, [string]$Distro, [switch]$NoAutostart)
+    param([string]$SourceRoot, [switch]$DryRun, [switch]$Backup, [string]$Distro, [switch]$NoAutostart, [switch]$NoWsl)
     $packages = Get-WingetPackages (Split-Path -Parent $SourceRoot) -All
-    if ($DryRun) { return $packages }
+    if ($DryRun) {
+        if (-not $NoWsl) {
+            $planned = Select-WslDistro $Distro
+            if ($planned) { Write-Host "WSL: dot update wuerde in $planned laufen" }
+        }
+        return $packages
+    }
     Assert-WindowsPrerequisites
     $selected = Select-WslDistro $Distro
     foreach ($package in $packages) { Update-WingetPackage $package }
-    $plan = @(Get-FilePlan @(Get-ConfigEntries $SourceRoot $selected -NoAutostart:$NoAutostart) -Backup:$Backup)
+    $plan = @(Get-FilePlan @(Get-ConfigEntries $SourceRoot $selected -NoAutostart:$NoAutostart -NoWsl:$NoWsl) -Backup:$Backup)
     $flowPath = Join-Path $env:APPDATA 'FlowLauncher/Settings/Settings.json'
     Assert-FlowConfigWritable @($plan | Where-Object Path -eq $flowPath)
     Write-FilePlan $plan
+    if ($NoWsl) { Write-Host 'WSL2: uebersprungen (-NoWsl).' }
+    elseif (-not $selected) { Write-Host 'WSL2: keine Arch-Distribution, uebersprungen.' }
+    else {
+        Write-Host "WSL: dot update in $selected"
+        $code = Invoke-NativeLive 'wsl.exe' (Get-WslDotArguments $selected 'update')
+        if ($code -ne 0) { throw "WSL dot update (Exit $code)" }
+    }
 }
 
 function Get-DoctorReport {
-    param([string]$SourceRoot, [string[]]$Extra = @(), [string]$Distro, [switch]$NoAutostart)
+    param([string]$SourceRoot, [string[]]$Extra = @(), [string]$Distro, [switch]$NoAutostart, [switch]$NoWsl)
     $repo = Split-Path -Parent $SourceRoot
     $required = Get-WingetPackages $repo $Extra
     foreach ($package in Get-WingetPackages $repo -All) {
@@ -451,7 +598,7 @@ function Get-DoctorReport {
 
     try {
         $selected = Select-WslDistro $Distro
-        Get-ConfigEntries $SourceRoot $selected -NoAutostart:$NoAutostart | ForEach-Object {
+        Get-ConfigEntries $SourceRoot $selected -NoAutostart:$NoAutostart -NoWsl:$NoWsl | ForEach-Object {
             $path = $_.Path
             try {
                 $item = Get-FilePlan @($_) -Backup
@@ -461,6 +608,22 @@ function Get-DoctorReport {
             } catch { [pscustomobject]@{ Problem = $true; Message = "${path}: $_" } }
         }
     } catch { [pscustomobject]@{ Problem = $true; Message = "Konfiguration: $_" } }
+
+    if ($NoWsl) {
+        [pscustomobject]@{ Problem = $false; Message = 'WSL2: uebersprungen (-NoWsl)' }
+    } else {
+        try {
+            $wsl = Select-WslDistro $Distro
+            if (-not $wsl) {
+                [pscustomobject]@{ Problem = $true; Message = 'WSL2 Arch: nicht installiert' }
+            } else {
+                [pscustomobject]@{ Problem = $false; Message = "WSL2 Arch: $wsl (WSL2)" }
+                $result = Invoke-NativeResult 'wsl.exe' (Get-WslDotArguments $wsl 'doctor')
+                $text = ($result.Output -join "`n") -replace "`0", ''
+                [pscustomobject]@{ Problem = $result.Code -ne 0; Message = "WSL dot doctor (Exit $($result.Code)):`n$text".TrimEnd() }
+            }
+        } catch { [pscustomobject]@{ Problem = $true; Message = "WSL2: $_" } }
+    }
 
     try {
         foreach ($item in Get-DarkModePlan) {

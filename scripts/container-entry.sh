@@ -190,3 +190,19 @@ as_dev 'zsh -c "dot update"'
 
 printf '==> dot doctor\n'
 as_dev 'zsh -c "dot doctor"'
+
+if [[ $family == arch ]]; then
+    printf '==> windows/wsl-bootstrap.sh --dry-run prüfen\n'
+    sys_snapshot() { find /etc /home -printf '%p %y %s %T@\n' | sort; }
+    sys_before=$(sys_snapshot)
+    wsl_preview=$(/dotfiles/windows/wsl-bootstrap.sh --user wsltest --repo /dotfiles --dry-run)
+    printf '%s\n' "$wsl_preview"
+    grep -qF 'DRY RUN: es wird nichts geändert.' <<< "$wsl_preview" || {
+        printf 'wsl-bootstrap.sh --dry-run: DRY-RUN-Ausgabe fehlt.\n' >&2
+        exit 1
+    }
+    [[ $sys_before == "$(sys_snapshot)" ]] || {
+        printf 'wsl-bootstrap.sh --dry-run hat Dateien geschrieben.\n' >&2
+        exit 1
+    }
+fi

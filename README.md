@@ -6,8 +6,8 @@ Unterstützt werden **Arch/CachyOS, Fedora und Debian/Ubuntu** (inklusive WSL2),
 keine Atomic-/rpm-ostree-Systeme.
 Der Desktop selbst, Treiber und Monitor-/Theme-Einstellungen werden nicht umgestellt.
 
-Für **Windows 11 mit WSL2** gibt es ein separates
-[Windows-Setup mit WezTerm, Zed, GlazeWM, Zebar und Flow Launcher](windows/README.md).
+Für **Windows 11 mit Arch Linux unter WSL2** gibt es ein separates
+[Windows-Setup mit `bootstrap.ps1`, `windows/dot.ps1`, WezTerm, Zed, GlazeWM, Zebar und Flow Launcher](windows/README.md).
 
 ## Installation
 

@@ -12,10 +12,15 @@ Describe 'Windows installer' {
         $script:temporary = Join-Path ([IO.Path]::GetTempPath()) ('windows-tests-' + [guid]::NewGuid())
         $script:previous = @{}
         foreach ($name in 'USERPROFILE', 'APPDATA', 'LOCALAPPDATA') { $script:previous[$name] = [Environment]::GetEnvironmentVariable($name) }
-        $env:USERPROFILE = Join-Path $script:temporary 'User with spaces'
-        $env:APPDATA = Join-Path $env:USERPROFILE 'AppData/Roaming'
-        $env:LOCALAPPDATA = Join-Path $env:USERPROFILE 'AppData/Local'
-        $script:names = @('Fedora Linux')
+        # Every Context gets its own profile (created lazily by the code under test), so files written by an
+        # earlier Context (distro.lua, .wslconfig, Flow settings) cannot conflict with the plan of the next one.
+        function Use-TestProfile {
+            $env:USERPROFILE = Join-Path $script:temporary ([guid]::NewGuid().ToString('N') + '/User with spaces')
+            $env:APPDATA = Join-Path $env:USERPROFILE 'AppData/Roaming'
+            $env:LOCALAPPDATA = Join-Path $env:USERPROFILE 'AppData/Local'
+        }
+        Use-TestProfile
+        $script:names = @('archlinux')
         $script:version = 2
         $script:packageCalls = 0
         function Throws([scriptblock]$Action, [string]$Pattern) {
@@ -48,6 +53,7 @@ Describe 'Windows installer' {
     }
 
     Context 'dry run and distro selection' {
+        BeforeAll { Use-TestProfile }
         It 'dry run creates no files and installs no packages' {
             Install-WindowsDesktop $script:source -DryRun
             Test-Path $script:temporary | Should -BeFalse
@@ -73,14 +79,18 @@ Describe 'Windows installer' {
             $flowEntry = Get-FlowConfigEntry
             ([Text.Encoding]::UTF8.GetString($flowEntry.Bytes) | ConvertFrom-Json).Theme | Should -BeExactly 'TokyoNight'
         }
-        It 'rejects ambiguous, missing and WSL1 distros' {
-            $script:names = @('Fedora', 'Fedora Test')
+        It 'prefers archlinux, rejects ambiguous, missing and WSL1 distros' {
+            $script:names = @('archlinux', 'Arch Test')
+            Select-WslDistro | Should -Be 'archlinux'
+            $script:names = @('Arch')
+            Select-WslDistro | Should -Be 'Arch'
+            $script:names = @('Arch', 'Arch Test')
             Throws { Select-WslDistro } 'nicht eindeutig'
-            Select-WslDistro 'Fedora Test' | Should -Be 'Fedora Test'
+            Select-WslDistro 'Arch Test' | Should -Be 'Arch Test'
             Throws { Select-WslDistro 'Missing' } 'nicht gefunden'
             $script:names = @('Ubuntu')
-            Throws { Select-WslDistro } 'nicht eindeutig'
-            $script:names = @('Fedora')
+            Select-WslDistro | Should -BeNullOrEmpty
+            $script:names = @('archlinux')
             $script:version = 1
             Throws { Select-WslDistro } 'WSL2'
             $script:version = 2
@@ -89,7 +99,7 @@ Describe 'Windows installer' {
             $script:noWsl = $true
             try {
                 Select-WslDistro | Should -BeNullOrEmpty
-                Throws { Select-WslDistro 'Fedora' } 'nicht gefunden'
+                Throws { Select-WslDistro 'archlinux' } 'nicht gefunden'
                 Install-WindowsDesktop $script:source -DryRun
                 Test-Path $script:temporary | Should -BeFalse
             } finally { $script:noWsl = $false }
@@ -98,22 +108,166 @@ Describe 'Windows installer' {
             $script:names = @()
             try {
                 Select-WslDistro | Should -BeNullOrEmpty
-                Throws { Select-WslDistro 'Fedora' } 'nicht gefunden'
-            } finally { $script:names = @('Fedora') }
+                $script:names = @('', " `0 ")
+                Select-WslDistro | Should -BeNullOrEmpty
+                Throws { Select-WslDistro 'archlinux' } 'nicht gefunden'
+            } finally { $script:names = @('archlinux') }
         }
         It 'writes return nil to distro.lua without a distro' {
             $entry = @(Get-ConfigEntries $script:source $null) | Where-Object { $_.Path -like '*distro.lua' }
             [Text.Encoding]::UTF8.GetString($entry.Bytes) | Should -Be "return nil`n"
         }
         It 'removes UTF16 NUL characters from distro names' {
-            $script:names = @("F`0e`0d`0o`0r`0a`0")
-            Select-WslDistro | Should -Be 'Fedora'
-            $script:names = @('Fedora')
+            $script:names = @("a`0r`0c`0h`0l`0i`0n`0u`0x`0")
+            Select-WslDistro | Should -Be 'archlinux'
+            $script:names = @('archlinux')
+        }
+    }
+
+    Context 'wsl arch install and bootstrap' {
+        BeforeAll {
+            Use-TestProfile
+            $script:wslCalls = @()
+            $script:installCode = 0
+            $script:installOutput = @('Installing')
+            $script:registers = $true
+            $script:bootstrapOutput = @('== wsl.conf', 'geschrieben: /etc/wsl.conf')
+            $script:liveCode = 0
+            function Invoke-Native {
+                param($Program, $Arguments, $SuccessCodes)
+                if ($Arguments -contains '--quiet') { return $script:names }
+                if ($Arguments -contains '--verbose') { return ($script:names | ForEach-Object { "  $_    Stopped    2" }) }
+                $script:wslCalls += , ($Arguments -join ' ')
+                if ($Arguments -contains 'wslpath') { return '/mnt/c/mock/' + (Split-Path -Leaf $Arguments[-1]) }
+                if ($Arguments -contains 'bash') { return $script:bootstrapOutput }
+                return
+            }
+            function Invoke-NativeResult {
+                param($Program, $Arguments)
+                $script:wslCalls += , ($Arguments -join ' ')
+                if ($script:registers -and $script:installCode -eq 0) { $script:names = @('archlinux') }
+                return [pscustomobject]@{ Code = $script:installCode; Output = $script:installOutput }
+            }
+            function Invoke-NativeLive {
+                param($Program, $Arguments)
+                $script:wslCalls += , ($Arguments -join ' ')
+                return $script:liveCode
+            }
+        }
+        BeforeEach {
+            $script:wslCalls = @()
+            $script:names = @()
+            $script:installCode = 0
+            $script:installOutput = @('Installing')
+            $script:registers = $true
+            $script:bootstrapOutput = @('== wsl.conf', 'geschrieben: /etc/wsl.conf')
+            $script:liveCode = 0
+        }
+        AfterAll { $script:names = @('archlinux') }
+        It 'installs archlinux when absent' {
+            Install-WslArch | Should -Be 'archlinux'
+            $script:wslCalls | Should -Be @('--install archlinux --no-launch')
+        }
+        It 'does not install again when the distro exists' {
+            $script:names = @('archlinux')
+            Install-WslArch | Should -Be 'archlinux'
+            $script:wslCalls | Should -BeNullOrEmpty
+        }
+        It 'asks for a reboot and rerun when WSL requires a restart' {
+            $script:installCode = 3010
+            Throws { Install-WslArch } 'Neustart.*erneut'
+            $script:installCode = 1
+            $script:installOutput = @('Changes will not be effective until the system is rebooted.')
+            Throws { Install-WslArch } 'Neustart.*erneut'
+        }
+        It 'fails when the distro stays unregistered' {
+            $script:registers = $false
+            Throws { Install-WslArch } 'nicht registriert.*erneut'
+        }
+        It 'fails on a plain install error' {
+            $script:installCode = 5
+            Throws { Install-WslArch } 'Exit 5'
+        }
+        It 'sanitizes the Linux user name' {
+            Get-WslUserName 'Max Mustermann' | Should -Be 'max_mustermann'
+            Get-WslUserName '1abc' | Should -Be '_1abc'
+            (Get-WslUserName ('a' * 40)).Length | Should -Be 32
+            $env:USERNAME = 'Ada.L'
+            try { Get-WslUserName | Should -Be 'ada_l' } finally { $env:USERNAME = $null }
+            Throws { Get-WslUserName 'Root' } 'root'
+        }
+        It 'bootstraps as root, terminates after a wsl.conf change, then runs install.sh as the user' {
+            $script:names = @('archlinux')
+            Invoke-WslBootstrap $script:source 'archlinux' 'Ada Lovelace' -Backup 6>$null
+            $script:wslCalls.Count | Should -Be 5 -Because '2x wslpath, bootstrap, terminate, install.sh'
+            $script:wslCalls[2] | Should -Be ('-d archlinux -u root -- bash /mnt/c/mock/wsl-bootstrap.sh --user ada_lovelace --repo /mnt/c/mock/' + (Split-Path -Leaf (Split-Path -Parent $script:source)) + ' --backup')
+            $script:wslCalls[4] | Should -Be '-d archlinux -u ada_lovelace --cd ~ -- bash ./dotfiles/install.sh --backup'
+        }
+        It 'orders the calls: root bootstrap, terminate, install.sh' {
+            Invoke-WslBootstrap $script:source 'archlinux' 'ada' 6>$null
+            ($script:wslCalls | Where-Object { $_ -like '*bash /mnt/c/mock/wsl-bootstrap.sh*' }).Count | Should -Be 1
+            $script:wslCalls[-3] | Should -Match '^-d archlinux -u root -- bash .*--user ada --repo'
+            $script:wslCalls[-2] | Should -Be '--terminate archlinux'
+            $script:wslCalls[-1] | Should -Be '-d archlinux -u ada --cd ~ -- bash ./dotfiles/install.sh'
+        }
+        It 'is idempotent: no terminate without a wsl.conf change, no backup unless asked' {
+            $script:bootstrapOutput = @('ok: /etc/wsl.conf default=ada')
+            Invoke-WslBootstrap $script:source 'archlinux' 'ada' 6>$null
+            $script:wslCalls | Should -Not -Contain '--terminate archlinux'
+            $script:wslCalls[-1] | Should -Not -Match '--backup'
+            $script:wslCalls[-1] | Should -Match 'install\.sh$'
+        }
+        It 'fails when install.sh fails' {
+            $script:liveCode = 3
+            Throws { Invoke-WslBootstrap $script:source 'archlinux' 'ada' 6>$null } 'install\.sh \(Exit 3\)'
+        }
+        It 'dry run with no distro plans the install but changes nothing' {
+            $output = (Install-WindowsDesktop $script:source -DryRun -Backup -WslUser ada 6>&1 | Out-String)
+            $output | Should -Match '--install archlinux --no-launch'
+            $output | Should -Match 'install\.sh --backup'
+            $script:wslCalls | Should -BeNullOrEmpty
+            Test-Path $script:temporary | Should -BeFalse
+        }
+        It '-NoWsl skips the WSL steps' {
+            $output = (Install-WindowsDesktop $script:source -DryRun -NoWsl 6>&1 | Out-String)
+            $output | Should -Not -Match 'install\.sh|--install archlinux'
+            $output | Should -Not -Match '\.wslconfig'
+            $script:wslCalls | Should -BeNullOrEmpty
+        }
+    }
+
+    Context 'wslconfig' {
+        BeforeAll { Use-TestProfile }
+        BeforeEach {
+            $script:wslPath = Join-Path $env:USERPROFILE '.wslconfig'
+            Remove-Item -LiteralPath $script:wslPath -ErrorAction SilentlyContinue
+        }
+        AfterAll { Remove-Item -LiteralPath (Join-Path $env:USERPROFILE '.wslconfig') -ErrorAction SilentlyContinue }
+        It 'creates mirrored networking, then skips' {
+            $entry = Get-WslConfigEntry
+            [Text.Encoding]::UTF8.GetString($entry.Bytes) | Should -Match '(?m)^\[wsl2\]\r?\nnetworkingMode=mirrored'
+            Write-FilePlan @(Get-FilePlan @($entry))
+            (Get-FilePlan @(Get-WslConfigEntry)).Action | Should -Be 'Skip'
+        }
+        It 'preserves unrelated sections and keys' {
+            [IO.File]::WriteAllText($script:wslPath, "[wsl2]`nmemory=8GB`n[experimental]`nautoMemoryReclaim=gradual`n")
+            $text = [Text.Encoding]::UTF8.GetString((Get-WslConfigEntry).Bytes)
+            $text | Should -Be "[wsl2]`nnetworkingMode=mirrored`nmemory=8GB`n[experimental]`nautoMemoryReclaim=gradual`n"
+            [IO.File]::WriteAllText($script:wslPath, "[experimental]`nsparseVhd=true`n")
+            $text = [Text.Encoding]::UTF8.GetString((Get-WslConfigEntry).Bytes)
+            $text | Should -Be "[experimental]`nsparseVhd=true`n`n[wsl2]`nnetworkingMode=mirrored`n"
+        }
+        It 'conflicts on networkingMode=nat without Backup and replaces with Backup' {
+            [IO.File]::WriteAllText($script:wslPath, "[wsl2]`nnetworkingMode=nat`nmemory=8GB`n")
+            Throws { Get-FilePlan @(Get-WslConfigEntry) } 'Dateikonflikt'
+            $plan = @(Get-FilePlan @(Get-WslConfigEntry) -Backup)
+            $plan[0].Action | Should -Be 'Replace'
+            [Text.Encoding]::UTF8.GetString($plan[0].Bytes) | Should -Be "[wsl2]`nnetworkingMode=mirrored`nmemory=8GB`n"
         }
     }
 
     Context 'winget packages' {
-        BeforeAll { $script:repo = Split-Path -Parent $script:source }
+        BeforeAll { Use-TestProfile; $script:repo = Split-Path -Parent $script:source }
         It 'returns the ten base packages' {
             $ids = @(Get-WingetPackages $script:repo)
             $ids.Count | Should -Be 10
@@ -134,10 +288,11 @@ Describe 'Windows installer' {
 
     Context 'config entries and file plan' {
         BeforeAll {
-            $script:entries = @(Get-ConfigEntries $script:source 'Fedora')
+            Use-TestProfile
+            $script:entries = @(Get-ConfigEntries $script:source 'archlinux')
         }
         It 'NoAutostart removes exactly one entry' {
-            $noAuto = @(Get-ConfigEntries $script:source 'Fedora' -NoAutostart)
+            $noAuto = @(Get-ConfigEntries $script:source 'archlinux' -NoAutostart)
             $noAuto.Count | Should -Be ($script:entries.Count - 1)
         }
         It 'stages the Zed settings' {
@@ -149,6 +304,22 @@ Describe 'Windows installer' {
             $zedText.Contains('"show_edit_predictions": true') | Should -BeTrue -Because 'Zed edit predictions disabled'
             ($zedText.Contains('"provider": "ollama"') -and $zedText.Contains('"model": "qwen2.5-coder:7b-base"')) | Should -BeTrue -Because 'Zed Ollama edit prediction missing'
             ($zedText.Contains('"panel.background": "#00000000"') -and $zedText.Contains('"surface.background": "#00000000"')) | Should -BeTrue -Because 'Zed panels are not transparent'
+        }
+        It 'stages wsl_connections as valid JSONC for the distro only' {
+            $zedPath = Join-Path $env:APPDATA 'Zed/settings.json'
+            $text = [Text.Encoding]::UTF8.GetString(@($script:entries | Where-Object Path -eq $zedPath)[0].Bytes)
+            $json = ($text -split "`r?`n" | Where-Object { $_.TrimStart() -notlike '//*' }) -join "`n" -replace ',(\s*[}\]])', '$1'
+            $parsed = $json | ConvertFrom-Json
+            $parsed.wsl_connections[0].distro_name | Should -Be 'archlinux'
+            $source = [IO.File]::ReadAllText((Join-Path $script:source '../zed-config/.config/zed/settings.json'))
+            $source | Should -Not -Match 'wsl_connections'
+            $none = @(Get-ConfigEntries $script:source $null | Where-Object Path -eq $zedPath)[0]
+            [Text.Encoding]::UTF8.GetString($none.Bytes) | Should -Not -Match 'wsl_connections'
+            $off = @(Get-ConfigEntries $script:source 'archlinux' -NoWsl | Where-Object Path -eq $zedPath)[0]
+            [Text.Encoding]::UTF8.GetString($off.Bytes) | Should -Not -Match 'wsl_connections'
+        }
+        It 'omits .wslconfig with NoWsl' {
+            @(Get-ConfigEntries $script:source 'archlinux' -NoWsl | Where-Object Path -like '*.wslconfig').Count | Should -Be 0
         }
         It 'stages <_> identical to its source' -ForEach 'keymap.json', 'tasks.json', 'debug.json' {
             $path = Join-Path $env:APPDATA "Zed/$_"
@@ -178,7 +349,7 @@ Describe 'Windows installer' {
             (Get-FilePlan @((Get-FlowConfigEntry))).Action | Should -Be 'Skip' -Because 'Flow repeat must preserve serialized settings'
         }
         It 'detects conflicts and backs up on request' {
-            $target = $script:entries[0].Path
+            $target = Join-Path $env:USERPROFILE '.config/wezterm/wezterm.lua'
             [IO.File]::WriteAllText($target, 'custom')
             Throws { Get-FilePlan $script:entries } 'Dateikonflikt'
             $backupPlan = @(Get-FilePlan $script:entries -Backup)
@@ -188,6 +359,18 @@ Describe 'Windows installer' {
             $saved = @(Get-ChildItem -LiteralPath (Split-Path $target) -Filter '*.backup-*')
             $saved.Count | Should -Be 1
             [IO.File]::ReadAllText($saved[0].FullName) | Should -Be 'custom'
+        }
+        It 'replaces generated distro.lua on distro change without Backup while wezterm.lua still conflicts' {
+            $distroPath = Join-Path $env:USERPROFILE '.config/wezterm/distro.lua'
+            $weztermPath = Join-Path $env:USERPROFILE '.config/wezterm/wezterm.lua'
+            $changedEntries = @(Get-ConfigEntries $script:source 'Arch' | Where-Object Path -in @($distroPath, $weztermPath))
+            $plan = @(Get-FilePlan $changedEntries)
+            (@($plan | Where-Object Path -eq $distroPath)[0]).Action | Should -Be 'Replace'
+            Write-FilePlan $plan
+            [IO.File]::ReadAllText($distroPath) | Should -Be "return `"Arch`"`n"
+            [IO.File]::WriteAllText($weztermPath, 'user-edited')
+            Throws { Get-FilePlan $changedEntries } 'Dateikonflikt'
+            Write-FilePlan @(Get-FilePlan $changedEntries -Backup)
         }
         It 'rejects directory and parent collisions' {
             $target = $script:entries[0].Path
@@ -205,6 +388,7 @@ Describe 'Windows installer' {
 
     Context 'agent config' {
         BeforeAll {
+            Use-TestProfile
             $script:repo = Split-Path -Parent $script:source
             $script:savedDirs = @($env:CLAUDE_CONFIG_DIR, $env:PI_CODING_AGENT_DIR)
             $env:CLAUDE_CONFIG_DIR = $null
@@ -277,8 +461,9 @@ Describe 'Windows installer' {
 
     Context 'full installation' {
         BeforeAll {
-            $script:entries = @(Get-ConfigEntries $script:source 'Fedora')
-            $script:target = $script:entries[0].Path
+            Use-TestProfile
+            $script:entries = @(Get-ConfigEntries $script:source 'archlinux')
+            $script:target = Join-Path $env:USERPROFILE '.config/wezterm/wezterm.lua'
             function Invoke-WebRequest { param($Uri, $OutFile, [switch]$UseBasicParsing) [IO.File]::WriteAllText($OutFile, 'mock archive') }
             function Expand-Archive {
                 param($LiteralPath, $DestinationPath)
@@ -304,8 +489,8 @@ Describe 'Windows installer' {
             $script:packageCalls = 0
         }
         It 'installs repeatedly with mocked registry, network, archive and packages' {
-            Install-WindowsDesktop $script:source
-            Install-WindowsDesktop $script:source
+            Install-WindowsDesktop $script:source -NoWsl
+            Install-WindowsDesktop $script:source -NoWsl
             $script:registryWrites | Should -Be 2 -Because 'steps after skipped packages did not run'
             $installedFonts = @(Get-ChildItem (Join-Path $env:LOCALAPPDATA 'Microsoft/Windows/Fonts') -Filter '*.ttf')
             $installedFonts.Count | Should -Be 40 -Because 'both Ioskeley families must install all 20 styles'
@@ -315,7 +500,7 @@ Describe 'Windows installer' {
         It 'runs the conflict preflight before any package' {
             [IO.File]::WriteAllText($script:target, 'conflict again')
             $before = $script:packageCalls
-            Throws { Install-WindowsDesktop $script:source } 'Dateikonflikt'
+            Throws { Install-WindowsDesktop $script:source -NoWsl } 'Dateikonflikt'
             $script:packageCalls | Should -Be $before
         }
     }

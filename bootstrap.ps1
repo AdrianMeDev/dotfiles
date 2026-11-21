@@ -1,5 +1,5 @@
 #requires -Version 5.1
-# One-command Windows 11 setup: pwsh -File bootstrap.ps1 [-DryRun] [-Backup] [-Extra vs]
+# One-command Windows 11 setup: pwsh -File bootstrap.ps1 [-DryRun] [-Backup] [-Extra vs] [-NoWsl] [-WslUser <Name>]
 [CmdletBinding()]
 param(
     [switch]$DryRun,
@@ -7,6 +7,8 @@ param(
     [string[]]$Extra = @(),
     [string]$Distro,
     [switch]$NoAutostart,
+    [switch]$NoWsl,
+    [string]$WslUser,
     [string]$DotScript = (Join-Path $PSScriptRoot 'windows/dot.ps1')
 )
 $ErrorActionPreference = 'Stop'
@@ -25,7 +27,8 @@ try {
     if (-not (Test-Winget)) { throw 'Voraussetzung fehlt: winget.exe (App Installer aus dem Microsoft Store installieren).' }
     $arguments = @{ Extra = $Extra }
     if ($Distro) { $arguments.Distro = $Distro }
-    & $DotScript install @arguments -DryRun:$DryRun -Backup:$Backup -NoAutostart:$NoAutostart
+    if ($WslUser) { $arguments.WslUser = $WslUser }
+    & $DotScript install @arguments -DryRun:$DryRun -Backup:$Backup -NoAutostart:$NoAutostart -NoWsl:$NoWsl
     if ($LASTEXITCODE) { exit $LASTEXITCODE }
     if (-not $DryRun) {
         Write-Host 'Bitte jetzt ab- und wieder anmelden (Fonts, PATH, GlazeWM-Autostart).'

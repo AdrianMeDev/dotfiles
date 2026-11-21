@@ -11,11 +11,21 @@ Describe 'Windows dot commands' {
             [Environment]::SetEnvironmentVariable($name, (Join-Path $TestDrive $name))
         }
         function Assert-WindowsPrerequisites {}
-        function Select-WslDistro { return $null }
+        function Select-WslDistro { return $script:wslDistro }
+        function Invoke-NativeLive {
+            param($Program, $Arguments)
+            $Program | Should -Be 'wsl.exe'
+            $script:wslCalls += , ($Arguments -join ' ')
+            return $script:wslCode
+        }
         function Get-Process { param($Name, $ErrorAction) }
         function Read-FontRegistryValue { param($SubKey, $Name) return $null }
         function Invoke-NativeResult {
             param($Program, $Arguments)
+            if ($Program -eq 'wsl.exe') {
+                $script:wslCalls += , ($Arguments -join ' ')
+                return [pscustomobject]@{ Code = $script:wslCode; Output = @('wsl doctor output') }
+            }
             if ($Program -eq 'claude' -and $Arguments[0] -eq '--version') {
                 return [pscustomobject]@{ Code = 0; Output = @('test version') }
             }
@@ -34,8 +44,16 @@ Describe 'Windows dot commands' {
         }
     }
     BeforeEach {
+        # Fresh profile per case: generated files (distro.lua, .wslconfig, Zed settings) depend on the selected distro.
+        $script:run = [guid]::NewGuid().ToString('N')
+        foreach ($name in 'USERPROFILE', 'APPDATA', 'LOCALAPPDATA', 'CLAUDE_CONFIG_DIR', 'PI_CODING_AGENT_DIR') {
+            [Environment]::SetEnvironmentVariable($name, (Join-Path $TestDrive "$script:run/$name"))
+        }
         $script:listed = @()
         $script:upgraded = @()
+        $script:wslDistro = $null
+        $script:wslCode = 0
+        $script:wslCalls = @()
     }
     AfterAll {
         foreach ($name in $script:oldEnv.Keys) { [Environment]::SetEnvironmentVariable($name, $script:oldEnv[$name]) }
@@ -44,9 +62,9 @@ Describe 'Windows dot commands' {
         @(Update-WindowsDesktop $script:source -DryRun) | Should -Be $script:ids
         $script:listed.Count | Should -Be 0
         $script:upgraded.Count | Should -Be 0
-        @(& "$script:source/dot.ps1" update -DryRun) | Should -Be $script:ids
+        @(& "$script:source/dot.ps1" update -DryRun -NoWsl) | Should -Be $script:ids
         $LASTEXITCODE | Should -Be 0
-        @(& "$script:source/dot.ps1" update --dry-run) | Should -Be $script:ids
+        @(& "$script:source/dot.ps1" update --dry-run -NoWsl) | Should -Be $script:ids
         $LASTEXITCODE | Should -Be 0
     }
     It 'upgrades only installed manifest IDs and reapplies configs and agents' {
@@ -71,6 +89,63 @@ Describe 'Windows dot commands' {
         $report.Message | Should -Contain 'Claude: test version'
         [IO.File]::ReadAllText($config) | Should -BeExactly 'modified'
         $script:upgraded.Count | Should -Be 0
+    }
+    It 'reports the WSL update in dry-run without launching WSL' {
+        $script:wslDistro = 'archlinux'
+        $output = Update-WindowsDesktop $script:source -DryRun 6>&1
+        @($output | Where-Object { $_ -is [string] }) | Should -Be $script:ids
+        (@($output | Where-Object { $_ -isnot [string] }) | Out-String) | Should -Match 'archlinux'
+        $script:wslCalls.Count | Should -Be 0
+    }
+    It 'runs dot update in the WSL distro after the Windows update' {
+        $script:wslDistro = 'archlinux'
+        Update-WindowsDesktop $script:source 6>$null
+        $script:upgraded | Should -Be @($script:ids | Where-Object { $_ -ne 'Git.Git' })
+        $script:wslCalls | Should -Be @('-d archlinux --cd ~ -- bash -c exec "$HOME/.local/bin/dot" update')
+    }
+    It 'skips WSL with -NoWsl or without a distro' {
+        $script:wslDistro = 'archlinux'
+        Update-WindowsDesktop $script:source -NoWsl 6>$null
+        $script:wslDistro = $null
+        Update-WindowsDesktop $script:source 6>$null
+        $script:wslCalls.Count | Should -Be 0
+        [IO.File]::ReadAllText((Join-Path $env:USERPROFILE '.config/wezterm/distro.lua')) | Should -Be "return nil`n"
+    }
+    It 'replaces distro.lua on distro change without -Backup while wezterm.lua still conflicts' {
+        $script:wslDistro = 'archlinux'
+        Update-WindowsDesktop $script:source -NoWsl 6>$null
+        $distroPath = Join-Path $env:USERPROFILE '.config/wezterm/distro.lua'
+        [IO.File]::ReadAllText($distroPath) | Should -Be "return `"archlinux`"`n"
+        $script:wslDistro = 'Arch'
+        Update-WindowsDesktop $script:source -NoWsl 6>$null
+        [IO.File]::ReadAllText($distroPath) | Should -Be "return `"Arch`"`n"
+        $weztermPath = Join-Path $env:USERPROFILE '.config/wezterm/wezterm.lua'
+        [IO.File]::WriteAllText($weztermPath, 'custom')
+        { Update-WindowsDesktop $script:source -NoWsl 6>$null } | Should -Throw '*Dateikonflikt*'
+    }
+    It 'fails when dot update in WSL fails' {
+        $script:wslDistro = 'archlinux'
+        $script:wslCode = 4
+        { Update-WindowsDesktop $script:source 6>$null } | Should -Throw '*Exit 4*'
+    }
+    It 'reports WSL Arch health read-only in doctor' {
+        $script:wslDistro = 'archlinux'
+        $report = @(Get-DoctorReport $script:source)
+        $report.Message | Should -Contain 'WSL2 Arch: archlinux (WSL2)'
+        ($report.Message -join "`n") | Should -Match 'WSL dot doctor \(Exit 0\)'
+        $script:wslCalls | Should -Be @('-d archlinux --cd ~ -- bash -c exec "$HOME/.local/bin/dot" doctor')
+    }
+    It 'reports missing Arch, WSL doctor failures and -NoWsl in doctor' {
+        $report = @(Get-DoctorReport $script:source)
+        ($report | Where-Object Problem).Message | Should -Contain 'WSL2 Arch: nicht installiert'
+        $script:wslDistro = 'archlinux'
+        $script:wslCode = 1
+        $report = @(Get-DoctorReport $script:source)
+        @($report | Where-Object { $_.Problem -and $_.Message -like 'WSL dot doctor*' }).Message | Should -Match 'WSL dot doctor \(Exit 1\)'
+        $script:wslCalls = @()
+        $report = @(Get-DoctorReport $script:source -NoWsl)
+        $report.Message | Should -Contain 'WSL2: uebersprungen (-NoWsl)'
+        $script:wslCalls.Count | Should -Be 0
     }
     It 'prints usage and fails for an unknown verb' {
         (& "$script:source/dot.ps1" unknown) | Should -Match 'Usage:'

@@ -1,32 +1,43 @@
-# Windows 11 mit Fedora unter WSL2
+# Windows 11 mit Arch Linux unter WSL2
 
-Dieses separate Setup installiert native Windows-Anwendungen: WezTerm, Zed,
-GlazeWM, Zebar, Flow Launcher und PowerShell 7 über Winget sowie Ioskeley Mono und
-Ioskeley Mono Term Nerd Font v2.1.0 mit allen Schnitten. Die Windows-Taskleiste bleibt erhalten. GlazeWM nähert COSMICs
-Tiling mit neun vordefinierten Workspaces an; es ersetzt keinen vollständigen Desktop.
+Dieses Setup richtet über `bootstrap.ps1` bzw. `windows/dot.ps1` native
+Windows-Anwendungen (WezTerm, Zed, GlazeWM, Zebar, Flow Launcher, PowerShell 7,
+Git, .NET SDK, Ollama und Claude Code) sowie eine Arch-Linux-WSL2-Instanz samt
+Linux-Dotfiles mit einem Befehl ein. Die Windows-Taskleiste bleibt erhalten.
+GlazeWM nähert COSMICs Tiling mit neun vordefinierten Workspaces an; es ersetzt
+keinen vollständigen Desktop.
 
 Für die Einrichtung ohne Setup- und Startskripte gibt es die separate
 [Anleitung zur manuellen Installation](MANUAL.md).
 
 ## Voraussetzungen und Installation
 
-Windows 11, Winget (App Installer), eingerichtetes WSL2 mit Fedora und Internetzugang
-müssen vorhanden sein. Als normaler Windows-Benutzer ausführen; einzelne
-Winget-Pakete können ihre eigene UAC-Abfrage anzeigen. In WSL muss Windows-Interop
-aktiv sein. Der Fedora-Installer im Repository bleibt ein eigener Schritt.
+Windows 11, Winget (App Installer) und Internetzugang müssen vorhanden sein.
+Als normaler Windows-Benutzer ausführen; einzelne Winget-Pakete oder `wsl --install`
+können ihre eigene UAC-Abfrage anzeigen. Falls bereits eine WSL-Distribution
+eingerichtet ist, muss Windows-Interop in WSL aktiv sein.
 
 In Windows PowerShell 5.1 oder PowerShell 7, aus dem Repository:
 
 ```powershell
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\windows\install.ps1 -DryRun
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\windows\install.ps1
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\bootstrap.ps1 -DryRun
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\bootstrap.ps1
 ```
 
-Aus Fedora-WSL, auch aus einem Repository-Pfad mit Leerzeichen:
+Mit `windows/dot.ps1` stehen dieselben Verben wie unter Linux zur Verfügung (`install`, `update`, `doctor`):
+
+```powershell
+pwsh -NoProfile -File .\windows\dot.ps1 install -DryRun
+pwsh -NoProfile -File .\windows\dot.ps1 install -Backup
+pwsh -NoProfile -File .\windows\dot.ps1 update
+pwsh -NoProfile -File .\windows\dot.ps1 doctor
+```
+
+Aus einer bestehenden WSL-Distribution (auch aus einem Repository-Pfad mit Leerzeichen):
 
 ```bash
 bash windows/install.sh -DryRun
-bash windows/install.sh -Backup -Distro 'Fedora Linux'
+bash windows/install.sh -Backup -Distro archlinux
 ```
 
 Die Weiterleitung verwendet `wslpath` und `-File`, auch für `\\wsl.localhost\…`-
@@ -36,8 +47,20 @@ UNC-Pfade. Kein Laufwerkswechsel über `cmd.exe` ist erforderlich.
 | --- | --- |
 | `-DryRun` | Voraussetzungen, WSL2 und Konfigurationskonflikte prüfen; Dateiplan und Pakete anzeigen. Keine Downloads, Dateien, Registry-Änderungen oder Paketinstallationen. |
 | `-Backup` | Abweichende Dateien vor dem Ersetzen unmittelbar daneben sichern. |
-| `-Distro 'Name'` | Exakten registrierten WSL-Namen wählen, etwa aus `wsl.exe --list --verbose`. Ohne Option muss genau ein Name „Fedora“ enthalten. Umbenannte Fedora-Distributionen explizit wählen. |
+| `-Extra vs` | Optionale Zusatzpakete installieren (z. B. Visual Studio Community). |
+| `-Distro 'Name'` | Exakten registrierten WSL-Namen wählen, etwa aus `wsl.exe --list --verbose`. Standardmäßig wird `archlinux` verwendet (bzw. installiert, falls noch nicht vorhanden). |
+| `-WslUser 'Name'` | Linux-Benutzernamen für die neue Arch-WSL2-Instanz festlegen (Standard: aktueller Windows-Benutzername in Kleinbuchstaben; `root` ist unzulässig). |
+| `-NoWsl` | WSL2-Einrichtung (`wsl --install archlinux`, `windows/wsl-bootstrap.sh`, `.wslconfig`) sowie WSL-Updates/-Prüfungen in `dot.ps1 update`/`doctor` überspringen. |
 | `-NoAutostart` | Keinen GlazeWM-Autostarteintrag anlegen oder aktualisieren und Flow-Autostart nicht aktivieren. Ein bereits bestehender Eintrag bleibt bestehen; Entfernen siehe unten. |
+
+Ohne `-NoWsl` installiert `bootstrap.ps1` bzw. `dot.ps1 install` bei fehlender
+Distribution automatisch `wsl --install archlinux`, richtet über
+`windows/wsl-bootstrap.sh` als `root` den Benutzer (`wheel`, `NOPASSWD`-sudo, `zsh`),
+`/etc/wsl.conf` (`[user] default=<WslUser>`) und den Linux-seitigen Klon unter
+`~/dotfiles` ein, startet die Instanz neu (`wsl --terminate`) und führt darin
+`./install.sh --profile headless` aus. Ein bestehender Klon bzw. eine bereits
+eingerichtete Instanz bleibt idempotent erhalten; abweichende `/etc/sudoers.d/10-wheel`
+oder `/etc/wsl.conf` werden nur mit `-Backup` ersetzt.
 
 Ein Dateikonflikt stoppt auch die Vorschau; zum Anzeigen geplanter Ersetzungen
 `-DryRun -Backup` verwenden. Identische Dateien werden übersprungen. Verzeichnisse
@@ -57,7 +80,7 @@ neuen PowerShell:
 ## Ablage und Verhalten
 
 Alle Laufzeitdateien werden kopiert und benötigen danach weder das Repository
-noch eine laufende WSL. Lediglich Fedora-Terminals und Entwicklungsprojekte benötigen WSL.
+noch eine laufende WSL. Lediglich Arch-WSL-Terminals und Entwicklungsprojekte benötigen WSL.
 Die Leiste lädt beim ersten Start den fest versionierten Zebar-JavaScript-Client
 von `esm.sh`; Zebar cached externe Ressourcen. Ein vollständig netzloser Erststart
 ist daher nicht vorgesehen.
@@ -65,8 +88,9 @@ ist daher nicht vorgesehen.
 | Ziel | Inhalt |
 | --- | --- |
 | `%USERPROFILE%\.wezterm.lua` | Einstiegspunkt, berücksichtigt die höhere Priorität dieser Datei |
-| `%USERPROFILE%\.config\wezterm\` | Kopierte gemeinsame Basis, Windows-Anpassung und ausgewählte Distribution |
-| `%APPDATA%\Zed\` | Aus `zed-config/.config/zed/`: Theme, Vim-Keymap, Editor-Einstellungen, Tasks und `debug.json` ohne erzwungenes `zsh` |
+| `%USERPROFILE%\.config\wezterm\` | Kopierte gemeinsame Basis, Windows-Anpassung und `WSL:archlinux` (bzw. gewählte Distribution) als Standard-Domain |
+| `%USERPROFILE%\.wslconfig` | Setzt `networkingMode=mirrored` unter `[wsl2]`, damit WSL2 lokal unter Windows laufendes Ollama (`127.0.0.1:11434`) erreicht |
+| `%APPDATA%\Zed\` | Aus `zed-config/.config/zed/`: Theme, Vim-Keymap, Editor-Einstellungen, Tasks, `debug.json` ohne erzwungenes `zsh` sowie vorregistrierte `wsl_connections` für Remote-WSL |
 | `%USERPROFILE%\.glzr\glazewm\` | Tiling-Konfiguration und Startskripte |
 | `%USERPROFILE%\.glzr\zebar\` | Zebar-Einstellungen und eigenes `dotfiles`-Widget-Paket |
 | `%LOCALAPPDATA%\Microsoft\Windows\Fonts\` | Benutzer-Fonts; Registrierung unter `HKCU\Software\Microsoft\Windows NT\CurrentVersion\Fonts` |
@@ -78,9 +102,10 @@ Zeds Fenster erhält einen Tokyo-Night-Hintergrund mit 75 % Deckkraft; Editor, T
 Agent-, Git- und Projekt-Panel bleiben darüber transparent. Edit Predictions nutzen
 lokal Ollama mit `qwen2.5-coder:7b-base`. Das Modell muss in Ollama vorhanden sein
 (`ollama pull qwen2.5-coder:7b-base`); automatische Vorschläge sind aktiviert.
-Die [WSL-Domain](https://wezterm.org/config/lua/WslDomain.html) startet die gewählte
-Distribution mit ihrer Standard-Shell. `Ctrl+T` öffnet Tabs in der aktuellen Domain;
-in Fedora bleiben sie Fedora-Tabs. `Ctrl+Shift+P` öffnet lokale PowerShell 7.
+Durch `networkingMode=mirrored` in `.wslconfig` ist Windows-Ollama auch aus Arch WSL2 heraus erreichbar.
+Die [WSL-Domain](https://wezterm.org/config/lua/WslDomain.html) (`WSL:archlinux`) startet Arch Linux
+mit `zsh` als Standard-Shell. `Ctrl+T` öffnet Tabs in der aktuellen Domain;
+in Arch bleiben sie Arch-Tabs. `Ctrl+Shift+P` öffnet lokale PowerShell 7.
 `Ctrl+1–9` wechselt Tabs; `Ctrl+Shift+O` öffnet den Launcher mit PowerShell-Eintrag.
 
 GlazeWM startet Zebar über einen einmaligen Startup-Hook mit Prozessprüfung und
@@ -142,27 +167,39 @@ Nach der Aktualisierung `Alt+Shift+R` drücken. `Alt+Shift+Leertaste` bleibt das
 GlazeWM-Kürzel für schwebende Fenster. Falls PowerToys Run, Command Palette oder
 Raycast laufen, dort `Alt+Leertaste` freigeben.
 
-## Zed-Projekte in Fedora
+## Zed-Projekte in Arch (WSL2)
 
-Lokale Windows-Terminals verwenden `pwsh.exe`. Für Entwicklungsprojekte in Fedora
-in Zeds Command Palette **`projects: open wsl`** wählen, Distribution hinzufügen
-und den Projektordner in Fedora öffnen. Für einen Windows-Ordner, der über WSL
-bearbeitet werden soll, gibt es **`projects: open folder in wsl`**.
-So laufen Terminal, Tasks und Sprachserver in Fedora; ein als lokaler UNC-Ordner
+Lokale Windows-Terminals verwenden `pwsh.exe`. Für Entwicklungsprojekte in Arch WSL2
+ist die Distribution in Zeds `settings.json` über `wsl_connections` bereits vorregistriert;
+in Zeds Command Palette **`projects: open wsl`** wählen und den Projektordner in Arch
+öffnen. Für einen Windows-Ordner, der über WSL bearbeitet werden soll, gibt es
+**`projects: open folder in wsl`**.
+So laufen Terminal, Tasks und Sprachserver in Arch Linux; ein als lokaler UNC-Ordner
 geöffnetes Projekt bietet diese Trennung nicht automatisch.
 Siehe [Zed unter Windows](https://zed.dev/docs/windows) und
 [WSL und Remote-Einstellungen](https://zed.dev/docs/remote-development#wsl-support).
 
-Auf Fedora weiterhin das bestehende Setup installieren. Dort liegen Linux-Shell-
-und Task-Einstellungen unter `~/.config/zed/`; Zed unterscheidet lokale UI- von
+Auf Arch WSL2 richtet `bootstrap.ps1` bzw. `dot.ps1 install` das bestehende Setup
+automatisch ein (`install.sh --profile headless`). Dort liegen Linux-Shell- und
+Task-Einstellungen unter `~/.config/zed/`; Zed unterscheidet lokale UI- von
 Server-Einstellungen. Zum Funktionstest im WSL-Projektterminal `uname -a` und
 `pwd` ausführen und einen passenden Projekt-Task starten, etwa `Node: test`.
-Die dafür benötigten Sprachwerkzeuge müssen in Fedora installiert sein.
+Die dafür benötigten Sprachwerkzeuge werden über `mise` bzw. Arch-Pakete in WSL bereitgestellt.
 
 ## Aktualisieren, Wiederherstellen, Autostart abschalten
 
-Nach Repository-Änderungen zuerst `-DryRun -Backup`, dann `-Backup` ausführen.
-Gemeinsame WezTerm-/Zed-Dateien werden dabei erneut übernommen. Eigene Änderungen
+Nach Repository-Änderungen oder für regelmäßige Updates zuerst Vorschau, dann Aktualisierung ausführen:
+
+```powershell
+pwsh -NoProfile -File .\windows\dot.ps1 update -DryRun
+pwsh -NoProfile -File .\windows\dot.ps1 update -Backup
+pwsh -NoProfile -File .\windows\dot.ps1 doctor
+```
+
+`dot.ps1 update` aktualisiert die Windows-Pakete (`winget`), übernimmt geänderte
+Konfigurationen und ruft anschließend in Arch WSL2 automatisch `dot update` auf
+(mit `-NoWsl` wird der WSL-Teil übersprungen). `dot.ps1 doctor` prüft analog
+Windows-Werkzeuge, Konfigurationen sowie `dot doctor` in WSL. Eigene Änderungen
 an kopierten Dateien erzeugen beim nächsten Lauf einen Konflikt und werden mit
 `-Backup` gesichert. Winget prüft jedes Paket mit `list --id <Paket-ID> --exact --source winget`
 und überspringt vorhandene Pakete. Nur bei „keine Anwendung gefunden“ wird mit
@@ -231,15 +268,23 @@ fehlende Voraussetzungen, WSL1, mehrdeutige Namen, Leerzeichen und externe Exitc
 Python testet die WSL-Argumentweitergabe einschließlich UNC-Pfaden und Exitcodes.
 Ein Lua-Verhaltenstest mit Neovim prüft WSL- und PowerShell-Domain sowie Tab-Kürzel.
 
-**Unter Fedora nicht ausführbar und noch unter Windows zu prüfen:**
+**Unter Linux nicht ausführbar und noch auf einer frischen Win11-VM zu prüfen:**
 
-- Direkte Installation unter Windows PowerShell 5.1 und Aufruf aus echter WSL,
-  jeweils auch aus einem Repository mit Leerzeichen/UNC-Pfad.
+- Ein-Befehl-Setup über `bootstrap.ps1` (unter PowerShell 5.1 und 7) sowie Aufruf aus
+  WSL (`windows/install.sh`), jeweils auch aus einem Pfad mit Leerzeichen/UNC-Pfad.
+- `wsl --install archlinux`, Benutzeranlage (`-WslUser`), `windows/wsl-bootstrap.sh`,
+  `.wslconfig` (`networkingMode=mirrored`) sowie Überspringen mit `-NoWsl`.
 - Reale Winget-Installation, Font-Anzeige und Registry-Registrierung.
 - Flow Launcher: erster Start, Alt+Leertaste, Autostart nach Anmeldung und frei
   schwebende Suche unter GlazeWM.
-- WezTerm startet Fedora; neue Tabs bleiben dort; PowerShell-Kürzel startet lokal.
-- Zed öffnet ein WSL-Projekt; Terminal, Task und Sprachserver laufen in Fedora.
+- WezTerm öffnet `zsh` in Arch (`WSL:archlinux`); neue Tabs bleiben in Arch;
+  `Ctrl+Shift+P` startet lokale PowerShell 7.
+- Zed öffnet ein Arch-WSL-Projekt über Remote-WSL; Terminal, Task und Sprachserver
+  laufen in Arch Linux.
+- Claude Code läuft in WSL (`claude --version`); Ollama unter Windows ist bei Bedarf
+  über `networkingMode=mirrored` aus WSL erreichbar.
+- `windows/dot.ps1 update` aktualisiert sowohl Windows als auch Arch WSL2;
+  `windows/dot.ps1 doctor` meldet keinen Fehler.
 - Tiling, Fokusrahmen, schwebende Dialoge, AltGr und alle Kürzel.
 - Klicks auf leere/belegte Workspaces; mehrere Monitore, unterschiedliche DPI,
   Monitor-Ab-/Anstecken und weiterhin nutzbare Windows-Taskleiste.
