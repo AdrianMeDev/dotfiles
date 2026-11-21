@@ -124,17 +124,19 @@ Verfügbare Tasks: `Node: start`, `Node: test`, `Node: build`, `Python: pytest`,
 
 ### Docks, Agent und Visual Mode
 
-| Kontext             | Kürzel                     | Aktion                               |
-| ------------------- | -------------------------- | ------------------------------------ |
-| Dock/Terminal/Panel | `Ctrl-W h/j/k/l`           | Fokus bewegen                        |
-| Dock/Terminal/Panel | `Ctrl-W Q` oder `Ctrl-W C` | Aktives Dock schließen               |
-| Normal              | `Space a a`                | Agent Panel umschalten               |
-| Normal              | `Space a c`                | neuen Claude-Terminal-Thread starten |
-| Normal              | `Space a n`                | neuen Zed-Agent-Thread starten       |
-| Normal              | `Space a p`                | Edit Predictions umschalten          |
-| Insert              | `Ctrl+Alt+P`               | Edit Predictions umschalten          |
-| Visual              | `S`, danach Zeichen        | Auswahl umschließen, etwa mit `(`    |
-| Visual              | `Space a s`                | Auswahl an Agent-Thread übergeben    |
+| Kontext             | Kürzel                      | Aktion                                   |
+| ------------------- | --------------------------- | ---------------------------------------- |
+| Dock/Terminal/Panel | `Ctrl-W h/j/k/l`            | Fokus bewegen                            |
+| Dock/Terminal/Panel | `Ctrl-W Q` oder `Ctrl-W C`  | Aktives Dock schließen                   |
+| Terminal            | `Ctrl+Alt+h/j/k/l`          | Fokus zwischen Panes bewegen             |
+| Normal              | `Space a a`                 | Agent Panel umschalten                   |
+| Normal              | `Space a c`                 | neuen Claude-Terminal-Thread starten     |
+| Normal              | `Space a n`                 | neuen Zed-Agent-Thread starten           |
+| Normal              | `Space a p`                 | Edit Predictions umschalten              |
+| Insert              | `Ctrl+Alt+P`                | Edit Predictions umschalten              |
+| Insert              | `Ctrl+Alt+l` / `Ctrl+Alt+j` | Edit Prediction / nächste Zeile annehmen |
+| Visual              | `S`, danach Zeichen         | Auswahl umschließen, etwa mit `(`        |
+| Visual              | `Space a s`                 | Auswahl an Agent-Thread übergeben        |
 
 ## Vim-Grundlagen für Zed und Neovim
 
@@ -483,6 +485,26 @@ verwaltet. Node/Python deshalb nicht zusätzlich über mise aktivieren.
 
 Podman läuft rootless: Container nicht mit `sudo` starten.
 
+## Linux: Hyprland (Vertrag mit GlazeWM)
+
+Gleiche Kürzel wie unter Windows (siehe unten); Quelle ist `manifests/keybindings.tsv`. Das Hyprland-Lua-Config braucht Hyprland >= 0.57. Alle Kürzel verwenden `Alt`.
+
+| Kürzel                              | Aktion                                               |
+| ----------------------------------- | ---------------------------------------------------- |
+| `Alt+1` … `9`                       | Workspace wechseln (mit `Shift`: Fenster verschieben) |
+| `Alt+h/j/k/l` oder `Alt+Pfeile`     | Fokus bewegen (mit `Shift`: Fenster verschieben)     |
+| `Alt+Enter`                         | WezTerm öffnen                                       |
+| `Alt+Space`                         | Launcher (fuzzel)                                    |
+| `Alt+Q`                             | Fenster schließen                                    |
+| `Alt+R`, dann `h/j/k/l` oder Pfeile | Resize Mode; `Esc`, `Enter` oder `Alt+R` beendet ihn |
+| `Alt+F`                             | Vollbild umschalten                                  |
+| `Alt+Shift+Space`                   | Floating umschalten                                  |
+| `Alt+Shift+R`                       | Konfiguration neu laden                              |
+| `Alt+Shift+P`                       | Bindings pausieren/fortsetzen                        |
+| `Alt+Shift+X`                       | Bildschirm sperren (hyprlock); Windows: `Win+L`      |
+| `Alt+V`                             | Zwischenablage-Verlauf (cliphist); Windows: `Win+V`  |
+| `Alt+Shift+S`                       | Screenshot (grim/slurp); Windows: `Win+Shift+S`      |
+
 ## Windows: GlazeWM und Flow Launcher
 
 Alle GlazeWM-Kürzel verwenden ausdrücklich das **linke** `Alt`; `AltGr` bleibt frei.
@@ -501,6 +523,8 @@ Alle GlazeWM-Kürzel verwenden ausdrücklich das **linke** `Alt`; `AltGr` bleibt
 | `Alt+Shift+Space`                   | Floating umschalten                                  |
 | `Alt+Shift+R`                       | GlazeWM-Konfiguration neu laden                      |
 | `Alt+Shift+P`                       | Tiling und globale Kürzel pausieren/fortsetzen       |
+| `Win+L`                             | Sperren (Windows; Linux: `Alt+Shift+X`)              |
+| `Alt+V` / `Alt+Shift+S`             | Zwischenablage-Verlauf (`Win+V`) / Screenshot (`Win+Shift+S`) |
 
 ## Dotfiles warten
 

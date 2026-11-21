@@ -1,5 +1,5 @@
 # logical	group	arch	fedora	debian
-# group: base (always), desktop (only with the desktop profile) or dev (only via pkg_names, never in the profile install). Comma lists = several packages.
+# group: base (always), desktop (only with the desktop profile) dev or hypr (only via pkg_names, never in the profile install; hypr is installed by the desktop and theme modules). Comma lists = several packages.
 git	base	git	git	git
 curl	base	curl	curl	curl
 wget	base	wget	wget	wget
@@ -32,3 +32,21 @@ dotnet-sdk	dev	dotnet-sdk	dotnet-sdk-10.0	-
 wezterm	dev	wezterm	wezterm	-
 zed	dev	zed	-	-
 ollama	dev	ollama	-	-
+hyprland	hypr	hyprland	hyprland	-
+xdg-desktop-portal-hyprland	hypr	xdg-desktop-portal-hyprland	xdg-desktop-portal-hyprland	-
+waybar	hypr	waybar	waybar	-
+fuzzel	hypr	fuzzel	fuzzel	-
+mako	hypr	mako	mako	-
+hyprlock	hypr	hyprlock	hyprlock	-
+hypridle	hypr	hypridle	hypridle	-
+hyprpaper	hypr	hyprpaper	hyprpaper	-
+cliphist	hypr	cliphist	cliphist	-
+grim	hypr	grim	grim	-
+slurp	hypr	slurp	slurp	-
+polkit-agent	hypr	polkit-kde-agent	polkit-kde	-
+theme-adw-gtk3	hypr	adw-gtk-theme	adw-gtk3-theme	-
+theme-icons	hypr	papirus-icon-theme	papirus-icon-theme	-
+theme-qt5ct	hypr	qt5ct	qt5ct	-
+theme-qt6ct	hypr	qt6ct	qt6ct	-
+theme-kvantum	hypr	kvantum,kvantum-qt5	kvantum,kvantum-qt5	-
+theme-bibata	hypr	bibata-cursor-theme-bin	-	-

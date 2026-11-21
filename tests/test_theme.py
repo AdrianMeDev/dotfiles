@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Tests for the unified theme contract (theme/tokens.toml) and tool parity."""
 from pathlib import Path
+import configparser
 import json
 import plistlib
 import re
@@ -29,7 +30,7 @@ EXCEPTIONS = {
                            'opacity here and is not given blur settings.',
     'window.blur.neovim': 'Neovim runs inside the terminal and inherits its blur and opacity.',
     'font.neovim': 'Neovim runs inside the terminal and inherits its font and size.',
-    'font.size.ui_bar': 'ui (15) applies to Zed UI only; bar (12) has no consumer in WezTerm/Zed/Neovim yet.',
+    'font.size.ui_bar': 'ui (15) applies to Zed UI only.',
     'font': 'Fonts and sizes are set by the terminal; CLI/TUI tools inherit them.',
     'border': 'Rounded borders only apply where the tool supports them (fzf --border=rounded); '
               'tmux draws plain pane borders and Starship has none.',
@@ -65,6 +66,49 @@ def jsonc(text):
 
 def hexes(text):
     return {h.lower() for h in HEX_IN_TEXT.findall(text)}
+
+
+def parse_lua_config(text):
+    """Return {'general.border_size': 2, ...} from the hl.config({...}) Lua table (line based)."""
+    text = re.sub(r'--[^\n]*', '', text)
+    start = re.search(r'hl\.config\(\{', text)
+    if not start:
+        raise ValueError('no hl.config table')
+    values, path = {}, []
+    for line in text[start.end():].splitlines():
+        line = line.strip().rstrip(',')
+        if opened := re.fullmatch(r'(\w+)\s*=\s*\{', line):
+            path.append(opened[1])
+        elif re.fullmatch(r'\}\)?', line):
+            if not path:
+                break
+            path.pop()
+        elif pair := re.fullmatch(r'(\w+)\s*=\s*(.+)', line):
+            raw = pair[2].strip()
+            if raw in ('true', 'false'):
+                value = raw == 'true'
+            elif raw.startswith('"'):
+                value = raw.strip('"')
+            else:
+                value = raw
+                if re.fullmatch(r'0x[0-9a-fA-F]{8}', raw) or re.fullmatch(r'-?\d+', raw):
+                    value = int(raw, 0)
+                elif re.fullmatch(r'-?\d*\.\d+', raw):
+                    value = float(raw)
+            values['.'.join(path + [pair[1]])] = value
+    return values
+
+
+def lua_color(value):
+    """Normalise 0xAARRGGBB or rgba(RRGGBBAA) to '#rrggbb' (alpha must be opaque)."""
+    if isinstance(value, int):
+        argb = f'{value:08x}'
+        alpha, rgb = argb[:2], argb[2:]
+    else:
+        match = re.fullmatch(r'rgba\(([0-9a-fA-F]{6})([0-9a-fA-F]{2})\)', value)
+        rgb, alpha = match[1].lower(), match[2].lower()
+    assert alpha == 'ff', alpha
+    return f'#{rgb}'
 
 
 class TokenContractTests(unittest.TestCase):
@@ -310,6 +354,128 @@ class ParityTests(unittest.TestCase):
         self.assertIn(f"config.font_size = {tokens['font']['size']['terminal']}\n", text)
         self.assertRegex(text, rf"font_with_fallback \{{\s*'{re.escape(tokens['font']['terminal_family'])}',"
                                rf"\s*'{re.escape(tokens['font']['editor_family'])}'")
+
+    def test_gtk_and_qt(self):
+        root = REPO / 'hypr/.config'
+        env = dict(re.findall(r'hl\.env\("(\w+)", "([^"]+)"\)', read('hypr/.config/hypr/hyprland.lua')))
+        font = load_tokens()['font']
+        for version in (3, 4):
+            folder = root / f'gtk-{version}.0'
+            config = configparser.ConfigParser()
+            config.read(folder / 'settings.ini')
+            settings = config['Settings']
+            self.assertEqual(settings['gtk-theme-name'], 'adw-gtk3-dark')
+            self.assertEqual(settings['gtk-icon-theme-name'], 'Papirus-Dark')
+            self.assertEqual(settings['gtk-application-prefer-dark-theme'], '1')
+            self.assertEqual(settings['gtk-font-name'], f"{font['editor_family']} {font['size']['ui']}")
+            for prefix in ('XCURSOR', 'HYPRCURSOR'):
+                self.assertEqual(env[f'{prefix}_THEME'], settings['gtk-cursor-theme-name'])
+                self.assertEqual(env[f'{prefix}_SIZE'], settings['gtk-cursor-theme-size'])
+            css = (folder / 'gtk.css').read_text()
+            colors = re.findall(r'@define-color \w+ (#[\w]+)', css)
+            self.assertTrue(colors)
+            self.assertLessEqual(set(colors), self.allowed)
+            self.assert_colors_in_contract(folder / 'gtk.css')
+
+        self.assertEqual(env['QT_QPA_PLATFORMTHEME'], 'qt5ct')
+        for version in (5, 6):
+            name = f'qt{version}ct'
+            config = configparser.ConfigParser()
+            config.read(root / name / f'{name}.conf')
+            appearance = config['Appearance']
+            self.assertEqual(appearance['icon_theme'], 'Papirus-Dark')
+            self.assertEqual(appearance['style'], 'kvantum-dark')
+            self.assertEqual(appearance['custom_palette'], 'true')
+            scheme = f'{name}/colors/tokyo-night.conf'
+            self.assertEqual(appearance['color_scheme_path'], f'~/.config/{scheme}')
+            config.read(root / scheme)
+            for state in ('active', 'inactive', 'disabled'):
+                colors = config['ColorScheme'][f'{state}_colors'].split(', ')
+                self.assertEqual(len(colors), 21 if version == 5 else 22)
+                self.assertLessEqual(set(colors), self.allowed)
+
+    def test_hyprland(self):
+        tokens = load_tokens()
+        self.assertTrue((REPO / 'hypr/.config/hypr/hyprland.lua').is_file())
+        self.assertFalse((REPO / 'hypr/.config/hypr/hyprland.conf').exists())
+        cfg = parse_lua_config(read('hypr/.config/hypr/hyprland.lua'))
+        self.assertEqual(cfg['general.border_size'], tokens['border']['width'])
+        self.assertEqual(cfg['decoration.rounding'], tokens['border']['radius'])
+        self.assertIs(cfg['decoration.blur.enabled'], tokens['window']['blur']['enabled'])
+        self.assertEqual(cfg['decoration.blur.size'], tokens['window']['blur']['radius'])
+        self.assertEqual(cfg['decoration.blur.passes'], tokens['window']['blur']['passes'])
+        self.assertEqual(cfg['decoration.active_opacity'], tokens['window']['opacity'])
+        self.assertEqual(cfg['decoration.inactive_opacity'], tokens['window']['opacity'])
+        self.assertEqual(lua_color(cfg['general.col.active_border']), tokens['palette']['border_active'])
+        self.assertEqual(lua_color(cfg['general.col.inactive_border']), tokens['palette']['border'])
+
+    def test_waybar(self):
+        tokens = load_tokens()
+        config = jsonc(read('hypr/.config/waybar/config.jsonc'))
+        css = read('hypr/.config/waybar/style.css')
+        self.assertEqual(config['height'], 32)
+        self.assertEqual(config['modules-left'], ['hyprland/workspaces'])
+        self.assertEqual(config['modules-center'], ['clock'])
+        self.assertEqual(config['hyprland/workspaces']['persistent-workspaces'], {'*': 9})
+        # Zebar's #status is an error slot without Waybar counterpart.
+        zebar = re.search(r'<aside>(.*)</aside>', read('windows/zebar/index.html')).group(1)
+        zebar_modules = [m for m in re.findall(r'id="(\w+)"', zebar) if m != 'status']
+        self.assertEqual(config['modules-right'], zebar_modules)
+        self.assertEqual(hexes(css) - self.allowed, set())
+        self.assertIn(f"font-family: '{tokens['font']['terminal_family']}'", css)
+        self.assertEqual(set(re.findall(r'font-size: (\d+)px', css)), {str(tokens['font']['size']['bar'])})
+        for state in ('active', 'urgent'):
+            self.assertIn(f'#workspaces button.{state}', css)
+        self.assertIn('#workspaces button:not(.empty)', css)  # Zebar "occupied"
+
+    def test_fuzzel(self):
+        tokens = load_tokens()
+        p, font, window, border = tokens['palette'], tokens['font'], tokens['window'], tokens['border']
+        text = read('hypr/.config/fuzzel/fuzzel.ini')
+        self.assertIn(f"font={font['terminal_family']}:size={font['size']['ui']}\n", text)
+        colors = dict(re.findall(r'(?m)^([\w-]+)=([0-9a-f]{8})$', text))
+        self.assertEqual(colors, {
+            'background': p['bg'][1:] + window['alpha_hex'], 'text': p['fg'][1:] + 'ff',
+            'match': p['cyan'][1:] + 'ff', 'selection': p['bg_highlight'][1:] + 'ff',
+            'selection-text': p['fg'][1:] + 'ff', 'selection-match': p['cyan'][1:] + 'ff',
+            'border': p['border_active'][1:] + 'ff',
+        })
+        self.assertRegex(text, rf"(?m)^width={border['width']}$")
+        self.assertRegex(text, rf"(?m)^radius={border['radius']}$")
+
+    def test_mako(self):
+        tokens = load_tokens()
+        p, font, window, border = tokens['palette'], tokens['font'], tokens['window'], tokens['border']
+        text = read('hypr/.config/mako/config')
+        self.assert_colors_in_contract('hypr/.config/mako/config')
+        conf = dict(re.findall(r'(?m)^([\w-]+)=(.+)$', text.split('[urgency=high]')[0]))
+        self.assertEqual(conf, {
+            'font': f"{font['terminal_family']} {font['size']['ui']}",
+            'background-color': p['bg'] + window['alpha_hex'], 'text-color': p['fg'],
+            'border-color': p['border_active'], 'progress-color': f"over {p['bg_highlight']}",
+            'border-size': str(border['width']), 'border-radius': str(border['radius']),
+        })
+        self.assertIn(f"[urgency=high]\nborder-color={p['red']}", text)
+
+    def test_hyprlock(self):
+        tokens = load_tokens()
+        p, font, window, border = tokens['palette'], tokens['font'], tokens['window'], tokens['border']
+        path = 'hypr/.config/hypr/hyprlock.conf'
+        text = read(path)
+        self.assert_colors_in_contract(path)
+        colors = dict(re.findall(r'(?m)^\s*(\w+) = rgba\(([0-9a-f]{8})\)$', text))
+        self.assertEqual(colors, {
+            'color': p['fg'][1:] + 'ff', 'outer_color': p['border_active'][1:] + 'ff',
+            'inner_color': p['bg'][1:] + window['alpha_hex'], 'font_color': p['fg'][1:] + 'ff',
+            'check_color': p['yellow'][1:] + 'ff', 'fail_color': p['red'][1:] + 'ff',
+        })  # 'color' is the label's: it overwrites the background's (bg, opaque) in the dict
+        self.assertIn(f"outline_thickness = {border['width']}", text)
+        self.assertIn(f"rounding = {border['radius']}", text)
+        self.assertIn(f"blur_size = {window['blur']['radius']}", text)
+        self.assertIn(f"blur_passes = {window['blur']['passes']}", text)
+        self.assertEqual(set(re.findall(r'font_family = (.+)', text)), {font['terminal_family']})
+        self.assertIn(f"font_size = {font['size']['ui']}", text)
+        self.assertIn('path = ~/.local/share/dotfiles/wallpaper.png', text)
 
     def test_neovim(self):
         tokens = load_tokens()

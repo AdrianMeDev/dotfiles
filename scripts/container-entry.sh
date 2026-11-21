@@ -160,6 +160,30 @@ sudo --preserve-env=GITHUB_TOKEN -u dev -i bash -s <<'EOF'
     rm -rf /tmp/x
 EOF
 
+printf '==> Hyprland-Links und desktop/theme-Vorschau prüfen\n'
+sudo --preserve-env=GITHUB_TOKEN -u dev -i bash -s <<'EOF'
+    set -euo pipefail
+    for f in hyprland.lua bindings.lua; do
+        link="$HOME/.config/hypr/$f"
+        [[ -L $link ]] || { printf 'Hypr-Link ist kein Symlink: %s\n' "$link" >&2; exit 1; }
+        target=$(readlink -f "$link")
+        [[ $target == "/dotfiles/hypr/.config/hypr/$f" ]] || {
+            printf 'Hypr-Link zeigt falsch: %s -> %s\n' "$link" "$target" >&2
+            exit 1
+        }
+    done
+EOF
+if [[ $family != debian ]]; then
+    # The container is headless, so force the desktop profile; the preview must write nothing.
+    before=$(snapshot)
+    for module in desktop theme; do
+        preview=$(as_dev "$dot install --only $module --profile desktop --dry-run")
+        printf '%s\n' "$preview"
+        grep -qF 'Profil: desktop' <<< "$preview" || { printf 'dot install --only %s: Profil desktop nicht gesetzt.\n' "$module" >&2; exit 1; }
+    done
+    [[ $before == "$(snapshot)" ]] || { printf 'desktop/theme --dry-run hat Dateien geschrieben.\n' >&2; exit 1; }
+fi
+
 printf '==> dot update\n'
 as_dev 'zsh -c "dot update --dry-run"'
 as_dev 'zsh -c "dot update"'

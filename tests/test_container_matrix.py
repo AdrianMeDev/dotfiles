@@ -82,6 +82,19 @@ class ContainerMatrixTests(unittest.TestCase):
         self.assertRegex(res.stdout, r'rot\s+fedora')
         self.assertRegex(res.stdout, r'grün\s+arch')
 
+    def test_entry_script_checks_hyprland_steps(self):
+        entry = (REPO / 'scripts' / 'container-entry.sh').read_text(encoding='utf-8')
+        for link in ('hyprland.lua', 'bindings.lua'):
+            self.assertIn(link, entry)
+        for module in ('desktop', 'theme'):
+            self.assertIn('--only $module --profile desktop --dry-run', entry)
+            self.assertIn(module, entry)
+        self.assertIn('if [[ $family != debian ]]', entry)
+        # The preview must be compared against a snapshot of $HOME.
+        self.assertRegex(entry, r'before=\$\(snapshot\)\n\s+for module in desktop theme')
+        for link in ('hyprland.lua', 'bindings.lua'):
+            self.assertTrue((REPO / 'hypr/.config/hypr' / link).is_file())
+
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)

@@ -102,7 +102,7 @@ alles wird in der neuesten Version installiert und mit `dot update` aktualisiert
 - **Depends on:** M2, M3
 - **Size:** M, ~6 commits
 
-### M6 [ ] Keybinding-Vertrag + Hyprland-Desktop
+### M6 [x] Keybinding-Vertrag + Hyprland-Desktop
 - **Goal:** Hyprland auf Arch/Fedora mit denselben Bindings wie GlazeWM und dem Theme aus M5.
 - **Includes:** `manifests/keybindings.tsv` + Paritätstest, Stow-Paket `hypr/` (Hyprland mit Blur/Rahmen aus Tokens, Waybar wie Zebar, Launcher auf `Alt+Space` wie Flow, Mako, Hyprlock/Hypridle, Clipboard-Verlauf, Screenshot), `theme`-Modul (GTK/Qt dunkel, Cursor, Icons, Wallpaper), `desktop`-Modul nur auf Desktop-Profil, GlazeWM-Bindings an den Vertrag angleichen
 - **Done when:** auf CachyOS in die Hyprland-Session einloggen, alle Vertrags-Bindings funktionieren, GTK-/Qt-Apps dunkel im Tokyo-Night-Look; beide Paritätstests grün; KDE-Session startet weiterhin
@@ -160,3 +160,4 @@ alles wird in der neuesten Version installiert und mit `dot update` aktualisiert
 - 2026-11-21: M3 Zed integrieren abgeschlossen (Zed-Config via Stow `zed-config`, `dot zed-template`, Distro-Paket auf Arch, Windows-Pfade und Container-Matrix aktualisiert)
 - 2026-11-21: M4 Agent-Config integrieren abgeschlossen (`agents`-Modul, Claude Code, pi, optional Ollama, `dot update`/`dot doctor`, Container-Matrix prüft Agents und Idempotenz)
 - 2026-11-21: M5 Einheitliches Theme: Terminal, Editoren, CLI abgeschlossen (`theme/tokens.toml`, Theme-Paritätstests, Zed/WezTerm/Neovim/tmux/Starship/fzf/bat/delta/lazygit/btop/yazi/Claude Code/pi, Container-Matrix prüft Theme-Links, `bat`-Cache und pi-Theme)
+- 2026-11-21: M6 Keybinding-Vertrag + Hyprland-Desktop abgeschlossen (`manifests/keybindings.tsv` + Paritätstests, Stow-Paket `hypr/` mit Lua-Config für Hyprland >= 0.57, `desktop`- und `theme`-Modul, `dot doctor` und Container-Matrix prüfen Hyprland)

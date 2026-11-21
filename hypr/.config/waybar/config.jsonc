@@ -1,0 +1,32 @@
+// Waybar mirrors windows/zebar: workspaces 1-9 left, clock centre, status right.
+// Module order is checked against windows/zebar/index.html by tests/test_theme.py.
+{
+  "layer": "top",
+  "position": "top",
+  "height": 32,
+  "spacing": 10,
+  "modules-left": ["hyprland/workspaces"],
+  "modules-center": ["clock"],
+  "modules-right": ["network", "battery"],
+  "hyprland/workspaces": {
+    "format": "{name}",
+    "persistent-workspaces": { "*": 9 },
+    "all-outputs": false,
+    "on-click": "activate"
+  },
+  "clock": {
+    "format": "{:%d.%m.%Y, %H:%M}",
+    "tooltip": false
+  },
+  "network": {
+    "format-wifi": "{essid}",
+    "format-ethernet": "{ifname}",
+    "format-disconnected": "Offline",
+    "tooltip": false
+  },
+  "battery": {
+    "format": "{capacity}%",
+    "format-charging": "↗ {capacity}%",
+    "tooltip": false
+  }
+}

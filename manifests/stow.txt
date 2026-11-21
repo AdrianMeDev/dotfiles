@@ -12,3 +12,4 @@ bat
 lazygit
 btop
 yazi
+hypr

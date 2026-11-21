@@ -73,6 +73,14 @@ install_system
                     self.assertNotIn(name, packages)
                 self.assertEqual(commands[len(before) + 1:], after)
 
+    def test_system_does_not_install_hypr_packages(self):
+        for family in FAMILIES:
+            with self.subTest(family=family):
+                self.log.unlink(missing_ok=True)
+                result, commands = self.system(family)
+                self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+                self.assertFalse([c for c in commands if 'hypr' in c or 'waybar' in c or 'copr' in c], commands)
+
     def test_rpmfusion_is_skipped_with_hint_outside_fedora(self):
         for family in ('arch', 'debian'):
             with self.subTest(family=family):

@@ -194,20 +194,20 @@
   {
     "context": "Editor && (edit_prediction || edit_prediction_conflict)",
     "bindings": {
-      "alt-l": "editor::AcceptEditPrediction",
+      "ctrl-alt-l": "editor::AcceptEditPrediction",
       "alt-w": "editor::AcceptNextWordEditPrediction",
-      "alt-j": "editor::AcceptNextLineEditPrediction"
+      "ctrl-alt-j": "editor::AcceptNextLineEditPrediction"
     }
   },
 
-  // ── Terminal: alt+hjkl statt ctrl (ctrl-h/l/k/w braucht die Shell) ────────
+  // ── Terminal: ctrl+alt+hjkl statt ctrl (ctrl-h/l/k/w braucht die Shell) ───
   {
     "context": "Terminal",
     "bindings": {
-      "alt-h": "workspace::ActivatePaneLeft",
-      "alt-l": "workspace::ActivatePaneRight",
-      "alt-k": "workspace::ActivatePaneUp",
-      "alt-j": "workspace::ActivatePaneDown",
+      "ctrl-alt-h": "workspace::ActivatePaneLeft",
+      "ctrl-alt-l": "workspace::ActivatePaneRight",
+      "ctrl-alt-k": "workspace::ActivatePaneUp",
+      "ctrl-alt-j": "workspace::ActivatePaneDown",
       "alt-z": "workspace::ToggleZoom"
     }
   },

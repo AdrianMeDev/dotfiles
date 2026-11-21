@@ -337,6 +337,10 @@ class DotCliTests(unittest.TestCase):
         self.env['PATH'] = f'{self.home}/.local/bin:{bindir}'
         self.env.pop('WSL_DISTRO_NAME', None)
         self.env.pop('WSL_INTEROP', None)
+        # Pin the headless profile regardless of the host session.
+        for var in ('WAYLAND_DISPLAY', 'DISPLAY', 'XDG_CURRENT_DESKTOP', 'XDG_SESSION_TYPE', 'HYPRLAND_INSTANCE_SIGNATURE'):
+            self.env.pop(var, None)
+        self.env['container'] = 'podman'
         local = self.home / '.gitconfig-local'
         local.write_text('[user]\n\tname = T\n\temail = t@example.invalid\n')
         local.chmod(0o600)
@@ -449,6 +453,98 @@ class DotCliTests(unittest.TestCase):
         result = self.run_dot('doctor')
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         self.assertIn('~/.gitconfig-local fehlt', result.stdout)
+
+    def fake_hyprland(self, version='0.57.0', verify=True, verify_rc=0):
+        """Install stub hyprland (and waybar) binaries into the doctor fakebin."""
+        bindir = self.base / 'fakebin'
+        help_text = 'Usage: Hyprland [arg [...]].\\n  --verify-config' if verify else 'Usage: Hyprland'
+        script = (
+            '#!/bin/sh\n'
+            f'echo "hyprland $*" >> "{self.log}"\n'
+            'case "$1" in\n'
+            f'  --version) echo "Hyprland {version} built from branch main";;\n'
+            f'  --help) printf "{help_text}\\n";;\n'
+            f'  --verify-config) echo "config error line 3"; exit {verify_rc};;\n'
+            'esac\n'
+        )
+        (bindir / 'hyprland').write_text(script)
+        (bindir / 'hyprland').chmod(0o755)
+        (bindir / 'waybar').write_text('#!/bin/sh\necho "Waybar v0.12.0"\n')
+        (bindir / 'waybar').chmod(0o755)
+
+    def link_hypr_lua(self):
+        lua = self.home / '.config/hypr/hyprland.lua'
+        lua.parent.mkdir(parents=True, exist_ok=True)
+        lua.write_text('-- stub\n')
+
+    def test_doctor_skips_desktop_without_hyprland_on_headless(self):
+        self.setup_doctor()
+        result = self.run_dot('doctor')
+        self.assertNotIn('hyprland', result.stdout.lower())
+
+    def test_doctor_lists_missing_desktop_tools_on_desktop_profile(self):
+        self.setup_doctor()
+        for var in ('container',):
+            self.env.pop(var, None)
+        self.env['WAYLAND_DISPLAY'] = 'wayland-0'
+        result = self.run_dot('doctor')
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn('Profil: desktop', result.stdout)
+        self.assertIn('[WARN]    Desktop-Tools fehlen: hyprland waybar', result.stdout)
+
+    def test_doctor_reports_hyprland_and_waybar_versions(self):
+        self.setup_doctor()
+        self.fake_hyprland()
+        result = self.run_dot('doctor')
+        self.assertIn('[OK]      hyprland: Hyprland 0.57.0', result.stdout)
+        self.assertIn('[OK]      waybar: Waybar v0.12.0', result.stdout)
+        self.assertNotIn('älter als', result.stdout)
+        self.assertIn('[WARN]    Desktop-Tools fehlen: fuzzel mako', result.stdout)
+
+    def test_doctor_warns_on_old_hyprland_and_leftover_conf(self):
+        self.setup_doctor()
+        self.fake_hyprland(version='0.56.2')
+        conf = self.home / '.config/hypr/hyprland.conf'
+        conf.parent.mkdir(parents=True)
+        conf.write_text('# old\n')
+        result = self.run_dot('doctor')
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn('[WARN]    Hyprland 0.56.2 ist älter als 0.57', result.stdout)
+        self.assertIn('[WARN]    ~/.config/hypr/hyprland.conf ist ein Überrest', result.stdout)
+        self.assertEqual(conf.read_text(), '# old\n')
+
+    def test_doctor_verifies_lua_config(self):
+        self.setup_doctor()
+        self.fake_hyprland()
+        self.link_hypr_lua()
+        result = self.run_dot('doctor')
+        self.assertIn('[OK]      Hyprland-Konfiguration: hyprland --verify-config', result.stdout)
+        self.assertIn('hyprland --verify-config --config', self.log.read_text())
+
+    def test_doctor_reports_lua_config_errors(self):
+        self.setup_doctor()
+        self.fake_hyprland(verify_rc=1)
+        self.link_hypr_lua()
+        result = self.run_dot('doctor')
+        self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
+        self.assertIn('[FEHLER]  Hyprland-Konfiguration: hyprland --verify-config meldet Fehler', result.stdout)
+        self.assertIn('config error line 3', result.stdout)
+
+    def test_doctor_falls_back_to_hyprctl_configerrors(self):
+        self.setup_doctor()
+        self.fake_hyprland(verify=False)
+        self.link_hypr_lua()
+        hyprctl = self.base / 'fakebin' / 'hyprctl'
+        hyprctl.write_text('#!/bin/sh\necho "Error: bindings.lua:7: bad"\n')
+        hyprctl.chmod(0o755)
+        result = self.run_dot('doctor')
+        self.assertNotIn('--verify-config ohne', result.stdout)
+        self.assertNotIn('hyprctl configerrors', result.stdout)
+        self.env['HYPRLAND_INSTANCE_SIGNATURE'] = 'abc'
+        result = self.run_dot('doctor')
+        self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
+        self.assertIn('[FEHLER]  Hyprland-Konfiguration: hyprctl configerrors meldet Fehler', result.stdout)
+        self.assertIn('bindings.lua:7: bad', result.stdout)
 
     def test_doctor_help_and_bad_option(self):
         self.assertIn('dot doctor', self.run_dot('--help').stdout)
