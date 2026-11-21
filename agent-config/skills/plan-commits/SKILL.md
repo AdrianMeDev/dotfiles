@@ -34,6 +34,8 @@ When planning a milestone, read only the roadmap parts you need: its milestone s
 
 ## 4. Design the steps – one step = one commit
 
+Plan the smallest complete solution: before adding a step, ask whether it needs to exist and whether the codebase, the standard library, the platform or an installed dependency already does it. Do not plan abstractions, options or "for later" work nobody asked for.
+
 Every step must:
 - have **one purpose** and be small: ideally under ~200 changed lines and a handful of files;
 - leave the project **buildable with green tests** – no broken intermediate states (if needed, add code that is not wired up yet, or put it behind a flag);

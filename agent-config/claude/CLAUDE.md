@@ -13,14 +13,18 @@ Projektspezifische Regeln (CLAUDE.md im Repo, `.editorconfig`, Linter, bestehend
 - Kleine, fokussierte Diffs. Kein Refactoring nebenbei, keine Formatierungsänderungen an unbeteiligten Dateien.
 - Neue Abhängigkeiten nur nach Rückfrage (Lizenz, Wartungszustand, Größe).
 - „Fertig“ heißt: baut, Tests grün, Lint sauber, neue Logik hat Tests. Berichte, welche Checks du ausgeführt hast und mit welchem Ergebnis.
-- Kein `git commit`, `git push` oder PR ohne ausdrückliche Aufforderung. Commits im Conventional-Commits-Format.
+- Kein `git commit`, `git push` oder PR ohne ausdrückliche Aufforderung. Commits im Conventional-Commits-Format. `/next-all` ist so eine Aufforderung: es committet selbst, aber nur auf einem Feature-Branch und pusht nie.
 - Fehlerursachen erst verstehen, dann beheben – keine Symptom-Workarounds (z. B. Tests abschalten, `any`, `# type: ignore`, `!`-Operator), ohne es zu begründen.
+
+## Einfachste Lösung (gilt auch außerhalb von `/next`)
+Faul bei der Lösung, nie beim Lesen des Codes. Erst Code und Aufrufer lesen, dann die erste Option, die vollständig funktioniert: 1. muss es existieren? 2. gibt es das schon im Projekt? 3. Standardbibliothek oder Plattform (außer das Projekt hat eine eigene UI-Lib, z. B. Syncfusion – die gewinnt)? 4. installierte Abhängigkeit? 5. eine lesbare Zeile? 6. erst dann das Minimum. Keine Abstraktion, Option oder Vorsorge, die niemand verlangt hat. Nie kürzen: Validierung an Vertrauensgrenzen, Fehlerbehandlung gegen Datenverlust, Sicherheit, Barrierefreiheit. Am Ende 1–2 Zeilen: was ausgelassen oder nicht geprüft wurde und welches Risiko ich kennen muss.
 
 ## Workflow: Roadmap → Plan → Schritt → Commit → `/next`
 - Große Vorhaben (ganze App, großes Feature): erst `/plan-roadmap` – Meilensteine in `docs/ROADMAP.md`.
 - Aufgaben mit mehr als einem Commit bzw. der nächste Meilenstein: `/plan-commits` – Plan aus kleinen Schritten, **ein Schritt = ein Commit**, gespeichert in `.agent-plan.md`. Nichts umsetzen, bevor ich den Plan freigebe.
 - `/next` setzt **genau einen** Schritt um, prüft ihn und **stoppt** dann mit Commit-Vorschlag. Ich prüfe und committe selbst; erst mein nächstes `/next` startet den nächsten Schritt.
 - Ist ein Schritt fertig, aber nicht committet, beginnst du keinen neuen.
+- `/next-all` setzt den ganzen Plan am Stück um: Feature-Branch, ein Commit pro Schritt, Stopp bei Fehlschlag. Kein Review zwischen den Schritten – Prüfung danach über `git log` und den Diff gegen die Basis.
 
 ## Kontext sparsam nutzen
 - Gezielt lesen: erst suchen (`rg`, Symbolnavigation), dann nur die relevanten Dateien bzw. Abschnitte lesen – nicht ganze Ordner.
