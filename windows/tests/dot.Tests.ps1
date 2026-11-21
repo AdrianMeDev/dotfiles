@@ -19,6 +19,19 @@ Describe 'Windows dot commands' {
             return $script:wslCode
         }
         function Get-Process { param($Name, $ErrorAction) }
+        function Invoke-RestMethod {
+            param($Uri)
+            $script:restCalls++
+            [pscustomobject]@{ tag_name = $script:vialTag; prerelease = $false; draft = $false; assets = @(
+                [pscustomobject]@{ name = "Vial-$script:vialTag-portable.zip"; browser_download_url = 'https://example.invalid/vial.zip'; digest = $null }) }
+        }
+        function Invoke-WebRequest { param($Uri, $OutFile, [switch]$UseBasicParsing) $script:downloads++; [IO.File]::WriteAllText($OutFile, 'vial archive') }
+        function Expand-Archive {
+            param($LiteralPath, $DestinationPath)
+            [IO.Directory]::CreateDirectory($DestinationPath) | Out-Null
+            [IO.File]::WriteAllText((Join-Path $DestinationPath 'Vial.exe'), 'exe')
+        }
+        function New-VialShortcut { param($Target) }
         function Read-FontRegistryValue { param($SubKey, $Name) return $null }
         function Invoke-NativeResult {
             param($Program, $Arguments)
@@ -54,6 +67,9 @@ Describe 'Windows dot commands' {
         $script:wslDistro = $null
         $script:wslCode = 0
         $script:wslCalls = @()
+        $script:vialTag = 'v0.7.5'
+        $script:restCalls = 0
+        $script:downloads = 0
     }
     AfterAll {
         foreach ($name in $script:oldEnv.Keys) { [Environment]::SetEnvironmentVariable($name, $script:oldEnv[$name]) }
@@ -146,6 +162,38 @@ Describe 'Windows dot commands' {
         $report = @(Get-DoctorReport $script:source -NoWsl)
         $report.Message | Should -Contain 'WSL2: uebersprungen (-NoWsl)'
         $script:wslCalls.Count | Should -Be 0
+    }
+    It 'skips Vial in update when it is not installed, without network' {
+        Update-WindowsDesktop $script:source -NoWsl 6>$null
+        $script:restCalls | Should -Be 0
+        Test-Path (Join-Path $env:LOCALAPPDATA 'Vial') | Should -BeFalse
+    }
+    It 'upgrades Vial in update only for a newer release tag' {
+        $dir = Join-Path $env:LOCALAPPDATA 'Vial'
+        [IO.Directory]::CreateDirectory($dir) | Out-Null
+        [IO.File]::WriteAllText((Join-Path $dir '.version'), 'v0.7.5')
+        Update-WindowsDesktop $script:source -NoWsl 6>$null
+        $script:downloads | Should -Be 0
+        $script:vialTag = 'v0.8.0'
+        Update-WindowsDesktop $script:source -NoWsl 6>$null
+        $script:downloads | Should -Be 1
+        Get-Content -LiteralPath (Join-Path $dir '.version') -Raw | Should -Be 'v0.8.0'
+        Update-WindowsDesktop $script:source -NoWsl 6>$null
+        $script:downloads | Should -Be 1
+    }
+    It 'reports Vial status read-only in doctor' {
+        $report = @(Get-DoctorReport $script:source -NoWsl)
+        ($report | Where-Object Problem).Message | Should -Match 'Vial: nicht installiert'
+        $dir = Join-Path $env:LOCALAPPDATA 'Vial'
+        [IO.Directory]::CreateDirectory($dir) | Out-Null
+        [IO.File]::WriteAllText((Join-Path $dir '.version'), 'v0.7.5')
+        $report = @(Get-DoctorReport $script:source -NoWsl)
+        ($report | Where-Object Problem).Message | Should -Match 'Vial.exe fehlt'
+        [IO.File]::WriteAllText((Join-Path $dir 'Vial.exe'), 'exe')
+        $report = @(Get-DoctorReport $script:source -NoWsl)
+        $report.Message | Should -Contain 'Vial: v0.7.5'
+        $script:restCalls | Should -Be 0
+        $script:downloads | Should -Be 0
     }
     It 'prints usage and fails for an unknown verb' {
         (& "$script:source/dot.ps1" unknown) | Should -Match 'Usage:'

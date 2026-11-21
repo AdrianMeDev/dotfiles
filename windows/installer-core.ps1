@@ -463,6 +463,92 @@ function Assert-FlowConfigWritable {
     }
 }
 
+function Get-VialDirectory { return Join-Path $env:LOCALAPPDATA 'Vial' }
+
+# Local state of the user-scoped Vial install: installed tag (from .version) and whether a foreign directory must be backed up.
+function Get-VialState {
+    param([switch]$Backup)
+    $dir = Get-VialDirectory
+    $state = [pscustomobject]@{ Directory = $dir; Version = $null; Replace = $false }
+    $item = Get-Item -LiteralPath $dir -Force -ErrorAction SilentlyContinue
+    if ($null -eq $item) { return $state }
+    if ($item.Attributes -band [IO.FileAttributes]::ReparsePoint) { throw "Verknuepfung im Zielpfad: $dir" }
+    if (-not $item.PSIsContainer) { throw "Zieldatei ist kein Verzeichnis: $dir" }
+    $marker = Join-Path $dir '.version'
+    if (Test-Path -LiteralPath $marker -PathType Leaf) {
+        $state.Version = ([IO.File]::ReadAllText($marker)).Trim()
+    } elseif (@(Get-ChildItem -LiteralPath $dir -Force).Count) {
+        if (-not $Backup) { throw "Dateikonflikt: $dir. Mit -Backup sichern und ersetzen." }
+        $state.Replace = $true
+    }
+    return $state
+}
+
+# Latest stable portable release of vial-kb/vial-gui; Sha256 is $null when GitHub supplies no digest.
+function Get-VialReleaseAsset {
+    [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+    $release = Invoke-RestMethod -Uri 'https://api.github.com/repos/vial-kb/vial-gui/releases/latest'
+    if ($release.prerelease -or $release.draft) { throw 'Vial: kein stabiles Release.' }
+    $assets = @($release.assets | Where-Object { $_.name -match '^Vial-v.*-portable\.zip$' })
+    if ($assets.Count -ne 1) { throw 'Vial: kein eindeutiges Portable-Release gefunden.' }
+    $sha = $null
+    if ($assets[0].digest -match '^sha256:([0-9a-fA-F]{64})$') { $sha = $Matches[1] }
+    return [pscustomobject]@{ Tag = [string]$release.tag_name; Name = $assets[0].name; Url = $assets[0].browser_download_url; Sha256 = $sha }
+}
+
+function Test-VialNewer {
+    param([string]$Installed, [string]$Latest)
+    $old = $null; $new = $null
+    if ([version]::TryParse($Installed.TrimStart('v'), [ref]$old) -and [version]::TryParse($Latest.TrimStart('v'), [ref]$new)) { return $new -gt $old }
+    return $Latest -ne $Installed
+}
+
+function New-VialShortcut {
+    param([string]$Target)
+    $path = Join-Path $env:APPDATA 'Microsoft/Windows/Start Menu/Programs/Vial.lnk'
+    [IO.Directory]::CreateDirectory((Split-Path -Parent $path)) | Out-Null
+    $link = (New-Object -ComObject WScript.Shell).CreateShortcut($path)
+    $link.TargetPath = $Target
+    $link.WorkingDirectory = Split-Path -Parent $Target
+    $link.Save()
+}
+
+function Install-VialRelease {
+    param([string]$TempDirectory, [switch]$Backup, [switch]$Upgrade)
+    $state = Get-VialState -Backup:$Backup
+    if ($state.Version -and -not $Upgrade) { Write-Host "Skip: Vial $($state.Version)"; return }
+    $release = Get-VialReleaseAsset
+    if ($state.Version -and -not (Test-VialNewer $state.Version $release.Tag)) { Write-Host "Skip: Vial $($state.Version)"; return }
+    $archive = Join-Path $TempDirectory 'vial.zip'
+    Invoke-WebRequest $release.Url -OutFile $archive -UseBasicParsing
+    if ($release.Sha256) {
+        $actual = (Get-FileHash -LiteralPath $archive -Algorithm SHA256).Hash
+        if ($actual -ne $release.Sha256) { throw "Vial SHA-256 stimmt nicht ueberein: erwartet $($release.Sha256), erhalten $actual" }
+    }
+    $extracted = Join-Path $TempDirectory 'vial'
+    Expand-Archive -LiteralPath $archive -DestinationPath $extracted
+    # Portable zips may wrap everything in one top-level folder.
+    $content = @(Get-ChildItem -LiteralPath $extracted -Force)
+    $source = if ($content.Count -eq 1 -and $content[0].PSIsContainer) { $content[0].FullName } else { $extracted }
+    if (-not (Get-ChildItem -LiteralPath $source -Filter 'Vial.exe' -File -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1)) {
+        throw 'Vial: Vial.exe fehlt im Archiv.'
+    }
+    $dir = $state.Directory
+    if ($state.Replace) {
+        $saved = "$dir.backup-$([DateTime]::UtcNow.ToString('yyyyMMddTHHmmssfff'))-$([guid]::NewGuid().ToString('N'))"
+        Move-Item -LiteralPath $dir -Destination $saved
+        Write-Host "Backup: $saved"
+    } elseif (Test-Path -LiteralPath $dir) {
+        Remove-Item -LiteralPath $dir -Recurse -Force
+    }
+    [IO.Directory]::CreateDirectory($dir) | Out-Null
+    Copy-Item -Path (Join-Path $source '*') -Destination $dir -Recurse -Force
+    [IO.File]::WriteAllText((Join-Path $dir '.version'), $release.Tag)
+    $exe = Get-ChildItem -LiteralPath $dir -Filter 'Vial.exe' -File -Recurse | Select-Object -First 1
+    New-VialShortcut $exe.FullName
+    Write-Host "Vial: $($release.Tag) in $dir"
+}
+
 function Install-WindowsDesktop {
     param([string]$SourceRoot, [switch]$DryRun, [switch]$Backup, [string]$Distro, [switch]$NoAutostart, [string[]]$Extra = @(), [switch]$NoWsl, [string]$WslUser)
     $packages = Get-WingetPackages (Split-Path -Parent $SourceRoot) $Extra
@@ -477,8 +563,11 @@ function Install-WindowsDesktop {
     $entries = @(Get-ConfigEntries $SourceRoot $wslName -NoAutostart:$NoAutostart -NoWsl:$NoWsl)
     $plan = @(Get-FilePlan $entries -Backup:$Backup)
     $darkPlan = @(Get-DarkModePlan)
+    # Conflict preflight (local only, no network).
+    $vial = Get-VialState -Backup:$Backup
     if ($DryRun) {
         Write-FilePlan $plan -DryRun
+        Write-Host "Vial: $(if ($vial.Version) { "Skip ($($vial.Version))" } else { 'wird installiert' }) in $($vial.Directory) (neuestes stabiles Release von vial-kb/vial-gui; Download erst ohne -DryRun)"
         if (-not $NoWsl) {
             $user = Get-WslUserName $WslUser
             if ($installWsl) { Write-Host "WSL: wsl.exe --install $wslName --no-launch (falls fehlend)" }
@@ -530,6 +619,7 @@ function Install-WindowsDesktop {
         Write-DarkModePlan $darkPlan (Get-DarkModeSubKey) (Join-Path $env:LOCALAPPDATA 'dotfiles/backup')
         Write-FilePlan $plan
         Write-FilePlan $fontPlan
+        Install-VialRelease $temp -Backup:$Backup
         if (-not $NoWsl) {
             $distroName = if ($installWsl) { Install-WslArch $wslName } else { $selected }
             Invoke-WslBootstrap $SourceRoot $distroName $WslUser -Backup:$Backup
@@ -567,6 +657,15 @@ function Update-WindowsDesktop {
     Assert-WindowsPrerequisites
     $selected = Select-WslDistro $Distro
     foreach ($package in $packages) { Update-WingetPackage $package }
+    if ((Get-VialState -Backup:$Backup).Version) {
+        $temp = Join-Path ([IO.Path]::GetTempPath()) ('dotfiles-' + [guid]::NewGuid().ToString('N'))
+        try {
+            [IO.Directory]::CreateDirectory($temp) | Out-Null
+            Install-VialRelease $temp -Backup:$Backup -Upgrade
+        } finally {
+            if (Test-Path -LiteralPath $temp) { Remove-Item -LiteralPath $temp -Recurse -Force }
+        }
+    } else { Write-Host 'Skip: Vial (nicht installiert)' }
     $plan = @(Get-FilePlan @(Get-ConfigEntries $SourceRoot $selected -NoAutostart:$NoAutostart -NoWsl:$NoWsl) -Backup:$Backup)
     $flowPath = Join-Path $env:APPDATA 'FlowLauncher/Settings/Settings.json'
     Assert-FlowConfigWritable @($plan | Where-Object Path -eq $flowPath)
@@ -595,6 +694,17 @@ function Get-DoctorReport {
         $version = Invoke-Native 'claude' @('--version')
         [pscustomobject]@{ Problem = $false; Message = "Claude: $version" }
     } catch { [pscustomobject]@{ Problem = $true; Message = "Claude: $_" } }
+
+    try {
+        $vial = Get-VialState
+        if (-not $vial.Version) {
+            [pscustomobject]@{ Problem = $true; Message = "Vial: nicht installiert ($($vial.Directory))" }
+        } elseif (-not (Get-ChildItem -LiteralPath $vial.Directory -Filter 'Vial.exe' -File -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1)) {
+            [pscustomobject]@{ Problem = $true; Message = "Vial: Vial.exe fehlt in $($vial.Directory)" }
+        } else {
+            [pscustomobject]@{ Problem = $false; Message = "Vial: $($vial.Version)" }
+        }
+    } catch { [pscustomobject]@{ Problem = $true; Message = "Vial: $_" } }
 
     try {
         $selected = Select-WslDistro $Distro
