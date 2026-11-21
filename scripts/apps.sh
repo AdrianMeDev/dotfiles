@@ -119,6 +119,8 @@ install_ollama_models() {
 }
 
 install_apps() {
+    # Upstream installers also invoke mise shims before the Stow links exist.
+    local -x MISE_GLOBAL_CONFIG_FILE="$REPO_DIR/mise/.config/mise/config.toml"
     install_claude
     install_pi
     install_ollama

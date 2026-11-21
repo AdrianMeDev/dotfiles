@@ -42,6 +42,26 @@ class AppsTests(ModuleTestCase):
         self.assertEqual(commands, [CLAUDE, PI_INSTALL, PI_RESHIM])
         self.assertIn('headless', result.stdout)
 
+    def test_claude_installer_can_use_mise_shims_before_stow(self):
+        self.env.pop('MISE_GLOBAL_CONFIG_FILE', None)
+        self.assertFalse((self.base / '.config/mise/config.toml').exists())
+        jq = self.base / 'jq'
+        jq.write_text(
+            '#!/usr/bin/env bash\n'
+            '[[ ${MISE_GLOBAL_CONFIG_FILE:-} == "$REPO_DIR/mise/.config/mise/config.toml" ]] || exit 1\n'
+            'printf "jq configured\\n" >> "$CMD_LOG"\n'
+        )
+        jq.chmod(0o755)
+        mocks = '''
+source "$REPO_DIR/scripts/common.sh"
+have() { declare -F "$1" >/dev/null 2>&1; }
+WORK_DIR=$HOME
+download() { printf 'jq --version\\n' > "$2"; }
+pi() { :; }
+'''
+        _, commands = self.ok(mocks=mocks, profile='headless')
+        self.assertEqual(commands, ['jq configured'])
+
     def test_installed_agents_are_kept(self):
         _, commands = self.ok(mocks='claude() { :; }\npi() { :; }', profile='headless')
         self.assertEqual(commands, [])
