@@ -61,12 +61,19 @@ class PkgTests(unittest.TestCase):
         self.assertEqual(len(resolved), len(set(resolved)))
 
     def test_dev_rows_are_not_in_profile_install(self):
-        for profile in ('headless', 'desktop'):
-            resolved = self.resolve('fedora', profile)
-            self.assertNotIn('dotnet-sdk-10.0', resolved)
-            self.assertNotIn('wezterm', resolved)
+        for family in ('arch', 'fedora', 'debian'):
+            for profile in ('headless', 'desktop'):
+                resolved = self.resolve(family, profile)
+                self.assertNotIn('dotnet-sdk-10.0', resolved)
+                self.assertNotIn('wezterm', resolved)
+                self.assertNotIn('zed', resolved)
         res = self.run_pkg('pkg_names dotnet-sdk fedora; pkg_names wezterm fedora')
         self.assertEqual(res.stdout.split(), ['dotnet-sdk-10.0', 'wezterm'])
+        for family, expected in (('arch', ['zed']), ('fedora', []), ('debian', [])):
+            with self.subTest(family=family):
+                res = self.run_pkg(f'pkg_names zed {family}')
+                self.assertEqual(res.returncode, 0, res.stderr)
+                self.assertEqual(res.stdout.split(), expected)
 
     def test_headless_excludes_desktop_rows(self):
         rows = manifest_rows()
