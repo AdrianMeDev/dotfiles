@@ -116,7 +116,7 @@ alles wird in der neuesten Version installiert und mit `dot update` aktualisiert
 - **Depends on:** M3, M4, M5, M6
 - **Size:** L, ~8 commits
 
-### M8 [ ] WSL2-Arch-Integration
+### M8 [~] WSL2-Arch-Integration
 - **Goal:** Der Windows-Bootstrap richtet WSL Arch ein und startet darin den Linux-Installer.
 - **Includes:** `wsl --install archlinux`, Benutzer + sudo, `.wslconfig` (mirrored networking für Ollama), WezTerm-Default-Domain Arch, Zed Remote-WSL, `dot.ps1 update` aktualisiert auch WSL
 - **Done when:** frische Win11-VM: ein Befehl → WezTerm öffnet zsh in Arch, Zed öffnet ein WSL-Projekt mit LSP, Claude läuft in WSL

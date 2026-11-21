@@ -15,7 +15,7 @@ Describe 'Windows installer' {
         $env:USERPROFILE = Join-Path $script:temporary 'User with spaces'
         $env:APPDATA = Join-Path $env:USERPROFILE 'AppData/Roaming'
         $env:LOCALAPPDATA = Join-Path $env:USERPROFILE 'AppData/Local'
-        $script:names = @('Fedora Linux')
+        $script:names = @('archlinux')
         $script:version = 2
         $script:packageCalls = 0
         function Throws([scriptblock]$Action, [string]$Pattern) {
@@ -73,14 +73,18 @@ Describe 'Windows installer' {
             $flowEntry = Get-FlowConfigEntry
             ([Text.Encoding]::UTF8.GetString($flowEntry.Bytes) | ConvertFrom-Json).Theme | Should -BeExactly 'TokyoNight'
         }
-        It 'rejects ambiguous, missing and WSL1 distros' {
-            $script:names = @('Fedora', 'Fedora Test')
+        It 'prefers archlinux, rejects ambiguous, missing and WSL1 distros' {
+            $script:names = @('archlinux', 'Arch Test')
+            Select-WslDistro | Should -Be 'archlinux'
+            $script:names = @('Arch')
+            Select-WslDistro | Should -Be 'Arch'
+            $script:names = @('Arch', 'Arch Test')
             Throws { Select-WslDistro } 'nicht eindeutig'
-            Select-WslDistro 'Fedora Test' | Should -Be 'Fedora Test'
+            Select-WslDistro 'Arch Test' | Should -Be 'Arch Test'
             Throws { Select-WslDistro 'Missing' } 'nicht gefunden'
             $script:names = @('Ubuntu')
-            Throws { Select-WslDistro } 'nicht eindeutig'
-            $script:names = @('Fedora')
+            Select-WslDistro | Should -BeNullOrEmpty
+            $script:names = @('archlinux')
             $script:version = 1
             Throws { Select-WslDistro } 'WSL2'
             $script:version = 2
@@ -89,7 +93,7 @@ Describe 'Windows installer' {
             $script:noWsl = $true
             try {
                 Select-WslDistro | Should -BeNullOrEmpty
-                Throws { Select-WslDistro 'Fedora' } 'nicht gefunden'
+                Throws { Select-WslDistro 'archlinux' } 'nicht gefunden'
                 Install-WindowsDesktop $script:source -DryRun
                 Test-Path $script:temporary | Should -BeFalse
             } finally { $script:noWsl = $false }
@@ -98,17 +102,19 @@ Describe 'Windows installer' {
             $script:names = @()
             try {
                 Select-WslDistro | Should -BeNullOrEmpty
-                Throws { Select-WslDistro 'Fedora' } 'nicht gefunden'
-            } finally { $script:names = @('Fedora') }
+                $script:names = @('', " `0 ")
+                Select-WslDistro | Should -BeNullOrEmpty
+                Throws { Select-WslDistro 'archlinux' } 'nicht gefunden'
+            } finally { $script:names = @('archlinux') }
         }
         It 'writes return nil to distro.lua without a distro' {
             $entry = @(Get-ConfigEntries $script:source $null) | Where-Object { $_.Path -like '*distro.lua' }
             [Text.Encoding]::UTF8.GetString($entry.Bytes) | Should -Be "return nil`n"
         }
         It 'removes UTF16 NUL characters from distro names' {
-            $script:names = @("F`0e`0d`0o`0r`0a`0")
-            Select-WslDistro | Should -Be 'Fedora'
-            $script:names = @('Fedora')
+            $script:names = @("a`0r`0c`0h`0l`0i`0n`0u`0x`0")
+            Select-WslDistro | Should -Be 'archlinux'
+            $script:names = @('archlinux')
         }
     }
 
@@ -134,10 +140,10 @@ Describe 'Windows installer' {
 
     Context 'config entries and file plan' {
         BeforeAll {
-            $script:entries = @(Get-ConfigEntries $script:source 'Fedora')
+            $script:entries = @(Get-ConfigEntries $script:source 'archlinux')
         }
         It 'NoAutostart removes exactly one entry' {
-            $noAuto = @(Get-ConfigEntries $script:source 'Fedora' -NoAutostart)
+            $noAuto = @(Get-ConfigEntries $script:source 'archlinux' -NoAutostart)
             $noAuto.Count | Should -Be ($script:entries.Count - 1)
         }
         It 'stages the Zed settings' {
@@ -277,7 +283,7 @@ Describe 'Windows installer' {
 
     Context 'full installation' {
         BeforeAll {
-            $script:entries = @(Get-ConfigEntries $script:source 'Fedora')
+            $script:entries = @(Get-ConfigEntries $script:source 'archlinux')
             $script:target = $script:entries[0].Path
             function Invoke-WebRequest { param($Uri, $OutFile, [switch]$UseBasicParsing) [IO.File]::WriteAllText($OutFile, 'mock archive') }
             function Expand-Archive {

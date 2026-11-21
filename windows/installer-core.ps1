@@ -1,4 +1,4 @@
-# Functions are kept separate so tests can replace Windows boundaries without installing anything.
+﻿# Functions are kept separate so tests can replace Windows boundaries without installing anything.
 function Invoke-NativeResult {
     param([string]$Program, [string[]]$Arguments)
 
@@ -153,16 +153,29 @@ function Select-WslDistro {
         if ($Requested) { throw "WSL-Distribution nicht gefunden: $Requested (wsl.exe fehlt)" }
         return $null
     }
-    $names = @((Invoke-Native 'wsl.exe' @('--list', '--quiet')) -join "`n" -split "`n" |
+    $rawList = $null
+    try {
+        $rawList = Invoke-Native 'wsl.exe' @('--list', '--quiet')
+    } catch {
+        if ($Requested) { throw "WSL-Distribution nicht gefunden: $Requested ($_)" }
+        return $null
+    }
+    $names = @(($rawList -join "`n") -split "`n" |
         ForEach-Object { ($_ -replace "`0", '').Trim() } | Where-Object { $_ })
     if ($Requested) {
         if ($Requested -notin $names) { throw "WSL-Distribution nicht gefunden: $Requested" }
         $selected = $names | Where-Object { $_ -eq $Requested } | Select-Object -First 1
     } else {
         if ($names.Count -eq 0) { return $null }
-        $candidates = @($names | Where-Object { $_ -match '(?i)fedora' })
-        if ($candidates.Count -ne 1) { throw "Fedora nicht eindeutig erkannt ($($candidates -join ', ')). -Distro <Name> angeben." }
-        $selected = $candidates[0]
+        $exact = @($names | Where-Object { $_ -ieq 'archlinux' })
+        if ($exact.Count -eq 1) {
+            $selected = $exact[0]
+        } else {
+            $candidates = @($names | Where-Object { $_ -match '(?i)arch' })
+            if ($candidates.Count -eq 0) { return $null }
+            if ($candidates.Count -gt 1) { throw "Arch nicht eindeutig erkannt ($($candidates -join ', ')). -Distro <Name> angeben." }
+            $selected = $candidates[0]
+        }
     }
     $verboseList = (Invoke-Native 'wsl.exe' @('--list', '--verbose')) -join "`n" -replace "`0", ''
     if ($verboseList -notmatch ('(?m)^\s*\*?\s*' + [regex]::Escape($selected) + '\s+.+\s+2\s*$')) {
