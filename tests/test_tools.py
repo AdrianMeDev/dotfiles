@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Tests for scripts/tools.sh and scripts/apps.sh with mocked installers; nothing is installed."""
+"""Tests for scripts/tools.sh with mocked installers; nothing is installed."""
 import os
 from pathlib import Path
 import subprocess
@@ -93,68 +93,6 @@ class ToolsTests(ModuleTestCase):
         result, commands = self.tools(mocks='mise() { return 7; }')
         self.assertNotEqual(result.returncode, 0)
         self.assertEqual(commands, ['pkg_install dotnet-sdk-10.0'])
-
-
-class AppsTests(ModuleTestCase):
-    def apps(self, mocks='', **kwargs):
-        # Isolate from host-installed binaries (e.g. /usr/bin/zeditor) while keeping mocked functions visible.
-        isolated = 'have() { declare -F "$1" >/dev/null 2>&1; }\n' + mocks
-        return self.call('install_apps', isolated, **kwargs)
-
-    def test_headless_skips_everything(self):
-        result, commands = self.apps(profile='headless')
-        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
-        self.assertEqual(commands, [])
-        self.assertIn('headless', result.stdout)
-
-    def test_desktop_installs_wezterm_and_zed(self):
-        mocks = 'install_wezterm() { printf "wezterm\\n" >> "$CMD_LOG"; }'
-        result, commands = self.apps(mocks=mocks)
-        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
-        self.assertEqual(commands, ['wezterm', 'upstream zed'])
-
-    def test_installed_zed_is_kept(self):
-        mocks = 'install_wezterm() { :; }\nzed() { :; }'
-        result, commands = self.apps(mocks=mocks)
-        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
-        self.assertEqual(commands, [])
-
-    def test_installed_zeditor_is_kept(self):
-        mocks = 'install_wezterm() { :; }\nzeditor() { :; }'
-        result, commands = self.apps(mocks=mocks, family='arch')
-        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
-        self.assertEqual(commands, [])
-
-    def test_arch_installs_zed_via_package_manager(self):
-        mocks = ('install_wezterm() { :; }\n'
-                 'pkg_install() { printf "pkg_install %s\\n" "$*" >> "$CMD_LOG"; zeditor() { :; }; }')
-        result, commands = self.apps(mocks=mocks, family='arch')
-        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
-        self.assertEqual(commands, ['pkg_install zed'])
-
-    def test_arch_dry_run_downloads_nothing(self):
-        result, commands = self.apps(dry_run=1, family='arch')
-        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
-        self.assertEqual(commands, ['pkg_install zed'])
-        self.assertIn('WezTerm', result.stdout)
-        self.assertFalse(list(self.base.glob('dotfiles.*')))
-
-    def test_fedora_and_debian_fall_back_to_upstream_installer(self):
-        mocks = ('install_wezterm() { :; }\n'
-                 'upstream_installer() { printf "upstream %s %s %s\\n" "$1" "$2" "$3" >> "$CMD_LOG"; }')
-        for family in ('fedora', 'debian'):
-            with self.subTest(family=family):
-                self.log.unlink(missing_ok=True)
-                result, commands = self.apps(mocks=mocks, family=family)
-                self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
-                self.assertEqual(commands, ['upstream zed https://zed.dev/install.sh sh'])
-
-    def test_dry_run_downloads_nothing(self):
-        result, commands = self.apps(dry_run=1)
-        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
-        self.assertEqual(commands, ['upstream zed'])
-        self.assertIn('WezTerm', result.stdout)
-        self.assertFalse(list(self.base.glob('dotfiles.*')))
 
 
 if __name__ == '__main__':

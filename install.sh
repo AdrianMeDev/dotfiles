@@ -15,7 +15,7 @@ usage() {
 Linux Developer Setup (als normaler Benutzer starten)
   ./install.sh [--dry-run] [--backup] [--only MODULE] [--extras LISTE] [--profile desktop|headless]
 Module: system, tools, apps, flatpak, fonts, dotfiles, agents
-Extras (kommagetrennt): java, rust, rpmfusion, firefox, discord, spotify
+Extras (kommagetrennt): java, rust, rpmfusion, firefox, discord, spotify, ollama, ollama-models
 --dry-run    Zeigt Schritte ohne Downloads, Schreibzugriffe oder sudo.
 --backup     Sichert kollidierende Dateien vor dem Verlinken außerhalb des Repos.
 --only       Führt genau ein Modul aus; Voraussetzungen müssen installiert sein.
@@ -53,8 +53,8 @@ if [[ -n $ONLY ]]; then
 fi
 IFS=',' read -r -a EXTRA_LIST <<< "$EXTRAS"
 for extra in "${EXTRA_LIST[@]}"; do
-    case "$extra" in java|rust|rpmfusion|firefox|discord|spotify) ;; *) die "Unbekanntes Extra: $extra" ;; esac
-    case "$extra" in java|rust) owner=tools ;; rpmfusion) owner=system ;; *) owner=flatpak ;; esac
+    case "$extra" in java|rust|rpmfusion|firefox|discord|spotify|ollama|ollama-models) ;; *) die "Unbekanntes Extra: $extra" ;; esac
+    case "$extra" in java|rust) owner=tools ;; ollama|ollama-models) owner=apps ;; rpmfusion) owner=system ;; *) owner=flatpak ;; esac
     [[ -z $ONLY || $ONLY == "$owner" ]] || die "Extra $extra benötigt Modul $owner."
 done
 

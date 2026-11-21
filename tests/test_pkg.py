@@ -67,7 +67,13 @@ class PkgTests(unittest.TestCase):
                 self.assertNotIn('dotnet-sdk-10.0', resolved)
                 self.assertNotIn('wezterm', resolved)
                 self.assertNotIn('zed', resolved)
-        res = self.run_pkg('pkg_names dotnet-sdk fedora; pkg_names wezterm fedora')
+                self.assertNotIn('ollama', resolved)
+        for family, expected in (('arch', ['ollama']), ('fedora', []), ('debian', [])):
+            with self.subTest(package='ollama', family=family):
+                res = self.run_pkg(f'pkg_names ollama {family}')
+                self.assertEqual(res.returncode, 0, res.stderr)
+                self.assertEqual(res.stdout.split(), expected)
+        res =self.run_pkg('pkg_names dotnet-sdk fedora; pkg_names wezterm fedora')
         self.assertEqual(res.stdout.split(), ['dotnet-sdk-10.0', 'wezterm'])
         for family, expected in (('arch', ['zed']), ('fedora', []), ('debian', [])):
             with self.subTest(family=family):
