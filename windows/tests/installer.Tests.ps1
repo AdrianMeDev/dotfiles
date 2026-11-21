@@ -34,6 +34,8 @@ Describe 'Windows installer' {
             throw "Unexpected command: $Program"
         }
         function Assert-WindowsPrerequisites {}
+        $script:noWsl = $false
+        function Get-Command { param($Name, $ErrorAction) if ($Name -ne 'wsl.exe' -or -not $script:noWsl) { return $Name } }
     }
     AfterAll {
         foreach ($name in $script:previous.Keys) { [Environment]::SetEnvironmentVariable($name, $script:previous[$name]) }
@@ -57,6 +59,26 @@ Describe 'Windows installer' {
             $script:version = 1
             Throws { Select-WslDistro } 'WSL2'
             $script:version = 2
+        }
+        It 'returns null without wsl.exe and rejects an explicit distro' {
+            $script:noWsl = $true
+            try {
+                Select-WslDistro | Should -BeNullOrEmpty
+                Throws { Select-WslDistro 'Fedora' } 'nicht gefunden'
+                Install-WindowsDesktop $script:source -DryRun
+                Test-Path $script:temporary | Should -BeFalse
+            } finally { $script:noWsl = $false }
+        }
+        It 'returns null without any distro and rejects an explicit missing one' {
+            $script:names = @()
+            try {
+                Select-WslDistro | Should -BeNullOrEmpty
+                Throws { Select-WslDistro 'Fedora' } 'nicht gefunden'
+            } finally { $script:names = @('Fedora') }
+        }
+        It 'writes return nil to distro.lua without a distro' {
+            $entry = @(Get-ConfigEntries $script:source $null) | Where-Object { $_.Path -like '*distro.lua' }
+            [Text.Encoding]::UTF8.GetString($entry.Bytes) | Should -Be "return nil`n"
         }
         It 'removes UTF16 NUL characters from distro names' {
             $script:names = @("F`0e`0d`0o`0r`0a`0")
@@ -261,7 +283,7 @@ Describe 'Prerequisites and native execution' {
             $caught.Exception.Message | Should -Match $Pattern
         }
     }
-    It 'rejects missing <_> before distro or package calls' -ForEach 'winget.exe', 'wsl.exe' {
+    It 'rejects missing <_> before distro or package calls' -ForEach 'winget.exe' {
         function Test-Windows11 { return $true }
         $script:missing = $_
         function Get-Command { param($Name, $ErrorAction) if ($Name -ne $script:missing) { return $Name } }

@@ -111,9 +111,7 @@ function Assert-WindowsPrerequisites {
     if (-not (Test-Windows11)) {
         throw 'Windows 11 ist erforderlich. Aus WSL bitte windows/install.sh verwenden.'
     }
-    foreach ($command in 'winget.exe', 'wsl.exe') {
-        if (-not (Get-Command $command -ErrorAction SilentlyContinue)) { throw "Voraussetzung fehlt: $command" }
-    }
+    if (-not (Get-Command 'winget.exe' -ErrorAction SilentlyContinue)) { throw 'Voraussetzung fehlt: winget.exe' }
     foreach ($variable in 'USERPROFILE', 'APPDATA', 'LOCALAPPDATA') {
         if (-not [Environment]::GetEnvironmentVariable($variable)) { throw "Umgebungsvariable fehlt: $variable" }
     }
@@ -121,12 +119,17 @@ function Assert-WindowsPrerequisites {
 
 function Select-WslDistro {
     param([string]$Requested)
+    if (-not (Get-Command 'wsl.exe' -ErrorAction SilentlyContinue)) {
+        if ($Requested) { throw "WSL-Distribution nicht gefunden: $Requested (wsl.exe fehlt)" }
+        return $null
+    }
     $names = @((Invoke-Native 'wsl.exe' @('--list', '--quiet')) -join "`n" -split "`n" |
         ForEach-Object { ($_ -replace "`0", '').Trim() } | Where-Object { $_ })
     if ($Requested) {
         if ($Requested -notin $names) { throw "WSL-Distribution nicht gefunden: $Requested" }
         $selected = $names | Where-Object { $_ -eq $Requested } | Select-Object -First 1
     } else {
+        if ($names.Count -eq 0) { return $null }
         $candidates = @($names | Where-Object { $_ -match '(?i)fedora' })
         if ($candidates.Count -ne 1) { throw "Fedora nicht eindeutig erkannt ($($candidates -join ', ')). -Distro <Name> angeben." }
         $selected = $candidates[0]
@@ -216,8 +219,12 @@ function Get-ConfigEntries {
     $glaze = Join-Path $env:USERPROFILE '.glzr/glazewm'
     $zebar = Join-Path $env:USERPROFILE '.glzr/zebar'
     # JSON quoted strings are also Lua strings for WSL distro names, except Unicode escapes.
-    $luaName = $SelectedDistro.Replace('\', '\\').Replace('"', '\"').Replace("`r", '\r').Replace("`n", '\n')
-    New-TextEntry (Join-Path $wezterm 'distro.lua') "return `"$luaName`"`n"
+    if ($SelectedDistro) {
+        $luaName = $SelectedDistro.Replace('\', '\\').Replace('"', '\"').Replace("`r", '\r').Replace("`n", '\n')
+        New-TextEntry (Join-Path $wezterm 'distro.lua') "return `"$luaName`"`n"
+    } else {
+        New-TextEntry (Join-Path $wezterm 'distro.lua') "return nil`n"
+    }
     New-CopyEntry (Join-Path $wezterm 'base.lua') (Join-Path $repo 'wezterm/.config/wezterm/wezterm.lua')
     New-CopyEntry (Join-Path $wezterm 'wezterm.lua') (Join-Path $SourceRoot 'wezterm/wezterm.lua')
     # WezTerm prefers this file to .config/wezterm; treat it as part of the conflict plan.
@@ -268,7 +275,7 @@ function Install-WindowsDesktop {
     $packages = Get-WingetPackages (Split-Path -Parent $SourceRoot) $Extra
     Assert-WindowsPrerequisites
     $selected = Select-WslDistro $Distro
-    Write-Host "WSL2: $selected"
+    if ($selected) { Write-Host "WSL2: $selected" } else { Write-Host 'WSL2: keine Distribution, nur native Windows-Konfiguration.' }
     $entries = @(Get-ConfigEntries $SourceRoot $selected -NoAutostart:$NoAutostart)
     $plan = @(Get-FilePlan $entries -Backup:$Backup)
     if ($DryRun) {
