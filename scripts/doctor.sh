@@ -159,6 +159,22 @@ _doc_desktop() {
     fi
 }
 
+_doc_corne() {
+    local profile=$1 target
+    if [[ $profile != desktop ]] || is_wsl; then return 0; fi
+    # shellcheck source=scripts/corne.sh
+    source "$REPO_DIR/scripts/corne.sh"
+    if have vial; then _doc_ok 'Vial vorhanden.'; else _doc_warn 'Vial fehlt (dot install --only corne).'; fi
+    target=$(corne_udev_path)
+    if [[ ! -f $target ]]; then
+        _doc_warn "Vial-udev-Regel fehlt: $target (dot install --only corne)."
+    elif [[ $(< "$target") == "$(corne_udev_rule)" ]]; then
+        _doc_ok "Vial-udev-Regel: $target"
+    else
+        _doc_warn "Vial-udev-Regel weicht ab: $target (dot install --only corne --backup)."
+    fi
+}
+
 dot_doctor() {
     (($# == 0)) || { case "$1" in
         -h|--help) printf 'dot doctor\n  Read-only Diagnose: Umgebung, Tool-Versionen, mise, Stow-Links, Agent-Config, Git-Identität, fnm.\n'; return 0 ;;
@@ -199,6 +215,7 @@ dot_doctor() {
     fi
 
     _doc_desktop "${profile:-}" "${family:-}"
+    _doc_corne "${profile:-}"
     _doc_agents
     _doc_git_identity
     _doc_fnm

@@ -81,6 +81,15 @@ class PkgTests(unittest.TestCase):
                 self.assertEqual(res.returncode, 0, res.stderr)
                 self.assertEqual(res.stdout.split(), expected)
 
+    def test_vial_resolution(self):
+        for family, expected in (('arch', ['vial-appimage']), ('fedora', []), ('debian', [])):
+            with self.subTest(family=family):
+                res = self.run_pkg(f'pkg_names vial {family}')
+                self.assertEqual(res.returncode, 0, res.stderr)
+                self.assertEqual(res.stdout.split(), expected)
+                for profile in ('headless', 'desktop'):
+                    self.assertNotIn('vial-appimage', self.resolve(family, profile))
+
     def test_headless_excludes_desktop_rows(self):
         rows = manifest_rows()
         self.assertTrue(any(r[1] == 'desktop' for r in rows))

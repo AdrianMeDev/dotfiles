@@ -8,6 +8,8 @@ import tempfile
 import unittest
 
 REPO = Path(__file__).resolve().parents[1]
+CORNE_RULE = ('KERNEL=="hidraw*", SUBSYSTEM=="hidraw", ATTRS{serial}=="vial:f64c2b3c", MODE="0660", '
+              'GROUP="users", TAG+="uaccess", TAG+="udev-acl"\n')
 DOT = REPO / 'dot/.local/bin/dot'
 
 
@@ -461,6 +463,37 @@ class DotCliTests(unittest.TestCase):
         result = self.run_dot('doctor')
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         self.assertIn('~/.gitconfig-local fehlt', result.stdout)
+
+    def desktop_doctor(self, vial=True, rule=None, setup=True):
+        if setup:
+            self.setup_doctor(extra=('vial',) if vial else ())
+            self.env.pop('container')
+            self.env['WAYLAND_DISPLAY'] = 'wayland-0'
+            self.env['VIAL_UDEV_RULE'] = str(self.base / '99-vial.rules')
+        if rule is not None:
+            (self.base / '99-vial.rules').write_text(rule)
+        before = self.snapshot()
+        result = self.run_dot('doctor')
+        self.assertEqual(self.snapshot(), before)
+        return result
+
+    def test_doctor_corne_desktop_ok(self):
+        result = self.desktop_doctor(rule=CORNE_RULE)
+        self.assertIn('[OK]      Vial vorhanden.', result.stdout)
+        self.assertIn(f'[OK]      Vial-udev-Regel: {self.base}/99-vial.rules', result.stdout)
+
+    def test_doctor_corne_desktop_warns(self):
+        result = self.desktop_doctor(vial=False)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn('[WARN]    Vial fehlt', result.stdout)
+        self.assertIn('[WARN]    Vial-udev-Regel fehlt', result.stdout)
+        result = self.desktop_doctor(rule='# custom\n', setup=False)
+        self.assertIn('[WARN]    Vial-udev-Regel weicht ab', result.stdout)
+
+    def test_doctor_corne_headless_is_silent(self):
+        self.setup_doctor()
+        result = self.run_dot('doctor')
+        self.assertNotIn('Vial', result.stdout)
 
     def fake_hyprland(self, version='0.57.0', verify=True, verify_rc=0):
         """Install stub hyprland (and waybar) binaries into the doctor fakebin."""
