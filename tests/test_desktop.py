@@ -58,7 +58,7 @@ install_desktop
     def test_fedora_enables_copr_then_installs(self):
         result, commands = self.desktop('fedora')
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
-        self.assertEqual(commands[0], 'dnf copr enable -y solopasha/hyprland')
+        self.assertEqual(commands[0], 'dnf copr enable -y sdegler/hyprland')
         self.assertTrue(commands[1].startswith('dnf install -y '), commands)
         packages = commands[1].split()
         for name in [*COMMON, 'polkit-kde']:
