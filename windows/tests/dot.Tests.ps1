@@ -139,13 +139,15 @@ Describe 'Windows dot commands' {
         $report.Message | Should -Contain 'WSL2: uebersprungen (-NoWsl)'
         $script:wslCalls.Count | Should -Be 0
     }
-    It 'replaces distro.lua on distro change without -Backup while wezterm.lua still conflicts' {
+    It 'needs -Backup on distro change because Zed registers the distro, while wezterm.lua still conflicts' {
         $script:wslDistro = 'archlinux'
         Update-WindowsDesktop $script:source 6>$null
         $distroPath = Join-Path $env:USERPROFILE '.config/wezterm/distro.lua'
         [IO.File]::ReadAllText($distroPath) | Should -Be "return `"archlinux`"`n"
         $script:wslDistro = 'Arch'
-        Update-WindowsDesktop $script:source 6>$null
+        # Zed's settings.json carries the distro in wsl_connections, so it differs and needs -Backup.
+        { Update-WindowsDesktop $script:source 6>$null } | Should -Throw '*Zed*settings.json*'
+        Update-WindowsDesktop $script:source -Backup 6>$null
         [IO.File]::ReadAllText($distroPath) | Should -Be "return `"Arch`"`n"
         $weztermPath = Join-Path $env:USERPROFILE '.config/wezterm/wezterm.lua'
         [IO.File]::WriteAllText($weztermPath, 'custom')
