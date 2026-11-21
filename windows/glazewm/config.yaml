@@ -16,8 +16,12 @@ gaps:
 window_effects:
   focused_window:
     border: { enabled: true, color: '#7aa2f7' }
+    corner_style: { enabled: true, style: rounded }
+    transparency: { enabled: true, opacity: '75%' }
   other_windows:
-    border: { enabled: false, color: '#414868' }
+    border: { enabled: true, color: '#414868' }
+    corner_style: { enabled: true, style: rounded }
+    transparency: { enabled: true, opacity: '75%' }
 window_behavior:
   initial_state: tiling
   state_defaults:

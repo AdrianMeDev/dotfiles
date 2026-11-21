@@ -43,6 +43,12 @@ EXCEPTIONS = {
     'claude.theme': 'Claude Code only offers built-in themes; "dark-ansi" uses the terminal ANSI '
                     'palette, so Tokyo Night comes from the terminal (WezTerm) and no hex values '
                     'can be set in Claude Code itself.',
+    'glazewm.border_width': 'Windows (DWM) draws a fixed 1px window border; GlazeWM cannot set '
+                            'border.width, so only the colors carry the token.',
+    'glazewm.corner_radius': 'DWM only knows rounded/square/small_rounded corners, no radius in px; '
+                             'style "rounded" stands in for border.radius.',
+    'glazewm.blur': 'GlazeWM has no blur; Acrylic is enabled in WezTerm (win32_system_backdrop) only.',
+    'zebar.opacity': 'The bar mirrors Waybar and stays opaque (bg), so no alpha_hex is applied.',
     'starship.foreground': 'Starship palette foreground uses fg_dark, matching the tmux/fzf text color.',
 }
 
@@ -354,6 +360,39 @@ class ParityTests(unittest.TestCase):
         self.assertIn(f"config.font_size = {tokens['font']['size']['terminal']}\n", text)
         self.assertRegex(text, rf"font_with_fallback \{{\s*'{re.escape(tokens['font']['terminal_family'])}',"
                                rf"\s*'{re.escape(tokens['font']['editor_family'])}'")
+
+    def test_glazewm(self):
+        tokens = load_tokens()
+        p, window = tokens['palette'], tokens['window']
+        text = read('windows/glazewm/config.yaml')
+        effects = re.search(r'(?ms)^window_effects:\n(.*?)^\S', text).group(1)
+        for group in ('focused_window', 'other_windows'):
+            body = re.search(rf'(?ms)^  {group}:\n(.*?)(?=^  \w|\Z)', effects).group(1)
+            color = p['border_active'] if group == 'focused_window' else p['border']
+            self.assertIn(f"border: {{ enabled: true, color: '{color}' }}", body, group)
+            self.assertIn("corner_style: { enabled: true, style: rounded }", body, group)
+            self.assertIn(f"transparency: {{ enabled: true, opacity: '{round(window['opacity'] * 100)}%' }}",
+                          body, group)
+        for key in ('glazewm.border_width', 'glazewm.corner_radius', 'glazewm.blur'):
+            self.assertIn(key, EXCEPTIONS)
+        self.assert_colors_in_contract('windows/glazewm/config.yaml')
+
+    def test_zebar(self):
+        font = load_tokens()['font']
+        css = read('windows/zebar/style.css')
+        self.assert_colors_in_contract('windows/zebar/style.css')
+        self.assertIn(f"font: {font['size']['bar']}px '{font['terminal_family']}'", css)
+        self.assertIn(f"background: {self.palette['bg']}", css)
+        self.assertIn('zebar.opacity', EXCEPTIONS)
+
+    def test_wezterm_windows(self):
+        text = read('wezterm/.config/wezterm/wezterm.lua')
+        block = re.search(r"(?s)if wezterm\.target_triple:find 'windows' then(.*?)\nend", text).group(1)
+        self.assertIn("config.win32_system_backdrop = 'Acrylic'", block)
+        # Opacity is the shared, platform-independent setting (checked in test_wezterm).
+        self.assertNotIn('window_background_opacity', block)
+        self.assertIn(f"config.window_background_opacity = {load_tokens()['window']['opacity']}",
+                      text.split("find 'windows'")[0])
 
     def test_gtk_and_qt(self):
         root = REPO / 'hypr/.config'
