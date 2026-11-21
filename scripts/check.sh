@@ -15,7 +15,7 @@ fi
 if command -v luajit >/dev/null 2>&1; then
     while IFS= read -r -d '' file; do
         DOTFILES_LUA_FILE="$file" luajit -e 'assert(loadfile(os.getenv("DOTFILES_LUA_FILE")))'
-    done < <(find nvim wezterm windows -name '*.lua' -print0)
+    done < <(find nvim wezterm windows hypr -name '*.lua' -print0)
 else
     printf 'SKIP: LuaJIT fehlt.\n'
 fi

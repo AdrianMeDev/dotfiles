@@ -67,6 +67,49 @@ def hexes(text):
     return {h.lower() for h in HEX_IN_TEXT.findall(text)}
 
 
+def parse_lua_config(text):
+    """Return {'general.border_size': 2, ...} from the hl.config({...}) Lua table (line based)."""
+    text = re.sub(r'--[^\n]*', '', text)
+    start = re.search(r'hl\.config\(\{', text)
+    if not start:
+        raise ValueError('no hl.config table')
+    values, path = {}, []
+    for line in text[start.end():].splitlines():
+        line = line.strip().rstrip(',')
+        if opened := re.fullmatch(r'(\w+)\s*=\s*\{', line):
+            path.append(opened[1])
+        elif re.fullmatch(r'\}\)?', line):
+            if not path:
+                break
+            path.pop()
+        elif pair := re.fullmatch(r'(\w+)\s*=\s*(.+)', line):
+            raw = pair[2].strip()
+            if raw in ('true', 'false'):
+                value = raw == 'true'
+            elif raw.startswith('"'):
+                value = raw.strip('"')
+            else:
+                value = raw
+                if re.fullmatch(r'0x[0-9a-fA-F]{8}', raw) or re.fullmatch(r'-?\d+', raw):
+                    value = int(raw, 0)
+                elif re.fullmatch(r'-?\d*\.\d+', raw):
+                    value = float(raw)
+            values['.'.join(path + [pair[1]])] = value
+    return values
+
+
+def lua_color(value):
+    """Normalise 0xAARRGGBB or rgba(RRGGBBAA) to '#rrggbb' (alpha must be opaque)."""
+    if isinstance(value, int):
+        argb = f'{value:08x}'
+        alpha, rgb = argb[:2], argb[2:]
+    else:
+        match = re.fullmatch(r'rgba\(([0-9a-fA-F]{6})([0-9a-fA-F]{2})\)', value)
+        rgb, alpha = match[1].lower(), match[2].lower()
+    assert alpha == 'ff', alpha
+    return f'#{rgb}'
+
+
 class TokenContractTests(unittest.TestCase):
     def setUp(self):
         self.tokens = load_tokens()
@@ -310,6 +353,21 @@ class ParityTests(unittest.TestCase):
         self.assertIn(f"config.font_size = {tokens['font']['size']['terminal']}\n", text)
         self.assertRegex(text, rf"font_with_fallback \{{\s*'{re.escape(tokens['font']['terminal_family'])}',"
                                rf"\s*'{re.escape(tokens['font']['editor_family'])}'")
+
+    def test_hyprland(self):
+        tokens = load_tokens()
+        self.assertTrue((REPO / 'hypr/.config/hypr/hyprland.lua').is_file())
+        self.assertFalse((REPO / 'hypr/.config/hypr/hyprland.conf').exists())
+        cfg = parse_lua_config(read('hypr/.config/hypr/hyprland.lua'))
+        self.assertEqual(cfg['general.border_size'], tokens['border']['width'])
+        self.assertEqual(cfg['decoration.rounding'], tokens['border']['radius'])
+        self.assertIs(cfg['decoration.blur.enabled'], tokens['window']['blur']['enabled'])
+        self.assertEqual(cfg['decoration.blur.size'], tokens['window']['blur']['radius'])
+        self.assertEqual(cfg['decoration.blur.passes'], tokens['window']['blur']['passes'])
+        self.assertEqual(cfg['decoration.active_opacity'], tokens['window']['opacity'])
+        self.assertEqual(cfg['decoration.inactive_opacity'], tokens['window']['opacity'])
+        self.assertEqual(lua_color(cfg['general.col.active_border']), tokens['palette']['border_active'])
+        self.assertEqual(lua_color(cfg['general.col.inactive_border']), tokens['palette']['border'])
 
     def test_neovim(self):
         tokens = load_tokens()
