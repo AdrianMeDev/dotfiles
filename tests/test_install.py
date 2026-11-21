@@ -216,7 +216,7 @@ class InstallerTests(unittest.TestCase):
         zsh = self.prepare_zsh()
         bin_dir = self.base / 'bin'
         bin_dir.mkdir()
-        for cmd in ['mkdir', 'uname', 'dirname', 'basename', 'cat', 'rm', 'mv', 'chmod']:
+        for cmd in ['mkdir', 'uname', 'dirname', 'basename', 'cat', 'rm', 'mv', 'chmod', 'grep']:
             executable = shutil.which(cmd)
             if executable:
                 (bin_dir / cmd).symlink_to(executable)
@@ -276,7 +276,7 @@ class InstallerTests(unittest.TestCase):
             executable.write_text('#!/bin/sh\n' + body)
             executable.chmod(0o755)
         (self.home / '.config/zsh/local.zsh').write_text('runtime_order+=(local)\n')
-        for cmd in ['mkdir', 'rm', 'mv', 'cat', 'chmod']:
+        for cmd in ['mkdir', 'rm', 'mv', 'cat', 'chmod', 'grep']:
             (bin_dir / cmd).symlink_to(shutil.which(cmd))
         self.env['PATH'] = str(bin_dir)
         for flag in ['-c', '-ic']:
@@ -284,6 +284,25 @@ class InstallerTests(unittest.TestCase):
             self.assertEqual(result.stdout.strip(), 'mise,fnm,local')
             self.assertEqual(result.stderr, '')
         self.assertFalse((self.home / '.local/share/zsh/plugins').exists())
+
+    def test_zsh_ignores_insecure_completion_dirs(self):
+        zsh = self.prepare_zsh()
+        bin_dir = self.base / 'bin'
+        bin_dir.mkdir()
+        for cmd in ['mkdir', 'rm', 'mv', 'cat', 'chmod', 'grep']:
+            executable = shutil.which(cmd)
+            if executable:
+                (bin_dir / cmd).symlink_to(executable)
+        insecure = self.base / 'insecure-fpath'
+        insecure.mkdir()
+        insecure.chmod(0o777)
+        zshenv = self.home / '.zshenv'
+        zshenv.unlink()
+        zshenv.write_text((REPO / 'zsh/.zshenv').read_text() + 'fpath=("$INSECURE_FPATH" $fpath)\n')
+        self.env['INSECURE_FPATH'] = str(insecure)
+        self.env['PATH'] = str(bin_dir)
+        result = self.run_command([zsh, '-ic', ':'])
+        self.assertEqual(result.stderr, '')
 
     def test_zsh_helpers_handle_special_paths_and_errors(self):
         zsh = self.prepare_zsh()
