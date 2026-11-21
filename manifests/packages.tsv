@@ -1,0 +1,42 @@
+# logical	group	arch	fedora	debian
+# group: base (always), desktop (only with the desktop profile) or dev (only via pkg_names, never in the profile install). Comma lists = several packages.
+git	base	git	git	git
+curl	base	curl	curl	curl
+wget	base	wget	wget	wget
+unzip	base	unzip	unzip	unzip
+zip	base	zip	zip	zip
+tar	base	tar	tar	tar
+jq	base	jq	jq	jq
+python3	base	python	python3	python3
+ripgrep	base	ripgrep	ripgrep	ripgrep
+fd	base	fd	fd-find	fd-find
+fzf	base	fzf	fzf	fzf
+bat	base	bat	bat	bat
+btop	base	btop	btop	btop
+htop	base	htop	htop	htop
+tree	base	tree	tree	tree
+tmux	base	tmux	tmux	tmux
+zsh	base	zsh	zsh	zsh
+stow	base	stow	stow	stow
+zoxide	base	zoxide	zoxide	zoxide
+direnv	base	direnv	direnv	direnv
+github-cli	base	github-cli	gh	gh
+shellcheck	base	shellcheck	ShellCheck	shellcheck
+# Fedora 45 retired shfmt (golang-mvdan-sh); M2 installs it everywhere via mise.
+shfmt	base	shfmt	-	shfmt
+base-devel	base	base-devel	gcc,gcc-c++,make	build-essential
+cmake	base	cmake	cmake	cmake
+pkg-config	base	pkgconf	pkgconf-pkg-config	pkg-config
+openssl	base	openssl	openssl-devel	libssl-dev
+libffi	base	libffi	libffi-devel	libffi-dev
+podman	base	podman	podman	podman
+podman-compose	base	podman-compose	podman-compose	podman-compose
+fontconfig	base	fontconfig	fontconfig	fontconfig
+flatpak	desktop	flatpak	flatpak	flatpak
+wl-clipboard	desktop	wl-clipboard	wl-clipboard	wl-clipboard
+xclip	desktop	xclip	xclip	xclip
+libxkbcommon-x11	desktop	libxkbcommon-x11	libxkbcommon-x11	libxkbcommon-x11-0
+mesa-egl	desktop	mesa	mesa-libEGL	libegl1
+mesa-gl	desktop	mesa	mesa-libGL	libgl1
+dotnet-sdk	dev	dotnet-sdk	dotnet-sdk-10.0	-
+wezterm	dev	wezterm	wezterm	-

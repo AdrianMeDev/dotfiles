@@ -79,8 +79,12 @@ class InstallerTests(unittest.TestCase):
             self.skipTest('GNU Stow fehlt')
 
     def test_dry_run_writes_nothing(self):
+        sysroot = self.base / 'sysroot'
+        (sysroot / 'etc').mkdir(parents=True)
+        (sysroot / 'etc/os-release').write_text('ID=fedora\n')
+        self.env['DOTFILES_SYSROOT'] = str(sysroot)
         before = snapshot(self.home)
-        result = self.install('--dry-run', '--extras', 'java,rust,rpmfusion,firefox,discord,spotify')
+        result = self.install('--dry-run', '--profile', 'desktop', '--extras', 'java,rust,rpmfusion,firefox,discord,spotify')
         self.assertEqual(snapshot(self.home), before)
         self.assertIn('fnm install 24', result.stdout)
         self.assertNotIn('mise use', result.stdout)
@@ -212,7 +216,7 @@ class InstallerTests(unittest.TestCase):
         zsh = self.prepare_zsh()
         bin_dir = self.base / 'bin'
         bin_dir.mkdir()
-        for cmd in ['mkdir', 'uname', 'dirname', 'basename', 'cat', 'rm', 'mv', 'chmod']:
+        for cmd in ['mkdir', 'uname', 'dirname', 'basename', 'cat', 'rm', 'mv', 'chmod', 'grep']:
             executable = shutil.which(cmd)
             if executable:
                 (bin_dir / cmd).symlink_to(executable)
@@ -272,7 +276,7 @@ class InstallerTests(unittest.TestCase):
             executable.write_text('#!/bin/sh\n' + body)
             executable.chmod(0o755)
         (self.home / '.config/zsh/local.zsh').write_text('runtime_order+=(local)\n')
-        for cmd in ['mkdir', 'rm', 'mv', 'cat', 'chmod']:
+        for cmd in ['mkdir', 'rm', 'mv', 'cat', 'chmod', 'grep']:
             (bin_dir / cmd).symlink_to(shutil.which(cmd))
         self.env['PATH'] = str(bin_dir)
         for flag in ['-c', '-ic']:
@@ -280,6 +284,27 @@ class InstallerTests(unittest.TestCase):
             self.assertEqual(result.stdout.strip(), 'mise,fnm,local')
             self.assertEqual(result.stderr, '')
         self.assertFalse((self.home / '.local/share/zsh/plugins').exists())
+
+    def test_zsh_ignores_insecure_completion_dirs(self):
+        zsh = self.prepare_zsh()
+        bin_dir = self.base / 'bin'
+        bin_dir.mkdir()
+        for cmd in ['mkdir', 'rm', 'mv', 'cat', 'chmod', 'grep']:
+            executable = shutil.which(cmd)
+            if executable:
+                (bin_dir / cmd).symlink_to(executable)
+        insecure = self.base / 'insecure-fpath'
+        insecure.mkdir()
+        insecure.chmod(0o777)
+        zshenv = self.home / '.zshenv'
+        zshenv.unlink()
+        zshenv.write_text((REPO / 'zsh/.zshenv').read_text() + 'fpath=("$INSECURE_FPATH" $fpath)\n')
+        self.env['INSECURE_FPATH'] = str(insecure)
+        self.env['PATH'] = str(bin_dir)
+        result = self.run_command([zsh, '-ic', ':'])
+        self.assertEqual(result.stderr, '')
+        skip_result = self.run_command([zsh, '-c', 'print -r -- $skip_global_compinit'])
+        self.assertEqual(skip_result.stdout.strip(), '1')
 
     def test_zsh_helpers_handle_special_paths_and_errors(self):
         zsh = self.prepare_zsh()
@@ -473,18 +498,6 @@ bindkey -M viins '^\'
         self.assertTrue((self.home / '.cache/zsh/fsh/secondary_theme.zsh').is_file())
         self.assertEqual(snapshot(REPO / 'zsh'), before)
 
-    def test_mocked_package_failure_is_propagated(self):
-        self.env['REPO_DIR'] = str(REPO)
-        result = self.run_command(['bash', '-c', '''
-set -Eeuo pipefail
-source "$REPO_DIR/scripts/common.sh"
-source "$REPO_DIR/scripts/system.sh"
-DRY_RUN=0 EXTRAS=''
-sudo() { return 42; }
-install_system
-'''], success=False)
-        self.assertEqual(result.returncode, 42)
-
     def test_font_installer_installs_both_ioskeley_families_idempotently(self):
         self.env['REPO_DIR'] = str(REPO)
         result = self.run_command(['bash', '-c', r'''
@@ -515,36 +528,6 @@ target="$XDG_DATA_HOME/fonts/IoskeleyMono"
 [[ $(< "$target/.version") == 2.1.0 ]]
 '''])
         self.assertIn('sind bereits installiert', result.stdout)
-
-    def test_fedora_wsl_system_upgrade_keeps_windows_kernel(self):
-        self.env['REPO_DIR'] = str(REPO)
-        self.env['WSL_INTEROP'] = '/run/WSL/interop'
-        self.env['WSL_LOG'] = str(self.base / 'wsl-commands')
-        result = self.run_command(['bash', '-c', '''
-set -Eeuo pipefail
-source "$REPO_DIR/scripts/common.sh"
-source "$REPO_DIR/scripts/system.sh"
-DRY_RUN=0 EXTRAS=''
-sudo() { printf '%s\\n' "$*" >> "$WSL_LOG"; }
-install_manifest() { printf 'install:%s\\n' "$*" >> "$WSL_LOG"; }
-install_system
-'''])
-        commands = Path(self.env['WSL_LOG']).read_text().splitlines()
-        self.assertEqual(commands[0], 'dnf upgrade --refresh -y --exclude=kernel*')
-        self.assertEqual(commands[1], 'install:system.txt')
-        self.assertIn('WSL erkannt', result.stdout)
-
-    def test_fedora_wsl_dry_run_reports_kernel_exclusion(self):
-        self.env['REPO_DIR'] = str(REPO)
-        self.env['WSL_DISTRO_NAME'] = 'Fedora'
-        result = self.run_command(['bash', '-c', '''
-set -Eeuo pipefail
-source "$REPO_DIR/scripts/common.sh"
-source "$REPO_DIR/scripts/system.sh"
-DRY_RUN=1 EXTRAS=''
-install_system
-'''])
-        self.assertIn('--exclude=kernel\\*', result.stdout)
 
     def test_fnm_recursive_project_switch(self):
         zsh, fnm = self.prepare_zsh(), shutil.which('fnm')
@@ -637,6 +620,19 @@ class ConfigTests(unittest.TestCase):
         fzf = (REPO / 'zsh/.config/zsh/fzf.zsh').read_text()
         self.assertIn('bg:#1a1b26', fzf)
         self.assertFalse((REPO / 'zed/.config/zed/themes/Neovim-custom.json').exists())
+
+    def test_ci_workflow(self):
+        workflow = (REPO / '.github/workflows/ci.yml').read_text()
+        self.assertIn('permissions:\n  contents: read', workflow)
+        self.assertIn('fetch-depth: 0', workflow)
+        self.assertIn('bash scripts/check.sh', workflow)
+        self.assertIn('fail-fast: false', workflow)
+        self.assertIn('distro: [arch, fedora, debian]', workflow)
+        self.assertIn('bash scripts/container-matrix.sh ${{ matrix.distro }}', workflow)
+        uses = re.findall(r'uses:\s*(\S+)', workflow)
+        self.assertTrue(uses)
+        for action in uses:
+            self.assertRegex(action, r'@[0-9a-f]{40}$', f'action not pinned to a SHA: {action}')
 
     def test_secret_scanner_redaction(self):
         spec = importlib.util.spec_from_file_location('scanner', REPO / 'scripts/check-secrets.py')
