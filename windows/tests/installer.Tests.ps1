@@ -178,6 +178,78 @@ Describe 'Windows installer' {
         }
     }
 
+    Context 'agent config' {
+        BeforeAll {
+            $script:repo = Split-Path -Parent $script:source
+            $script:savedDirs = @($env:CLAUDE_CONFIG_DIR, $env:PI_CODING_AGENT_DIR)
+            $env:CLAUDE_CONFIG_DIR = $null
+            $env:PI_CODING_AGENT_DIR = $null
+            $script:agentEntries = @(Get-AgentConfigEntries $script:repo)
+        }
+        AfterAll { $env:CLAUDE_CONFIG_DIR, $env:PI_CODING_AGENT_DIR = $script:savedDirs }
+        It 'targets .claude and .pi/agent below USERPROFILE' {
+            $claude = Join-Path $env:USERPROFILE '.claude'
+            $pi = Join-Path $env:USERPROFILE '.pi/agent'
+            $script:agentEntries.Path | Should -Contain (Join-Path $claude 'CLAUDE.md')
+            $script:agentEntries.Path | Should -Contain (Join-Path $claude 'settings.json')
+            $script:agentEntries.Path | Should -Contain (Join-Path $pi 'AGENTS.md')
+            $script:agentEntries.Path | Should -Contain (Join-Path $pi 'skills/next/SKILL.md')
+            $script:agentEntries.Path | Should -Not -Match 'claude-frontmatter'
+        }
+        It '-Only limits the tool' {
+            @(Get-AgentConfigEntries $script:repo -Only pi).Path | Should -Not -Match '[\\/]\.claude[\\/]'
+            @(Get-AgentConfigEntries $script:repo -Only claude).Path | Should -Not -Match '[\\/]\.pi[\\/]'
+        }
+        It 'dry run lists the agent targets and writes nothing' {
+            $before = Test-Path (Join-Path $env:USERPROFILE '.claude')
+            $out = Install-WindowsDesktop $script:source -DryRun 6>&1 | Out-String
+            $out | Should -Match 'CLAUDE\.md'
+            $out | Should -Match 'AGENTS\.md'
+            Test-Path (Join-Path $env:USERPROFILE '.claude') | Should -Be $before
+        }
+        It 'renders the same bytes as scripts/agents.py' -Skip:(-not (Get-Command python3 -ErrorAction SilentlyContinue)) {
+            $code = 'import sys, hashlib; sys.path.insert(0, sys.argv[1]); import agents, pathlib; ' +
+                'r = agents.render(pathlib.Path(sys.argv[2])); ' +
+                '[print(t, k, hashlib.sha256(v).hexdigest()) for t, f in r.items() for k, v in sorted(f.items())]'
+            $lines = @(& python3 -I -c $code (Join-Path $script:repo 'scripts') $script:repo)
+            $lines.Count | Should -BeGreaterThan 0
+            $expected = @{}
+            foreach ($line in $lines) {
+                $tool, $rel, $hash = $line -split ' '
+                $root = if ($tool -eq 'claude') { '.claude' } else { '.pi/agent' }
+                $expected[(Join-Path (Join-Path $env:USERPROFILE $root) $rel)] = $hash
+            }
+            $script:agentEntries.Count | Should -Be $expected.Count
+            foreach ($entry in $script:agentEntries) {
+                $hash = [BitConverter]::ToString([Security.Cryptography.SHA256]::Create().ComputeHash($entry.Bytes)).Replace('-', '').ToLowerInvariant()
+                $hash | Should -BeExactly $expected[$entry.Path] -Because $entry.Path
+            }
+        }
+        It 'injects the frontmatter after the first line for Claude only' {
+            $next = Join-Path $env:USERPROFILE '.claude/skills/next/SKILL.md'
+            $text = [Text.Encoding]::UTF8.GetString(@($script:agentEntries | Where-Object Path -eq $next)[0].Bytes)
+            $extra = [IO.File]::ReadAllText((Join-Path $script:repo 'agent-config/skills/next/claude-frontmatter.txt'))
+            $text.StartsWith("---`n" + $extra.TrimEnd("`n") + "`n") | Should -BeTrue
+            $pi = Join-Path $env:USERPROFILE '.pi/agent/skills/next/SKILL.md'
+            $piBytes = @($script:agentEntries | Where-Object Path -eq $pi)[0].Bytes
+            [Convert]::ToBase64String($piBytes) | Should -BeExactly ([Convert]::ToBase64String([IO.File]::ReadAllBytes((Join-Path $script:repo 'agent-config/skills/next/SKILL.md'))))
+        }
+        It 'second write is all Skip and creates no backups' {
+            Write-FilePlan @(Get-FilePlan $script:agentEntries)
+            $second = @(Get-FilePlan $script:agentEntries)
+            @($second | Where-Object Action -ne 'Skip').Count | Should -Be 0
+            Write-FilePlan $second
+            @(Get-ChildItem (Join-Path $env:USERPROFILE '.claude') -Recurse -Filter '*.backup-*').Count | Should -Be 0
+        }
+        It 'a conflict without -Backup is an error' {
+            $target = Join-Path $env:USERPROFILE '.claude/CLAUDE.md'
+            [IO.File]::WriteAllText($target, 'custom')
+            Throws { Get-FilePlan $script:agentEntries } 'Dateikonflikt'
+            @(Get-FilePlan $script:agentEntries -Backup | Where-Object Path -eq $target)[0].Action | Should -Be 'Replace'
+            [IO.File]::WriteAllBytes($target, @($script:agentEntries | Where-Object Path -eq $target)[0].Bytes)
+        }
+    }
+
     Context 'full installation' {
         BeforeAll {
             $script:entries = @(Get-ConfigEntries $script:source 'Fedora')

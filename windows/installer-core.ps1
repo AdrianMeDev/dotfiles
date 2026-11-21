@@ -211,6 +211,45 @@ function Get-FlowConfigEntry {
     else { New-CopyEntry $path $path }
 }
 
+# Mirrors scripts/agents.py render(): Claude-only frontmatter goes after line 1 of each top-level SKILL.md.
+function Get-AgentConfigEntries {
+    param([string]$Repo, [ValidateSet('all', 'pi', 'claude')] [string]$Only = 'all')
+    $src = Join-Path $Repo 'agent-config'
+    $roots = @{
+        claude = if ($env:CLAUDE_CONFIG_DIR) { $env:CLAUDE_CONFIG_DIR } else { Join-Path $env:USERPROFILE '.claude' }
+        pi     = if ($env:PI_CODING_AGENT_DIR) { $env:PI_CODING_AGENT_DIR } else { Join-Path $env:USERPROFILE '.pi/agent' }
+    }
+    $tools = if ($Only -eq 'all') { @('claude', 'pi') } else { @($Only) }
+    $files = {
+        param([string]$Base)
+        foreach ($file in Get-ChildItem -LiteralPath $Base -Recurse -File | Sort-Object FullName) {
+            [pscustomobject]@{ Rel = $file.FullName.Substring($Base.TrimEnd('\', '/').Length + 1).Replace('\', '/'); Full = $file.FullName }
+        }
+    }
+    foreach ($tool in $tools) {
+        foreach ($f in & $files (Join-Path $src $tool)) {
+            New-CopyEntry (Join-Path $roots[$tool] $f.Rel) $f.Full
+        }
+        foreach ($f in & $files (Join-Path $src 'skills')) {
+            if ($f.Rel.EndsWith('/claude-frontmatter.txt') -or $f.Rel -eq 'claude-frontmatter.txt') { continue }
+            $target = Join-Path $roots[$tool] "skills/$($f.Rel)"
+            $extra = Join-Path (Split-Path -Parent $f.Full) 'claude-frontmatter.txt'
+            if ($tool -ne 'claude' -or $f.Rel -notmatch '^[^/]+/SKILL\.md$' -or -not (Test-Path -LiteralPath $extra -PathType Leaf)) {
+                New-CopyEntry $target $f.Full
+                continue
+            }
+            $bytes = [IO.File]::ReadAllBytes($f.Full)
+            $newline = [Array]::IndexOf($bytes, [byte]10)
+            $first = if ($newline -ge 0) { [Text.Encoding]::ASCII.GetString($bytes, 0, $newline).TrimEnd("`r") } else { '' }
+            if ($first -ne '---') { throw "skills/$($f.Rel): erste Zeile muss --- sein, um Claude-Frontmatter einzufuegen." }
+            $front = [IO.File]::ReadAllBytes($extra)
+            if ($front.Length -eq 0 -or $front[-1] -ne 10) { $front += [byte]10 }
+            $merged = [byte[]]($bytes[0..$newline] + $front + $(if ($newline + 1 -lt $bytes.Length) { $bytes[($newline + 1)..($bytes.Length - 1)] } else { @() }))
+            [pscustomobject]@{ Path = $target; Bytes = $merged }
+        }
+    }
+}
+
 function Get-ConfigEntries {
     param([string]$SourceRoot, [string]$SelectedDistro, [switch]$NoAutostart)
     $repo = Split-Path -Parent $SourceRoot
@@ -252,6 +291,7 @@ function Get-ConfigEntries {
         $command = 'powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -File "' + $launcher + '"'
         New-TextEntry $startup ('CreateObject("WScript.Shell").Run "' + $command.Replace('"', '""') + '", 0, False' + "`r`n")
     }
+    Get-AgentConfigEntries $repo
 }
 
 function Get-WingetPackages {
