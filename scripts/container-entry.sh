@@ -22,9 +22,13 @@ as_dev() { sudo --preserve-env=GITHUB_TOKEN -u dev -i bash -c "$1"; }
 # The repository is cloned by bootstrap.sh itself (no pre-cloned checkout), into ~/dotfiles.
 # shellcheck disable=SC2016 # expanded by the inner shell on purpose
 dot='$HOME/dotfiles/dot/.local/bin/dot'
-# /dotfiles is a read-only mount owned by another user (Debian's git checks /dotfiles/.git too); git is not installed yet, so use env config.
+bootstrap='bash -s -- --repo /dotfiles'
+
+# /dotfiles is a read-only mount owned by another user, and git only reads
+# safe.directory from config files; use ~/.config/git/config rather than
+# ~/.gitconfig because ~/.gitconfig is a Stow link of the dotfiles.
 # shellcheck disable=SC2016 # expanded by the inner shell on purpose
-bootstrap='GIT_CONFIG_COUNT=2 GIT_CONFIG_KEY_0=safe.directory GIT_CONFIG_VALUE_0=/dotfiles GIT_CONFIG_KEY_1=safe.directory GIT_CONFIG_VALUE_1=/dotfiles/.git bash -s -- --repo /dotfiles'
+as_dev 'mkdir -p "$HOME/.config/git" && printf "[safe]\n\tdirectory = *\n" > "$HOME/.config/git/config"'
 
 # bootstrap.sh --dry-run (piped like curl | bash) must not write anything below $HOME.
 # shellcheck disable=SC2016 # expanded by the inner shell on purpose

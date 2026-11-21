@@ -422,13 +422,13 @@ printf 'cached theme\\n' > "$cache/themes.bin"
         self.run_command(['git', 'config', '--global', 'user.email', 'dev@example.com'])
         zsh = self.prepare_login_shell('/bin/bash')
         calls = Path(self.env['CHSH_TEST_LOG'])
-        installer = ['bash', str(REPO / 'install.sh'), '--only', 'dotfiles']
+        installer = ['bash', str(REPO / 'install.sh'), '--only', 'dotfiles', '--backup']
 
-        result = self.install('--only', 'dotfiles', '--dry-run')
+        result = self.install('--only', 'dotfiles', '--backup', '--dry-run')
         self.assertIn('chsh -s', result.stdout)
         self.assertFalse(calls.exists())
 
-        result = self.install('--only', 'dotfiles')
+        result = self.install('--only', 'dotfiles', '--backup')
         self.assertIn(f'chsh -s {zsh}', result.stdout)
         self.assertFalse(calls.exists())
 
