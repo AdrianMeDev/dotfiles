@@ -31,11 +31,15 @@ install_theme() {
     fi
 
     local interface=org.gnome.desktop.interface
-    run gsettings set "$interface" color-scheme prefer-dark
-    run gsettings set "$interface" gtk-theme adw-gtk3-dark
-    run gsettings set "$interface" icon-theme Papirus-Dark
-    run gsettings set "$interface" cursor-theme "$cursor"
-    run gsettings set "$interface" cursor-size 24
+    if ((DRY_RUN)) || { have gsettings && grep -qxF "$interface" <(gsettings list-schemas 2>/dev/null); }; then
+        run gsettings set "$interface" color-scheme prefer-dark
+        run gsettings set "$interface" gtk-theme adw-gtk3-dark
+        run gsettings set "$interface" icon-theme Papirus-Dark
+        run gsettings set "$interface" cursor-theme "$cursor"
+        run gsettings set "$interface" cursor-size 24
+    else
+        log "gsettings oder das Schema $interface fehlt (gsettings-desktop-schemas) – GTK-Einstellungen übersprungen."
+    fi
 
     local wallpaper="$HOME/.local/share/dotfiles/wallpaper.png"
     if [[ ! -e $wallpaper && ! -L $wallpaper ]]; then

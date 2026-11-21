@@ -38,7 +38,7 @@ param([string]$Verb, [switch]$DryRun, [switch]$Backup, [string[]]$Extra, [string
     }
     It 'rejects unsupported Windows versions before invoking dot.ps1' {
         function Test-Windows11 { $false }
-        (& $script:bootstrap -DotScript $global:fake 2>&1 | Out-String) | Should -Match 'Windows 11 ist erforderlich'
+        ((& $script:bootstrap -DotScript $global:fake 2>&1 | ForEach-Object { "$_" }) -join ' ') | Should -Match 'Windows 11 ist erforderlich'
         $LASTEXITCODE | Should -Be 1
         Test-Path -LiteralPath $script:argsFile | Should -BeFalse
         function Test-Windows11 { $true }
@@ -47,7 +47,7 @@ param([string]$Verb, [switch]$DryRun, [switch]$Backup, [string[]]$Extra, [string
         function Test-Winget { $false }
         { & $script:bootstrap -DotScript $global:fake -ErrorAction Stop 2>&1 | Out-Null; if ($LASTEXITCODE) { throw "exit $LASTEXITCODE" } } | Should -Throw
         Test-Path -LiteralPath $script:argsFile | Should -BeFalse
-        (& $script:bootstrap -DotScript $global:fake 2>&1 | Out-String) | Should -Match 'winget.exe'
+        ((& $script:bootstrap -DotScript $global:fake 2>&1 | ForEach-Object { "$_" }) -join ' ') | Should -Match 'winget.exe'
         function Test-Winget { $true }
     }
     Context 'standalone (no local checkout)' {
@@ -104,7 +104,7 @@ param([string]$Verb, [switch]$DryRun, [switch]$Backup, [string[]]$Extra, [string
         It 'fails on a non-empty non-Git target' {
             New-Item -ItemType Directory -Path $script:target | Out-Null
             Set-Content -LiteralPath (Join-Path $script:target 'file.txt') -Value 'x'
-            (& $script:standalone -TargetDir $script:target 2>&1 | Out-String) | Should -Match 'kein Git-Klon'
+            ((& $script:standalone -TargetDir $script:target 2>&1 | ForEach-Object { "$_" }) -join ' ') | Should -Match 'kein Git-Klon'
             $global:cloneCalls | Should -Be 0
         }
         AfterAll {
