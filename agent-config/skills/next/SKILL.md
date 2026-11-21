@@ -42,7 +42,18 @@ Arguments:
 1. Take the first `[ ]` step (or the requested one) and announce it: **"Step n/N: <commit message>"**.
 2. Re-read the files involved – the user may have changed code since planning.
 3. Implement **only** what this step describes, following the project's conventions. Include the planned tests.
-4. If the plan turns out to be wrong or the step is too big: **stop**, explain why, and propose an updated plan (split the step, reorder, add a step). Change `.agent-plan.md` only after the user agrees. Never silently expand the scope.
+4. **Be lazy about the solution, never about reading the code.** Before writing, read the code the step touches and list everything the change must reach: callers, tests, fixtures, config, exports. Then take the **first option that fully works**:
+   1. Does it need to exist? Skip features, options and flexibility nobody asked for; name them in one line.
+   2. Already in this codebase (helper, component, service, pattern)? Use it the way the surrounding code does.
+   3. Standard library or a platform feature? Use it – unless the project has its own (a house UI library such as Syncfusion beats the native widget).
+   4. An installed dependency? Use it. Never add a dependency for a few lines.
+   5. Can it be one readable line? Then one line.
+   6. Only then: the minimum code that works.
+
+   No abstraction, wrapper, option, config or "for later" code nobody asked for. Deletion beats addition. Bug fix: grep every caller first, fix the root cause once in shared code. Moved or merged code keeps its error handling and validation. New non-trivial logic (branch, loop, parser, money, security) gets one small test or assert. A shortcut with a known limit gets a comment: `shortcut: <limit>, <when to upgrade>`.
+
+   **Never cut:** validation at trust boundaries, error handling that prevents data loss, security, accessibility, anything the user asked for.
+5. If the plan turns out to be wrong or the step is too big: **stop**, explain why, and propose an updated plan (split the step, reorder, add a step). Change `.agent-plan.md` only after the user agrees. Never silently expand the scope.
 
 ## 4. Verify
 
@@ -57,6 +68,7 @@ Fix failures that belong to this step. If it still fails after two attempts: sto
    - **Changed:** each file with one line on what changed
    - **How it works:** 2–4 sentences, with `file:line` for the key places (for a full explanation: `/explain`)
    - **Checks:** each command → passed / failed
+   - **Skipped / risk:** one or two lines – what you left out or did not check, and any risk the user must know
    - **Review:** `git diff` or Zed `<space> g g`
    - **Commit:**
      ```

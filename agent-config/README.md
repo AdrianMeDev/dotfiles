@@ -5,44 +5,41 @@
 | Einsatz | private Projekte | Arbeit |
 | Modell | lokal über Ollama (nichts verlässt den Rechner) | Claude (`sonnet`, bei Bedarf `/model opus`) |
 | Sicherheit | **fragt nicht vor Befehlen** – Regeln stehen nur als Anweisung in `AGENTS.md` | Berechtigungsregeln: erlauben / nachfragen / verbieten |
-| Befehle (gleich in beiden) | `/plan-roadmap` `/plan-commits` `/next` `/explain` `/explain-project` | `/plan-roadmap` `/plan-commits` `/next` `/explain` `/explain-project` |
+| Befehle (gleich in beiden) | `/plan-roadmap` `/plan-commits` `/next` `/next-all` `/explain` `/explain-project` | `/plan-roadmap` `/plan-commits` `/next` `/next-all` `/explain` `/explain-project` |
 | In Zed | `<space> a p` | `<space> a c` |
 
 ```
 agent-config/
 ├── pi/                     → ~/.pi/agent/
-│   ├── settings.json       Standard: Ollama + qwen3-coder:30b, Theme tokyo-night, Projekt-Vertrauen fragen
+│   ├── settings.json       Standard: Ollama + qwen3-coder:30b, Projekt-Vertrauen fragen
 │   ├── models.json         Ollama-Modelle (Kontext, Tokens)
 │   ├── AGENTS.md           globale Anweisungen (privat)
-│   ├── themes/             tokyo-night.json (Tokyo Night)
-│   └── prompts/            /plan-roadmap /plan-commits /next /explain /explain-project /review /commit
+│   └── prompts/            /plan-roadmap /plan-commits /next /next-all /explain /explain-project /review /commit
 ├── claude/                 → ~/.claude/
-│   ├── settings.json       Modell, Theme (dark-ansi), Vim, Erklär-Stil, Berechtigungen
+│   ├── settings.json       Modell, Vim, Erklär-Stil, Berechtigungen
 │   └── CLAUDE.md           globale Anweisungen (Arbeit)
 ├── skills/                 → in beide Tools (Englisch, antworten in deiner Sprache)
 │   ├── plan-roadmap/       großes Feature / ganze App → Meilensteine (docs/ROADMAP.md)
 │   ├── plan-commits/       Aufgabe oder nächsten Meilenstein in Commit-große Schritte planen
 │   ├── next/               genau einen Schritt umsetzen, dann für Commit stoppen
+│   ├── next-all/           ganzen Plan am Stück: Feature-Branch, ein Commit pro Schritt
 │   ├── explain/            Implementiertes verständlich erklären
 │   └── explain-project/    ganzes Projekt erklären (Onboarding)
 ├── templates/PROJEKT-ANWEISUNGEN.md   Vorlage für CLAUDE.md / AGENTS.md im Projekt
-└── install.ps1             Windows nativ: Standalone-Wrapper (Gesamtsetup: `bootstrap.ps1` / `windows/dot.ps1 install`)
+├── codex/AGENTS.md         globale Anweisungen für Codex (nach ~/.codex/)
+├── install.sh              Linux / WSL
+└── install.ps1             Windows nativ
 ```
 
 ## 1. Installieren
 
 ```bash
-dot install --only agents            # Linux / WSL: Config nach ~/.claude und ~/.pi/agent
-dot install --only agents --backup   # abweichende Dateien sichern und ersetzen
-dot install                          # alles, inkl. Claude Code und pi (Modul apps)
+./install.sh            # alles: pi, Claude Code, Codex, agy  (oder einzeln: ./install.sh pi | claude | codex | agy)
 ```
-Das Modul `agents` rendert die Skills (Claude-Frontmatter aus `claude-frontmatter.txt`) und ist
-idempotent; `dot update` aktualisiert Tools und Agenten, `dot doctor` meldet lokale Abweichungen.
-Ollama: `dot install --only apps --extras ollama,ollama-models`.
-Windows nativ: `.\bootstrap.ps1` bzw. `.\windows\dot.ps1 install` aus dem Repo-Root (nur
-Agent-Config ohne Gesamtsetup: `.\agent-config\install.ps1` als Standalone-Wrapper). **Arbeitest du
-in WSL** (auch über Zed), installiere in WSL – dort laufen pi und Claude Code. Backups liegen
-unter `~/.local/state/dotfiles/backups/`.
+**Codex und agy (für baton):** Die Skills landen für Codex in `~/.agents/skills` (Aufruf mit `$next`, `$plan-commits` …, nicht mit `/`), für agy in `~/.gemini/antigravity-cli/skills`. Codex bekommt zusätzlich `~/.codex/AGENTS.md`. Für agy installiert das Skript **keine** globale Anweisungsdatei: `~/.gemini/GEMINI.md` teilt sich agy mit anderen Google-Tools, und ob agy sie global liest, habe ich nicht geprüft. Die Claude-Felder (`context: fork`, Modell, Aufwand) gelten nur für Claude Code.
+
+Windows nativ: `.\install.ps1`. **Arbeitest du in WSL** (auch über Zed), installiere in WSL –
+dort laufen pi und Claude Code. Bestehende Dateien werden als `*.bak.<zeit>` gesichert.
 
 ## 2. pi lokal einrichten
 
@@ -55,13 +52,13 @@ unter `~/.local/state/dotfiles/backups/`.
 2. **Kontextlänge von Ollama erhöhen – wichtig!** pi spricht Ollama über die OpenAI-kompatible
    Schnittstelle an; dort gilt Ollamas Server-Einstellung. Ist sie zu klein, „vergisst“ das Modell
    Dateien und Anweisungen. Setze vor dem Start von Ollama:
-   - Linux/WSL: `export OLLAMA_CONTEXT_LENGTH=32768` (z. B. in `~/.config/zsh/local.zsh` oder im systemd-Service)
+   - Linux/WSL: `export OLLAMA_CONTEXT_LENGTH=32768` (z. B. in `~/.bashrc` oder im systemd-Service)
    - Windows: Umgebungsvariable `OLLAMA_CONTEXT_LENGTH` = `32768` setzen, Ollama neu starten
 
    Der Wert muss zu `contextWindow` in `pi/models.json` passen.
-3. **WSL + Ollama unter Windows:** `bootstrap.ps1` bzw. `windows/dot.ps1 install` konfiguriert
-   `%UserProfile%\.wslconfig` automatisch mit `networkingMode=mirrored` unter `[wsl2]`, damit pi in
-   WSL `localhost:11434` erreicht (alternativ manuell setzen oder Ollama direkt in WSL installieren).
+3. **WSL + Ollama unter Windows:** Damit pi in WSL `localhost:11434` erreicht, in
+   `%UserProfile%\.wslconfig` unter `[wsl2]` `networkingMode=mirrored` setzen – oder Ollama direkt
+   in WSL installieren.
 4. **Test:** `pi` starten, `/model` zeigt die Ollama-Modelle (`Ctrl+S` speichert die Wahl als Standard).
 
 **Weniger VRAM?** In `settings.json` `defaultModel` auf `qwen2.5-coder:7b` stellen.
@@ -91,6 +88,7 @@ Drei Ebenen, jede mit eigener Datei:
 | Großes Ganzes | `/plan-roadmap <was>` | `docs/ROADMAP.md` | Vision, Umfang, Architektur, Entscheidungen, Risiken, **Meilensteine** |
 | Nächster Meilenstein | `/plan-commits` | `.agent-plan.md` | 3–8 Schritte, **ein Schritt = ein Commit** |
 | Umsetzen | `/next` | Code + dein Commit | genau ein Schritt, dann Stopp |
+| Alles umsetzen | `/next-all` | Branch + ein Commit je Schritt | ganzer Plan ohne Review-Stopp; `once` = nur ein Schritt; pusht nie |
 
 ```
 /plan-roadmap Vereins-App: Mitglieder, Termine, Beiträge   → Fragen beantworten → Roadmap M0…M5
@@ -176,7 +174,7 @@ in die Historie geht.
 `/review [pfad|fokus]` Code-Review · `/commit` Commit-Message vorschlagen (committet nicht selbst).
 In Claude Code gibt es dafür die eingebauten `/review` bzw. „schreib mir eine Commit-Message“.
 
-In pi sind die fünf Workflow-Befehle kleine Prompt-Vorlagen, die den gleichnamigen Skill laden;
+In pi sind die vier Workflow-Befehle kleine Prompt-Vorlagen, die den gleichnamigen Skill laden;
 `/skill:next` usw. funktioniert dort ebenfalls.
 
 ## 7. Tokens sparen (mehr aus dem Abo holen)
