@@ -114,5 +114,67 @@ install_system
         self.assertIn('--exclude=kernel\\*', result.stdout)
 
 
+class InstallerDryRunTests(unittest.TestCase):
+    def setUp(self):
+        temp = tempfile.TemporaryDirectory(prefix='dotfiles-dry-run-')
+        self.addCleanup(temp.cleanup)
+        base = Path(temp.name)
+        self.home = base / 'home'
+        self.home.mkdir()
+        self.sysroot = base / 'sysroot'
+        (self.sysroot / 'etc').mkdir(parents=True)
+        self.env = dict(HOME=str(self.home), PATH=os.environ['PATH'],
+                        DOTFILES_SYSROOT=str(self.sysroot), WSL_DISTRO_NAME='test')
+
+    def preview(self, distro, *args):
+        (self.sysroot / 'etc/os-release').write_text(f'ID={distro}\n')
+        result = subprocess.run([str(REPO / 'install.sh'), '--dry-run', *args], env=self.env,
+                                stdin=subprocess.DEVNULL, capture_output=True, text=True, timeout=30)
+        self.assertEqual(list(self.home.iterdir()), [])
+        return result
+
+    def test_full_preview_per_family(self):
+        for distro, family in [('cachyos', 'arch'), ('fedora', 'fedora'), ('ubuntu', 'debian')]:
+            with self.subTest(distro=distro):
+                result = self.preview(distro)
+                self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+                self.assertIn(f'Distro-Familie: {family} · Profil: headless · WSL: ja', result.stdout)
+                self.assertIn(FAMILIES[family][0][-1], result.stdout)
+                self.assertIn('Modul: dotfiles', result.stdout)
+
+    def test_unsupported_systems_allow_only_dotfiles(self):
+        for distro in ('alpine', 'fedora'):
+            with self.subTest(distro=distro):
+                if distro == 'fedora':
+                    (self.sysroot / 'run').mkdir()
+                    (self.sysroot / 'run/ostree-booted').touch()
+                result = self.preview(distro)
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn('ostree' if distro == 'fedora' else 'alpine', result.stderr)
+                self.assertIn('--only dotfiles', result.stderr)
+                self.assertNotIn('Modul:', result.stdout)
+                result = self.preview(distro, '--only', 'dotfiles')
+                self.assertEqual(result.returncode, 0, result.stderr)
+
+    def test_invalid_profile(self):
+        result = self.preview('fedora', '--profile', 'server')
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn('Ungültiges Profil', result.stderr)
+
+    def test_profile_controls_flatpak_and_clipboard(self):
+        for profile in ('desktop', 'headless'):
+            with self.subTest(profile=profile):
+                result = self.preview('ubuntu', '--profile', profile, '--extras', 'firefox')
+                self.assertEqual(result.returncode, 0, result.stderr)
+                self.assertIn(f'Profil: {profile}', result.stdout)
+                commands = ' '.join(line for line in result.stdout.splitlines() if line.startswith('  +'))
+                for word in ('wl-clipboard', 'flatpak'):
+                    self.assertEqual(word in commands.split(), profile == 'desktop', commands)
+                if profile == 'headless':
+                    self.assertIn('Flatpak wird im Profil headless übersprungen', result.stdout)
+                else:
+                    self.assertIn('+ flatpak install', commands)
+
+
 if __name__ == '__main__':
     unittest.main()

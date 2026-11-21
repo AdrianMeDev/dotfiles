@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
 install_flatpak() {
+    if [[ $PROFILE == headless ]]; then
+        log 'Flatpak wird im Profil headless übersprungen.'
+        return 0
+    fi
     run flatpak remote-add --user --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
     local name app
     while read -r name app; do

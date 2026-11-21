@@ -79,8 +79,12 @@ class InstallerTests(unittest.TestCase):
             self.skipTest('GNU Stow fehlt')
 
     def test_dry_run_writes_nothing(self):
+        sysroot = self.base / 'sysroot'
+        (sysroot / 'etc').mkdir(parents=True)
+        (sysroot / 'etc/os-release').write_text('ID=fedora\n')
+        self.env['DOTFILES_SYSROOT'] = str(sysroot)
         before = snapshot(self.home)
-        result = self.install('--dry-run', '--extras', 'java,rust,rpmfusion,firefox,discord,spotify')
+        result = self.install('--dry-run', '--profile', 'desktop', '--extras', 'java,rust,rpmfusion,firefox,discord,spotify')
         self.assertEqual(snapshot(self.home), before)
         self.assertIn('fnm install 24', result.stdout)
         self.assertNotIn('mise use', result.stdout)
