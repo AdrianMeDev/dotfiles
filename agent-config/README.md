@@ -26,7 +26,7 @@ agent-config/
 │   ├── explain/            Implementiertes verständlich erklären
 │   └── explain-project/    ganzes Projekt erklären (Onboarding)
 ├── templates/PROJEKT-ANWEISUNGEN.md   Vorlage für CLAUDE.md / AGENTS.md im Projekt
-└── install.ps1             Windows nativ (Linux / WSL: `dot install`, siehe unten)
+└── install.ps1             Windows nativ: Standalone-Wrapper (Gesamtsetup: `bootstrap.ps1` / `windows/dot.ps1 install`)
 ```
 
 ## 1. Installieren
@@ -37,9 +37,12 @@ dot install --only agents --backup   # abweichende Dateien sichern und ersetzen
 dot install                          # alles, inkl. Claude Code und pi (Modul apps)
 ```
 Das Modul `agents` rendert die Skills (Claude-Frontmatter aus `claude-frontmatter.txt`) und ist
-idempotent; `dot doctor` meldet lokale Abweichungen. Ollama: `dot install --only apps --extras ollama,ollama-models`.
-Windows nativ: `.\install.ps1`. **Arbeitest du in WSL** (auch über Zed), installiere in WSL –
-dort laufen pi und Claude Code. Backups liegen unter `~/.local/state/dotfiles/backups/`.
+idempotent; `dot update` aktualisiert Tools und Agenten, `dot doctor` meldet lokale Abweichungen.
+Ollama: `dot install --only apps --extras ollama,ollama-models`.
+Windows nativ: `.\bootstrap.ps1` bzw. `.\windows\dot.ps1 install` aus dem Repo-Root (nur
+Agent-Config ohne Gesamtsetup: `.\agent-config\install.ps1` als Standalone-Wrapper). **Arbeitest du
+in WSL** (auch über Zed), installiere in WSL – dort laufen pi und Claude Code. Backups liegen
+unter `~/.local/state/dotfiles/backups/`.
 
 ## 2. pi lokal einrichten
 
@@ -52,13 +55,13 @@ dort laufen pi und Claude Code. Backups liegen unter `~/.local/state/dotfiles/ba
 2. **Kontextlänge von Ollama erhöhen – wichtig!** pi spricht Ollama über die OpenAI-kompatible
    Schnittstelle an; dort gilt Ollamas Server-Einstellung. Ist sie zu klein, „vergisst“ das Modell
    Dateien und Anweisungen. Setze vor dem Start von Ollama:
-   - Linux/WSL: `export OLLAMA_CONTEXT_LENGTH=32768` (z. B. in `~/.bashrc` oder im systemd-Service)
+   - Linux/WSL: `export OLLAMA_CONTEXT_LENGTH=32768` (z. B. in `~/.config/zsh/local.zsh` oder im systemd-Service)
    - Windows: Umgebungsvariable `OLLAMA_CONTEXT_LENGTH` = `32768` setzen, Ollama neu starten
 
    Der Wert muss zu `contextWindow` in `pi/models.json` passen.
-3. **WSL + Ollama unter Windows:** Damit pi in WSL `localhost:11434` erreicht, in
-   `%UserProfile%\.wslconfig` unter `[wsl2]` `networkingMode=mirrored` setzen – oder Ollama direkt
-   in WSL installieren.
+3. **WSL + Ollama unter Windows:** `bootstrap.ps1` bzw. `windows/dot.ps1 install` konfiguriert
+   `%UserProfile%\.wslconfig` automatisch mit `networkingMode=mirrored` unter `[wsl2]`, damit pi in
+   WSL `localhost:11434` erreicht (alternativ manuell setzen oder Ollama direkt in WSL installieren).
 4. **Test:** `pi` starten, `/model` zeigt die Ollama-Modelle (`Ctrl+S` speichert die Wahl als Standard).
 
 **Weniger VRAM?** In `settings.json` `defaultModel` auf `qwen2.5-coder:7b` stellen.
@@ -173,7 +176,7 @@ in die Historie geht.
 `/review [pfad|fokus]` Code-Review · `/commit` Commit-Message vorschlagen (committet nicht selbst).
 In Claude Code gibt es dafür die eingebauten `/review` bzw. „schreib mir eine Commit-Message“.
 
-In pi sind die vier Workflow-Befehle kleine Prompt-Vorlagen, die den gleichnamigen Skill laden;
+In pi sind die fünf Workflow-Befehle kleine Prompt-Vorlagen, die den gleichnamigen Skill laden;
 `/skill:next` usw. funktioniert dort ebenfalls.
 
 ## 7. Tokens sparen (mehr aus dem Abo holen)

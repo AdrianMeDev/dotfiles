@@ -20,7 +20,10 @@ zed-config/
 | System | Globale Dateien landen in |
 |---|---|
 | Linux | `~/.config/zed/` → `dot install` (bzw. `./install.sh` aus dem Repo-Root) |
-| Windows | `%APPDATA%\Zed\` → `.\windows\install.ps1` (aus dem Repo-Root) |
+| Windows | `%APPDATA%\Zed\` → `.\bootstrap.ps1` / `.\windows\dot.ps1 install` (aus dem Repo-Root) |
+
+`dot install` installiert außerdem Claude Code und pi (Modul `apps`) und wendet das einheitliche
+Tokyo-Night- + Ioskeley-Theme (`theme/tokens.toml`) an.
 
 **Windows + WSL:** Zed läuft unter Windows, WSL-Ordner werden als Remote-Projekt geöffnet
 (`<space> p w` = *projects: open wsl*). Deshalb gehören die globalen Dateien nach
@@ -88,7 +91,7 @@ Nach `<space>` kurz warten → Which-Key zeigt alle Optionen.
 | `<space> ,` | offene Tabs |
 | `<space> f s` / `f S` | Symbole in Datei / im Projekt |
 | `shift-h` / `shift-l` | vorheriger / nächster Tab |
-| `ctrl-h/j/k/l` | Pane/Panel wechseln (im Terminal: `alt-h/j/k/l`) |
+| `ctrl-h/j/k/l` | Pane/Panel wechseln (im Terminal: `ctrl-alt-h/j/k/l`) |
 | `-` | aktuelle Datei im Projekt-Panel zeigen |
 | `<space> e` / `<space> o` | Projekt-Panel / Outline |
 | `<space> q` / `<space> Q` | Tab schließen / alle anderen |
@@ -158,7 +161,7 @@ wiederholen · `<space> t t` Terminal · `<space> t n` neues Terminal
 | `<space> a s` | Auswahl in den Agent-Thread einfügen |
 | `<space> a t` | Ghost-Text an/aus |
 | `<space> a C` / `a P` | Claude Code / pi im Terminal-Tab |
-| `alt-l` / `alt-w` / `alt-j` | Vorschlag ganz / Wort / Zeile annehmen (Insert-Modus) |
+| `ctrl-alt-l` / `alt-w` / `ctrl-alt-j` | Vorschlag ganz / Wort / Zeile annehmen (Insert-Modus) |
 | `alt-\` | Vorschlag manuell anfordern |
 
 ### Git

@@ -3,7 +3,8 @@
 **Schnellnavigation:** [Zed](#zed) · [Vim-Basis](#vim-grundlagen-für-zed-und-neovim) ·
 [Neovim](#neovim) · [zsh/fzf](#zsh-und-fzf) · [tmux](#tmux) ·
 [WezTerm](#wezterm) · [Git](#git) · [CLI-Tools](#cli-werkzeuge) ·
-[Windows](#windows-glazewm-und-flow-launcher) · [Lernroutine](#lernroutine)
+[Hyprland = GlazeWM](#hyprland--glazewm) · [dot](#dot-linux-und-windows) ·
+[Corne](#corne-layer) · [Lernroutine](#lernroutine)
 
 ## Legende
 
@@ -29,11 +30,14 @@
 | Datei in Zed/Neovim suchen       | `Space Space`                                              |
 | Text im Projekt suchen           | `Space /`                                                  |
 | Explorer umschalten              | `Space e`                                                  |
-| Speichern                        | `Space w`                                                  |
+| Speichern                        | `Ctrl-S` (Zed) / `Space w` (Neovim)                        |
 | Code-Action / Rename / Format    | `Space c a` / `Space c r` / `Space c f`                    |
-| Nächste / vorige Diagnose        | `Space x n` / `Space x p`                                  |
+| Diagnosen                        | `Space c d` (Zed) / `Space x n` / `Space x p` (Neovim)     |
 | Terminal umschalten / neu        | `Space t t` / `Space t n`                                  |
-| Split navigieren                 | `Ctrl-W h/j/k/l`                                           |
+| Split navigieren                 | `Ctrl-h/j/k/l` (Zed) / `Ctrl-W h/j/k/l` (Neovim)           |
+| Fenster / Workspace wechseln     | `Alt+h/j/k/l` / `Alt+1..9`                                 |
+| Dotfiles aktualisieren / prüfen  | `dot update` / `dot doctor`                                |
+| Agent in Zed                     | `Space a c` (Claude Code) / `Space a p` (pi)               |
 | Git-Überblick                    | `gs`, dann `gd` und `gds`                                  |
 | Interaktiv stagen                | `git add -p`                                               |
 | Commit erstellen                 | `gc -m "Nachricht"`                                        |
@@ -66,77 +70,77 @@ git push
 
 Die folgenden Kürzel kommen direkt aus `zed-config/.config/zed/keymap.json`.
 
-### Dateien, Suche und Buffer
+### Finden, Panels und Projekt
 
-| Kürzel                     | Aktion                                        |
-| -------------------------- | --------------------------------------------- |
-| `Space Space`, `Space f f` | Datei suchen                                  |
-| `Space f g`, `Space /`     | Projektweit suchen                            |
-| `Space f s`                | Projektsymbole suchen                         |
-| `Space f o`                | Outline der aktuellen Datei                   |
-| `Space e`                  | Project Panel umschalten                      |
-| `Space f e`                | Aktuelle Datei im Project Panel zeigen        |
-| `Space b b`                | Zwischen aktueller und voriger Datei wechseln |
-| `Space b n` / `Space b p`  | Nächster / voriger Buffer                     |
-| `Space b d`                | Aktiven Buffer schließen                      |
-| `Space b o`                | Alle anderen Buffer schließen                 |
-| `Space b r`                | Geschlossenen Buffer wieder öffnen            |
-| `Space p`                  | Command Palette                               |
-| `Space w`                  | Speichern                                     |
+| Kürzel                     | Aktion                                   |
+| -------------------------- | ---------------------------------------- |
+| `Space Space`, `Space f f` | Datei suchen                             |
+| `Space f g`, `Space /`     | Projektweit suchen                       |
+| `Space f b`, `Space ,`     | Tab-/Buffer-Wechsler                     |
+| `Space f s`                | Outline der aktuellen Datei              |
+| `Space f S`                | Projektsymbole                           |
+| `Space f c` / `Space f t`  | Command Palette / Theme wählen           |
+| `Space e` / `Space E`      | Project Panel / aktuelle Datei zeigen    |
+| `Space o`                  | Outline Panel                            |
+| `Space q` / `Space Q`      | Aktiven / andere Tabs schließen          |
+| `Space p r/o/w/W`          | Zuletzt geöffnet / Remote / WSL / Ordner in WSL |
+| `Space p s/k/t/d`          | Settings / Keymap / Tasks / Debug-Tasks  |
+| `Ctrl-P` / `Ctrl-Shift-P`  | Datei suchen / Command Palette           |
 
-### Code, Diagnosen und Git
+### Fenster, Code und Git
 
-| Kürzel                    | Aktion                                |
-| ------------------------- | ------------------------------------- |
-| `Space c a`               | Code-Action                           |
-| `Space c r`               | Symbol umbenennen                     |
-| `Space c f`               | Datei formatieren                     |
-| `Space c u`               | Verwendungen/Referenzen suchen        |
-| `Space c l`               | Language Server neu starten           |
-| `Space x x`               | Projekt-Diagnosen                     |
-| `Space x f`               | Diagnosen der aktuellen Datei         |
-| `Space x n` / `Space x p` | Nächste / vorige Diagnose             |
-| `Space x i`               | Inline-Diagnosen umschalten           |
-| `Space g g`               | Git Panel umschalten                  |
-| `Space g b`               | Inline Git Blame umschalten           |
-| `Space g d`               | Diff des Hunks/der Auswahl umschalten |
+| Kürzel                | Aktion                                              |
+| --------------------- | --------------------------------------------------- |
+| `Space w v` / `w s`   | Split rechts / unten                                |
+| `Space w z/c/x/f`     | Zoom / zentriertes Layout / alle Docks zu / Vollbild |
+| `Space w h/l/j`       | Linkes / rechtes / unteres Dock umschalten          |
+| `Ctrl-h/j/k/l`        | Fokus zwischen Panes und Panels                     |
+| `Shift-h` / `Shift-l` | Voriger / nächster Tab                              |
+| `Space c a/r/f`       | Code-Action / Rename / Format                       |
+| `Space c d`           | Diagnosen                                           |
+| `Space c i/t/u`       | Implementierung / Typdefinition / Referenzen        |
+| `Space c h/l/v`       | Inlay-Hints / LSP neu starten / Toolchain wählen    |
+| `Space g g`           | Git Panel                                           |
+| `Space g b` / `g B`   | Inline Blame / Blame                                |
+| `Space g d/c/C`       | Diff / Commit / Commit-Editor                       |
+| `Space g p/P/f`       | Push / Pull / Fetch                                 |
+| `Space g s/h/r/o`     | Stage umschalten / Hunks / Restore / Branch         |
+| `Space g l`           | lazygit (Task)                                      |
+| `g w`                 | Zu sichtbarem Wort springen                         |
 
-### Terminal, Splits, UI und Tasks
+### Tasks, Terminal, Debug und Markdown
 
-| Kürzel            | Aktion                                 |
-| ----------------- | -------------------------------------- |
-| `Space t t`       | Unteres Terminal umschalten            |
-| `Space t n`       | Neues Terminal                         |
-| `Space t v`       | Terminal-Vi-Modus umschalten           |
-| `Space s h/j/k/l` | Split links/unten/oben/rechts          |
-| `Space u a`       | Alle Docks umschalten                  |
-| `Space u c`       | Alle Docks schließen                   |
-| `Space u h/j/l`   | Linkes/unteres/rechtes Dock umschalten |
-| `Space u z`       | Editor maximieren                      |
-| `Space u i`       | Inlay-Hints umschalten                 |
-| `Space u n`       | Relative Zeilennummern umschalten      |
-| `Space r r`       | Task auswählen und starten             |
-| `Space r l`       | Letzten Task erneut starten            |
-| `Space j`         | Zu sichtbarem Wort springen            |
+| Kürzel                  | Aktion                                         |
+| ----------------------- | ---------------------------------------------- |
+| `Space r r/b/t/l/f`     | `dev: run` / `build` / `test` / `lint` / `format` |
+| `Space r n/s/a`         | Nächster Task / Task wählen / letzten wiederholen |
+| `Space t t` / `Space t n` | Terminal umschalten / neues Terminal         |
+| `Ctrl+Alt+h/j/k/l`      | Im Terminal: Fokus zwischen Panes              |
+| `Space d d/c/o/i/u/p/s` | Debug starten / Continue / Over / Into / Out / Pause / Stop |
+| `Space d b` / `F9`      | Breakpoint umschalten                          |
+| `Space m p`             | Markdown-Vorschau                              |
 
-Verfügbare Tasks: `Node: start`, `Node: test`, `Node: build`, `Python: pytest`,
-`Django: runserver (localhost)`, `.NET: build`, `.NET: test` und `.NET: watch`.
+Die `dev: …`-Tasks kommen aus den Projektvorlagen (`dot zed-template angular|django|dotnet PFAD`).
 
-### Docks, Agent und Visual Mode
+### Agents (Claude Code / pi)
 
-| Kontext             | Kürzel                      | Aktion                                   |
-| ------------------- | --------------------------- | ---------------------------------------- |
-| Dock/Terminal/Panel | `Ctrl-W h/j/k/l`            | Fokus bewegen                            |
-| Dock/Terminal/Panel | `Ctrl-W Q` oder `Ctrl-W C`  | Aktives Dock schließen                   |
-| Terminal            | `Ctrl+Alt+h/j/k/l`          | Fokus zwischen Panes bewegen             |
-| Normal              | `Space a a`                 | Agent Panel umschalten                   |
-| Normal              | `Space a c`                 | neuen Claude-Terminal-Thread starten     |
-| Normal              | `Space a n`                 | neuen Zed-Agent-Thread starten           |
-| Normal              | `Space a p`                 | Edit Predictions umschalten              |
-| Insert              | `Ctrl+Alt+P`                | Edit Predictions umschalten              |
-| Insert              | `Ctrl+Alt+l` / `Ctrl+Alt+j` | Edit Prediction / nächste Zeile annehmen |
-| Visual              | `S`, danach Zeichen         | Auswahl umschließen, etwa mit `(`        |
-| Visual              | `Space a s`                 | Auswahl an Agent-Thread übergeben        |
+| Kürzel                     | Aktion                                           |
+| -------------------------- | ------------------------------------------------ |
+| `Space a a`                | Agent Panel umschalten                           |
+| `Space a n`                | Neuer Zed-Agent-Thread                           |
+| `Space a c` / `Space a p`  | Claude Code / pi als externer Agent-Thread (ACP) |
+| `Space a C` / `Space a P`  | Claude Code / pi im Terminal (Task)              |
+| `Space a m`                | Modell wählen                                    |
+| `Space a i`                | Inline-Assist                                    |
+| `Space a s`                | Auswahl an Agent-Thread übergeben                |
+| `Space a t`                | Edit Predictions umschalten                      |
+| `Ctrl+Alt+l` / `Ctrl+Alt+j` | Edit Prediction / nächste Zeile annehmen        |
+| `Alt-w`                    | Nächstes Wort der Prediction annehmen            |
+| Visual: `S`, dann Zeichen  | Auswahl umschließen                              |
+
+In Claude Code und pi gelten `/plan-commits`, `/next`, `/next-all`, `/explain`,
+`/explain-project` aus `agent-config/`; Anmeldung bei Claude einmalig mit `claude`.
+
 
 ## Vim-Grundlagen für Zed und Neovim
 
@@ -466,11 +470,25 @@ git log --oneline | fzf
 | zoxide   | `z NAME`, `z teil/pfad`, `zi`                                       |
 | direnv   | `.envrc` anlegen, dann `direnv allow`; mit `direnv deny` sperren    |
 | starship | rendert automatisch den Prompt; `starship explain` erklärt ihn      |
-| mise     | `mise use java@21`, `mise ls`, `mise exec java@21 -- java -version` |
-| fnm      | `fnm install 24`, `fnm use 24`, `fnm list`, `fnm default 24`        |
+| mise     | `mise ls`, `mise use java@21`, `mise upgrade`, `mise exec java@21 -- java -version` |
+| eza      | `ls`/`ll`/`lt` (Aliase), `eza -la --git`, `eza --tree -L 2`        |
+| yazi     | `yazi`; Dateimanager im Terminal, `q` beendet                       |
 
-Node wird von fnm, Python von uv und optionale Java-Versionen werden von mise
-verwaltet. Node/Python deshalb nicht zusätzlich über mise aktivieren.
+Alle Dev-Tools (Node, uv, ripgrep, fd, fzf, bat, delta, eza, yazi, tldr, just,
+lazygit, lazydocker, Neovim, …) kommen über mise; Konfiguration:
+`mise/.config/mise/config.toml`. fnm wird nicht mehr verwendet; ein Überrest wird
+von `dot doctor` gemeldet.
+
+### Weitere Werkzeuge
+
+| Werkzeug   | Häufige Befehle                                                      |
+| ---------- | -------------------------------------------------------------------- |
+| tldr       | `tldr tar`, `tldr --update`; kurze Beispiele statt langer Manpages   |
+| just       | `just --list`, `just REZEPT`                                         |
+| lazydocker | `lazydocker`; TUI für Container (Podman-Socket)                      |
+| delta      | automatischer Git-Pager: `git diff`, `git show`, `git log -p`        |
+| lazygit    | `lazygit`; in Zed `Space g l`                                        |
+
 
 ### Projekte und Runtimes
 
@@ -485,66 +503,75 @@ verwaltet. Node/Python deshalb nicht zusätzlich über mise aktivieren.
 
 Podman läuft rootless: Container nicht mit `sudo` starten.
 
-## Linux: Hyprland (Vertrag mit GlazeWM)
+## Hyprland = GlazeWM
 
-Gleiche Kürzel wie unter Windows (siehe unten); Quelle ist `manifests/keybindings.tsv`. Das Hyprland-Lua-Config braucht Hyprland >= 0.57. Alle Kürzel verwenden `Alt`.
+Gleiche Kürzel unter Linux (Hyprland >= 0.57, Lua-Config) und Windows (GlazeWM, nur das **linke** `Alt`; `AltGr` bleibt frei). Quelle ist `manifests/keybindings.tsv`; `tests/test_keybindings.py` prüft diese Tabellen gegen den Vertrag.
 
-| Kürzel                              | Aktion                                               |
-| ----------------------------------- | ---------------------------------------------------- |
-| `Alt+1` … `9`                       | Workspace wechseln (mit `Shift`: Fenster verschieben) |
-| `Alt+h/j/k/l` oder `Alt+Pfeile`     | Fokus bewegen (mit `Shift`: Fenster verschieben)     |
-| `Alt+Enter`                         | WezTerm öffnen                                       |
-| `Alt+Space`                         | Launcher (fuzzel)                                    |
-| `Alt+Q`                             | Fenster schließen                                    |
-| `Alt+R`, dann `h/j/k/l` oder Pfeile | Resize Mode; `Esc`, `Enter` oder `Alt+R` beendet ihn |
-| `Alt+F`                             | Vollbild umschalten                                  |
-| `Alt+Shift+Space`                   | Floating umschalten                                  |
-| `Alt+Shift+R`                       | Konfiguration neu laden                              |
-| `Alt+Shift+P`                       | Bindings pausieren/fortsetzen                        |
-| `Alt+Shift+X`                       | Bildschirm sperren (hyprlock); Windows: `Win+L`      |
-| `Alt+V`                             | Zwischenablage-Verlauf (cliphist); Windows: `Win+V`  |
-| `Alt+Shift+S`                       | Screenshot (grim/slurp); Windows: `Win+Shift+S`      |
+### Global
 
-## Windows: GlazeWM und Flow Launcher
+| Kürzel                                | Aktion                                                     |
+| ------------------------------------- | ---------------------------------------------------------- |
+| `Alt+1..9`                            | Workspace wechseln                                         |
+| `Alt+Shift+1..9`                      | Fenster auf Workspace verschieben                          |
+| `Alt+h/j/k/l`                         | Fokus bewegen                                              |
+| `Alt+Left/Down/Up/Right`              | Fokus bewegen (Pfeile)                                     |
+| `Alt+Shift+h/j/k/l`                   | Fenster verschieben                                        |
+| `Alt+Shift+Left/Down/Up/Right`        | Fenster verschieben (Pfeile)                               |
+| `Alt+Enter`                           | WezTerm öffnen                                             |
+| `Alt+Space`                           | Launcher (Linux: fuzzel, Windows: Flow Launcher)           |
+| `Alt+Q`                               | Fenster schließen                                          |
+| `Alt+R`                               | Resize-Modus starten                                       |
+| `Alt+F`                               | Vollbild umschalten                                        |
+| `Alt+Shift+Space`                     | Floating umschalten                                        |
+| `Alt+Shift+R`                         | WM-Konfiguration neu laden                                 |
+| `Alt+Shift+P`                         | Tiling und globale Kürzel pausieren/fortsetzen             |
+| `Alt+Shift+X`                         | Sperren (Linux: hyprlock; Windows: `Win+L`)                |
+| `Alt+V`                               | Zwischenablage-Verlauf (Linux: cliphist; Windows: `Win+V`) |
+| `Alt+Shift+S`                         | Screenshot (Linux: grim/slurp; Windows: `Win+Shift+S`)     |
 
-Alle GlazeWM-Kürzel verwenden ausdrücklich das **linke** `Alt`; `AltGr` bleibt frei.
+### Resize-Modus
 
-| Kürzel                              | Aktion                                               |
-| ----------------------------------- | ---------------------------------------------------- |
-| `Alt+1` … `9`                       | Workspace wechseln                                   |
-| `Alt+Shift+1` … `9`                 | Fenster auf Workspace verschieben                    |
-| `Alt+h/j/k/l` oder `Alt+Pfeile`     | Fokus bewegen                                        |
-| zusätzlich `Shift`                  | Fenster in diese Richtung verschieben                |
-| `Alt+Enter`                         | WezTerm öffnen                                       |
-| `Alt+Space`                         | Flow Launcher öffnen                                 |
-| `Alt+Q`                             | Fenster regulär schließen                            |
-| `Alt+R`, dann `h/j/k/l` oder Pfeile | Resize Mode; `Esc`, `Enter` oder `Alt+R` beendet ihn |
-| `Alt+F`                             | Vollbild umschalten                                  |
-| `Alt+Shift+Space`                   | Floating umschalten                                  |
-| `Alt+Shift+R`                       | GlazeWM-Konfiguration neu laden                      |
-| `Alt+Shift+P`                       | Tiling und globale Kürzel pausieren/fortsetzen       |
-| `Win+L`                             | Sperren (Windows; Linux: `Alt+Shift+X`)              |
-| `Alt+V` / `Alt+Shift+S`             | Zwischenablage-Verlauf (`Win+V`) / Screenshot (`Win+Shift+S`) |
+| Kürzel                  | Aktion                           |
+| ----------------------- | -------------------------------- |
+| `h/j/k/l`               | Breite -/Höhe +/Höhe -/Breite +  |
+| `Left/Down/Up/Right`    | dasselbe mit Pfeilen             |
+| `Esc`, `Enter`, `Alt+R` | Resize-Modus beenden             |
 
-## Dotfiles warten
+## `dot` (Linux und Windows)
 
-| Ziel                      | Befehl                                                    |
-| ------------------------- | --------------------------------------------------------- |
-| sichere Vorschau          | `./install.sh --dry-run`                                  |
-| Vorschau mit Backups      | `./install.sh --dry-run --backup`                         |
-| komplette Installation    | `./install.sh --backup`                                   |
-| nur Dotfiles verlinken    | `./install.sh --only dotfiles --backup`                   |
-| Extras installieren       | `./install.sh --extras java,rust,firefox,discord,spotify` |
-| Prüfungen starten         | `bash scripts/check.sh`                                   |
-| Secrets vor Commit prüfen | `python3 scripts/check-secrets.py --history`              |
+| Ziel                       | Linux (`dot`)                                    | Windows (`windows\dot.ps1`)       |
+| -------------------------- | ------------------------------------------------ | --------------------------------- |
+| Installation / Vorschau    | `dot install [--dry-run] [--backup]`             | `dot.ps1 install [-DryRun] [-Backup]` |
+| Nur ein Modul              | `dot install --only dotfiles --backup`           | -                                 |
+| Extras                     | `dot install --extras java,rust`                 | -                                 |
+| Pakete, Tools, Agents      | `dot update [--dry-run]`                         | `dot.ps1 update`                  |
+| Zustand prüfen (read-only) | `dot doctor`                                     | `dot.ps1 doctor`                  |
+| Zed-Projektvorlage         | `dot zed-template angular\|django\|dotnet PFAD`  | -                                 |
 
-Vor einem Dotfiles-Commit:
+Ohne installierten `dot`: `./install.sh --dry-run`, `./install.sh --backup`. Vor einem Dotfiles-Commit:
 
 ```bash
+bash scripts/check.sh
 python3 scripts/check-secrets.py --history
 git diff
 git status --short
 ```
+
+## Corne-Layer
+
+Layout `corne_v4.vil` (Vial), Details und Tastenbelegung in [`docs/CORNE.md`](docs/CORNE.md).
+
+| Layer | Halten                       | Inhalt                                       |
+| ----- | ---------------------------- | -------------------------------------------- |
+| 0     | -                            | Base (QWERTY)                                |
+| 1     | `MO(1)` / `Enter` halten     | Symbole                                      |
+| 2     | `MO(2)` / `Space` halten     | Navigation, Pfeile, Modifier auf Home Row    |
+| 3     | `MO(3)` (linker Daumen)      | WM (`Alt+…`), Medien, RGB; mit `LShift` = `Alt+Shift+…` |
+| 4     | `MO(4)` / `RAlt` halten      | Deutsche Umlaute (US-International)          |
+| 5     | `MO(5)` / `Backspace` halten | Zahlen und Operatoren                        |
+
+Alle Vertrags-Bindings (siehe oben) sind über Layer 3 erreichbar.
+
 
 ## Lernroutine
 

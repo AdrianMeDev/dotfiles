@@ -149,6 +149,43 @@ def parse_zed(text):
     return combos
 
 
+CHEATSHEET = REPO / 'CHEATSHEET.md'
+DOC_KEYS = {'esc': 'escape', 'return': 'enter', 'left': 'left', 'down': 'down', 'up': 'up', 'right': 'right'}
+DOC_MODS = {'win': 'win', 'ctrl': 'ctrl', 'alt': 'alt', 'shift': 'shift'}
+
+
+def expand_doc_token(token):
+    """Expand a cheatsheet token like `Alt+Shift+1..9` or `Alt+h/j/k/l` into contract combos."""
+    *mods, keys = token.split('+')
+    mods = {DOC_MODS[m.lower()] for m in mods}
+    if re.fullmatch(r'\d\.\.\d', keys):
+        names = [str(n) for n in range(int(keys[0]), int(keys[-1]) + 1)]
+    else:
+        names = keys.split('/')
+    return [
+        '+'.join([*[m for m in MOD_ORDER if m in mods], DOC_KEYS.get(n.lower(), n.lower())])
+        for n in names
+    ]
+
+
+def parse_cheatsheet_wm(text):
+    """Return {(mode, combo)} from the first column of the tables under `## Hyprland = GlazeWM`."""
+    found = set()
+    section = mode = None
+    for line in text.splitlines():
+        if line.startswith('## '):
+            section = line[3:].strip()
+            mode = None
+        elif line.startswith('### '):
+            mode = {'Global': 'global', 'Resize-Modus': 'resize'}.get(line[4:].strip())
+        elif section == 'Hyprland = GlazeWM' and mode and line.startswith('|'):
+            first = line.split('|')[1]
+            for token in re.findall(r'`([^`]+)`', first):
+                for combo in expand_doc_token(token):
+                    found.add((mode, combo))
+    return found
+
+
 def reserved_combos():
     reserved = set()
     for _, mode, combo, windows in load_contract():
@@ -241,6 +278,18 @@ class KeybindingTests(unittest.TestCase):
         combos = parse_zed(ZED_KEYMAP.read_text(encoding='utf-8'))
         collisions = sorted(set(combos) & reserved)
         self.assertEqual(collisions, [], f'{ZED_KEYMAP.relative_to(REPO)} collides with reserved combos: {collisions}')
+
+    def test_cheatsheet_wm_matches_contract(self):
+        documented = parse_cheatsheet_wm(CHEATSHEET.read_text(encoding='utf-8'))
+        expected = {(mode, combo) for _, mode, combo, _ in load_contract()}
+        self.assertEqual(sorted(documented - expected), [], 'CHEATSHEET binding not in contract')
+        self.assertEqual(sorted(expected - documented), [], 'contract binding missing in CHEATSHEET')
+
+    def test_cheatsheet_token_expansion(self):
+        self.assertEqual(expand_doc_token('Alt+Shift+1..3'), ['alt+shift+1', 'alt+shift+2', 'alt+shift+3'])
+        self.assertEqual(expand_doc_token('Alt+h/j'), ['alt+h', 'alt+j'])
+        self.assertEqual(expand_doc_token('Esc'), ['escape'])
+        self.assertEqual(expand_doc_token('Alt+Space'), ['alt+space'])
 
 
 if __name__ == '__main__':
