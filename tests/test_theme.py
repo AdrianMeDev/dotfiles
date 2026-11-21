@@ -39,6 +39,9 @@ EXCEPTIONS = {
                        'through; main_bg only documents bg.',
     'yazi.background': 'yazi only paints highlight/mode backgrounds; the terminal background and '
                        'opacity show through.',
+    'claude.theme': 'Claude Code only offers built-in themes; "dark-ansi" uses the terminal ANSI '
+                    'palette, so Tokyo Night comes from the terminal (WezTerm) and no hex values '
+                    'can be set in Claude Code itself.',
     'starship.foreground': 'Starship palette foreground uses fg_dark, matching the tmux/fzf text color.',
 }
 
@@ -315,6 +318,28 @@ class ParityTests(unittest.TestCase):
         self.assertIn('transparent = true', text)
         self.assertIn("styles = { sidebars = 'transparent', floats = 'transparent' }", text)
         self.assertIn(f"colorscheme 'tokyonight-{tokens['meta']['variant']}'", text)
+
+    def test_claude_code(self):
+        settings = json.loads(read('agent-config/claude/settings.json'))
+        self.assertEqual(settings['theme'], 'dark-ansi')
+        self.assertIn('claude.theme', EXCEPTIONS)
+        self.assert_colors_in_contract('agent-config/claude/settings.json')
+
+    def test_pi(self):
+        settings = json.loads(read('agent-config/pi/settings.json'))
+        theme = json.loads(read('agent-config/pi/themes/tokyo-night.json'))
+        self.assertEqual(settings['theme'], theme['name'])
+        self.assertEqual(theme['name'], 'tokyo-night')
+        self.assertEqual(theme['appearance'], 'dark')
+        tokens = load_tokens()
+        unknown = hexes(read('agent-config/pi/themes/tokyo-night.json')) - self.allowed - set(tokens['diff'].values())
+        self.assertEqual(unknown, set())
+        for key, value in tokens['palette'].items():
+            self.assertEqual(theme['vars'][key], value, key)
+        for key in ('add', 'delete', 'text'):  # diff.change has no pi counterpart
+            self.assertEqual(theme['vars'][f'diff_{key}'], tokens['diff'][key], key)
+        for key, ref in theme['colors'].items():
+            self.assertIn(ref, theme['vars'], f'{key} -> {ref}')
 
 
 if __name__ == '__main__':

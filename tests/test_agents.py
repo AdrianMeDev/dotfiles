@@ -42,6 +42,8 @@ class AgentsTests(unittest.TestCase):
         self.assertEqual((self.claude / 'settings.json').read_bytes(), (SRC / 'claude/settings.json').read_bytes())
         self.assertEqual((self.pi / 'AGENTS.md').read_bytes(), (SRC / 'pi/AGENTS.md').read_bytes())
         self.assertTrue((self.pi / 'prompts/next.md').is_file())
+        self.assertEqual((self.pi / 'themes/tokyo-night.json').read_bytes(),
+                         (SRC / 'pi/themes/tokyo-night.json').read_bytes())
         self.assertTrue((self.claude / 'skills/explain/SKILL.md').is_file())
         for root in (self.claude, self.pi):
             self.assertEqual(list(root.rglob('claude-frontmatter.txt')), [])
@@ -89,6 +91,18 @@ class AgentsTests(unittest.TestCase):
         self.assertEqual(saved[0].read_text(), 'local\n')
         self.assertEqual(self.backups.stat().st_mode & 0o777, 0o700)
         self.assertEqual(list(self.pi.rglob('*.bak*')), [])
+
+    def test_theme_file_backup_and_idempotency(self):
+        self.run_agents()
+        theme = self.pi / 'themes/tokyo-night.json'
+        theme.write_text('local\n')
+        self.assertEqual(self.run_agents().returncode, 1)
+        self.assertEqual(theme.read_text(), 'local\n')
+        self.assertEqual(self.run_agents('--backup').returncode, 0)
+        self.assertEqual(theme.read_bytes(), (SRC / 'pi/themes/tokyo-night.json').read_bytes())
+        self.assertEqual(len(list(self.backups.glob('*/pi/themes/tokyo-night.json'))), 1)
+        self.assertEqual(self.run_agents('--backup').returncode, 0)
+        self.assertEqual(self.backup_count(), 1)
 
     def test_dry_run_and_check_write_nothing(self):
         for flag in ('--dry-run', '--check', '--status'):
