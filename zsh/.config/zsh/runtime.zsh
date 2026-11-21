@@ -1,8 +1,9 @@
-# fnm and uv own Node/Python; mise handles other project runtimes.
-export MISE_DISABLE_TOOLS=node,python
+# uv owns Python; mise handles Node and other project runtimes.
+export MISE_DISABLE_TOOLS=python
 if (( $+commands[mise] )); then
-  eval "$(mise activate zsh)"
-fi
-if (( $+commands[fnm] )); then
-  eval "$(fnm env --use-on-cd --version-file-strategy recursive --shell zsh)"
+  if [[ -o interactive ]]; then
+    eval "$(mise activate zsh)"
+  else
+    eval "$(mise activate zsh --shims)"
+  fi
 fi

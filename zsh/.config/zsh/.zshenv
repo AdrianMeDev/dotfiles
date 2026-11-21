@@ -9,11 +9,11 @@ export ZDOTDIR="$XDG_CONFIG_HOME/zsh"
 skip_global_compinit=1
 
 typeset -U path PATH
-path=("$HOME/.local/bin" "$XDG_DATA_HOME/fnm" "$HOME/.cargo/bin" "$HOME/.dotnet/tools" $path)
+path=("$HOME/.local/bin" "$HOME/.cargo/bin" "$HOME/.dotnet/tools" $path)
+source "$ZDOTDIR/runtime.zsh"
 if (( $+commands[nvim] )); then
   export EDITOR=nvim VISUAL=nvim
 fi
-source "$ZDOTDIR/runtime.zsh"
 # Interactive overrides run after all other modules in .zshrc.
 if [[ ! -o interactive && -f "$ZDOTDIR/local.zsh" ]]; then
   source "$ZDOTDIR/local.zsh"
