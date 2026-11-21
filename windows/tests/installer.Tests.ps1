@@ -362,12 +362,12 @@ Describe 'Windows installer' {
         }
         It 'replaces generated distro.lua on distro change without Backup while wezterm.lua still conflicts' {
             $distroPath = Join-Path $env:USERPROFILE '.config/wezterm/distro.lua'
-            $changedEntries = @(Get-ConfigEntries $script:source 'Arch')
+            $weztermPath = Join-Path $env:USERPROFILE '.config/wezterm/wezterm.lua'
+            $changedEntries = @(Get-ConfigEntries $script:source 'Arch' | Where-Object Path -in @($distroPath, $weztermPath))
             $plan = @(Get-FilePlan $changedEntries)
             (@($plan | Where-Object Path -eq $distroPath)[0]).Action | Should -Be 'Replace'
             Write-FilePlan $plan
             [IO.File]::ReadAllText($distroPath) | Should -Be "return `"Arch`"`n"
-            $weztermPath = Join-Path $env:USERPROFILE '.config/wezterm/wezterm.lua'
             [IO.File]::WriteAllText($weztermPath, 'user-edited')
             Throws { Get-FilePlan $changedEntries } 'Dateikonflikt'
             Write-FilePlan @(Get-FilePlan $changedEntries -Backup)
