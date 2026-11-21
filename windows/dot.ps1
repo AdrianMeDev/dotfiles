@@ -2,15 +2,25 @@
 [CmdletBinding()]
 param(
     [Parameter(Position = 0)][string]$Verb,
-    [Alias('dry-run', '-dry-run')][switch]$DryRun,
+    [switch]$DryRun,
     [switch]$Backup,
     [string[]]$Extra = @(),
     [string]$Distro,
-    [switch]$NoAutostart
+    [switch]$NoAutostart,
+    [Parameter(ValueFromRemainingArguments)][string[]]$Rest = @()
 )
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
 . (Join-Path $PSScriptRoot 'installer-core.ps1')
+$usage = 'Usage: dot.ps1 install|update|doctor [-DryRun] [-Backup] [-Extra vs] [-Distro <Name>] [-NoAutostart]'
+foreach ($arg in $Rest) {
+    if ($arg -eq '--dry-run') {
+        $DryRun = $true
+    } else {
+        Write-Output $usage
+        exit 2
+    }
+}
 try {
     switch ($Verb) {
         'install' {
@@ -25,7 +35,7 @@ try {
             if ($report.Problem -contains $true) { exit 1 }
         }
         default {
-            Write-Output 'Usage: dot.ps1 install|update|doctor [-DryRun] [-Backup] [-Extra vs] [-Distro <Name>] [-NoAutostart]'
+            Write-Output $usage
             exit 2
         }
     }

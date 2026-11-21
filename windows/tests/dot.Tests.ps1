@@ -44,6 +44,8 @@ Describe 'Windows dot commands' {
         @(Update-WindowsDesktop $script:source -DryRun) | Should -Be $script:ids
         $script:listed.Count | Should -Be 0
         $script:upgraded.Count | Should -Be 0
+        @(& "$script:source/dot.ps1" update -DryRun) | Should -Be $script:ids
+        $LASTEXITCODE | Should -Be 0
         @(& "$script:source/dot.ps1" update --dry-run) | Should -Be $script:ids
         $LASTEXITCODE | Should -Be 0
     }
@@ -72,6 +74,10 @@ Describe 'Windows dot commands' {
     }
     It 'prints usage and fails for an unknown verb' {
         (& "$script:source/dot.ps1" unknown) | Should -Match 'Usage:'
+        $LASTEXITCODE | Should -Be 2
+    }
+    It 'prints usage and fails for an unknown argument' {
+        (& "$script:source/dot.ps1" update --unknown) | Should -Match 'Usage:'
         $LASTEXITCODE | Should -Be 2
     }
 }
