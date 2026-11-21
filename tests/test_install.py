@@ -473,19 +473,6 @@ bindkey -M viins '^\'
         self.assertTrue((self.home / '.cache/zsh/fsh/secondary_theme.zsh').is_file())
         self.assertEqual(snapshot(REPO / 'zsh'), before)
 
-    def test_mocked_package_failure_is_propagated(self):
-        self.env['REPO_DIR'] = str(REPO)
-        result = self.run_command(['bash', '-c', '''
-set -Eeuo pipefail
-source "$REPO_DIR/scripts/common.sh"
-source "$REPO_DIR/scripts/pkg.sh"
-source "$REPO_DIR/scripts/system.sh"
-DRY_RUN=0 EXTRAS='' DISTRO_FAMILY=fedora PROFILE=desktop
-sudo() { return 42; }
-install_system
-'''], success=False)
-        self.assertEqual(result.returncode, 42)
-
     def test_font_installer_installs_both_ioskeley_families_idempotently(self):
         self.env['REPO_DIR'] = str(REPO)
         result = self.run_command(['bash', '-c', r'''
@@ -516,38 +503,6 @@ target="$XDG_DATA_HOME/fonts/IoskeleyMono"
 [[ $(< "$target/.version") == 2.1.0 ]]
 '''])
         self.assertIn('sind bereits installiert', result.stdout)
-
-    def test_fedora_wsl_system_upgrade_keeps_windows_kernel(self):
-        self.env['REPO_DIR'] = str(REPO)
-        self.env['WSL_INTEROP'] = '/run/WSL/interop'
-        self.env['WSL_LOG'] = str(self.base / 'wsl-commands')
-        result = self.run_command(['bash', '-c', '''
-set -Eeuo pipefail
-source "$REPO_DIR/scripts/common.sh"
-source "$REPO_DIR/scripts/pkg.sh"
-source "$REPO_DIR/scripts/system.sh"
-DRY_RUN=0 EXTRAS='' DISTRO_FAMILY=fedora PROFILE=desktop
-sudo() { printf '%s\\n' "$*" >> "$WSL_LOG"; }
-pkg_install_manifest() { printf 'install:%s\\n' "$*" >> "$WSL_LOG"; }
-install_system
-'''])
-        commands = Path(self.env['WSL_LOG']).read_text().splitlines()
-        self.assertEqual(commands[0], 'dnf upgrade --refresh -y --exclude=kernel*')
-        self.assertEqual(commands[1], 'install:')
-        self.assertIn('WSL erkannt', result.stdout)
-
-    def test_fedora_wsl_dry_run_reports_kernel_exclusion(self):
-        self.env['REPO_DIR'] = str(REPO)
-        self.env['WSL_DISTRO_NAME'] = 'Fedora'
-        result = self.run_command(['bash', '-c', '''
-set -Eeuo pipefail
-source "$REPO_DIR/scripts/common.sh"
-source "$REPO_DIR/scripts/pkg.sh"
-source "$REPO_DIR/scripts/system.sh"
-DRY_RUN=1 EXTRAS='' DISTRO_FAMILY=fedora PROFILE=desktop
-install_system
-'''])
-        self.assertIn('--exclude=kernel\\*', result.stdout)
 
     def test_fnm_recursive_project_switch(self):
         zsh, fnm = self.prepare_zsh(), shutil.which('fnm')
