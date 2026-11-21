@@ -3,9 +3,18 @@
 -- reads only this file. Wiki: https://wiki.hypr.land/Configuring/Basics/Using-Lua/
 -- Theme values come from theme/tokens.toml and are checked by tests/test_theme.py.
 
+-- qt6ct also accepts the qt5ct platform theme name.
+hl.env("QT_QPA_PLATFORMTHEME", "qt5ct")
+hl.env("XCURSOR_THEME", "Bibata-Modern-Classic")
+hl.env("XCURSOR_SIZE", "24")
+hl.env("HYPRCURSOR_THEME", "Bibata-Modern-Classic")
+hl.env("HYPRCURSOR_SIZE", "24")
+
 hl.monitor({ output = "", mode = "preferred", position = "auto", scale = 1 })
 
 hl.config({
+  -- Bibata ships Xcursor images.
+  cursor = { enable_hyprcursor = false },
   input = {
     kb_layout = "us",
     follow_mouse = 1,

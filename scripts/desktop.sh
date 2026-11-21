@@ -35,7 +35,7 @@ install_desktop() {
     fi
     local logical pkg packages=()
     while IFS=$'\t' read -r logical group _; do
-        [[ $group == hypr ]] || continue
+        [[ $group == hypr && $logical != theme-* ]] || continue
         while IFS= read -r pkg; do packages+=("$pkg"); done < <(pkg_names "$logical")
     done < <(grep -v '^#' "$PKG_MANIFEST")
     pkg_install "${packages[@]}" || return $?

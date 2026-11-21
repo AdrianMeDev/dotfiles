@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Tests for the unified theme contract (theme/tokens.toml) and tool parity."""
 from pathlib import Path
+import configparser
 import json
 import plistlib
 import re
@@ -353,6 +354,45 @@ class ParityTests(unittest.TestCase):
         self.assertIn(f"config.font_size = {tokens['font']['size']['terminal']}\n", text)
         self.assertRegex(text, rf"font_with_fallback \{{\s*'{re.escape(tokens['font']['terminal_family'])}',"
                                rf"\s*'{re.escape(tokens['font']['editor_family'])}'")
+
+    def test_gtk_and_qt(self):
+        root = REPO / 'hypr/.config'
+        env = dict(re.findall(r'hl\.env\("(\w+)", "([^"]+)"\)', read('hypr/.config/hypr/hyprland.lua')))
+        font = load_tokens()['font']
+        for version in (3, 4):
+            folder = root / f'gtk-{version}.0'
+            config = configparser.ConfigParser()
+            config.read(folder / 'settings.ini')
+            settings = config['Settings']
+            self.assertEqual(settings['gtk-theme-name'], 'adw-gtk3-dark')
+            self.assertEqual(settings['gtk-icon-theme-name'], 'Papirus-Dark')
+            self.assertEqual(settings['gtk-application-prefer-dark-theme'], '1')
+            self.assertEqual(settings['gtk-font-name'], f"{font['editor_family']} {font['size']['ui']}")
+            for prefix in ('XCURSOR', 'HYPRCURSOR'):
+                self.assertEqual(env[f'{prefix}_THEME'], settings['gtk-cursor-theme-name'])
+                self.assertEqual(env[f'{prefix}_SIZE'], settings['gtk-cursor-theme-size'])
+            css = (folder / 'gtk.css').read_text()
+            colors = re.findall(r'@define-color \w+ (#[\w]+)', css)
+            self.assertTrue(colors)
+            self.assertLessEqual(set(colors), self.allowed)
+            self.assert_colors_in_contract(folder / 'gtk.css')
+
+        self.assertEqual(env['QT_QPA_PLATFORMTHEME'], 'qt5ct')
+        for version in (5, 6):
+            name = f'qt{version}ct'
+            config = configparser.ConfigParser()
+            config.read(root / name / f'{name}.conf')
+            appearance = config['Appearance']
+            self.assertEqual(appearance['icon_theme'], 'Papirus-Dark')
+            self.assertEqual(appearance['style'], 'kvantum-dark')
+            self.assertEqual(appearance['custom_palette'], 'true')
+            scheme = f'{name}/colors/tokyo-night.conf'
+            self.assertEqual(appearance['color_scheme_path'], f'~/.config/{scheme}')
+            config.read(root / scheme)
+            for state in ('active', 'inactive', 'disabled'):
+                colors = config['ColorScheme'][f'{state}_colors'].split(', ')
+                self.assertEqual(len(colors), 21 if version == 5 else 22)
+                self.assertLessEqual(set(colors), self.allowed)
 
     def test_hyprland(self):
         tokens = load_tokens()

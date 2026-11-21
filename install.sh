@@ -14,7 +14,7 @@ usage() {
     cat <<'EOF'
 Linux Developer Setup (als normaler Benutzer starten)
   ./install.sh [--dry-run] [--backup] [--only MODULE] [--extras LISTE] [--profile desktop|headless]
-Module: system, desktop, tools, apps, flatpak, fonts, dotfiles, agents
+Module: system, desktop, tools, apps, flatpak, fonts, theme, dotfiles, agents
 Extras (kommagetrennt): java, rust, rpmfusion, firefox, discord, spotify, ollama, ollama-models
 --dry-run    Zeigt Schritte ohne Downloads, Schreibzugriffe oder sudo.
 --backup     Sichert kollidierende Dateien vor dem Verlinken außerhalb des Repos.
@@ -46,7 +46,7 @@ while (($#)); do
     esac
     shift
 done
-MODULES=(system desktop tools apps flatpak fonts dotfiles agents)
+MODULES=(system desktop tools apps flatpak fonts theme dotfiles agents)
 if [[ -n $ONLY ]]; then
     [[ " ${MODULES[*]} " == *" $ONLY "* ]] || die "Unbekanntes Modul: $ONLY"
     MODULES=("$ONLY")
