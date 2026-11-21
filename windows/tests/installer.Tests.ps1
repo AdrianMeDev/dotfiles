@@ -65,6 +65,26 @@ Describe 'Windows installer' {
         }
     }
 
+    Context 'winget packages' {
+        BeforeAll { $script:repo = Split-Path -Parent $script:source }
+        It 'returns the ten base packages' {
+            $ids = @(Get-WingetPackages $script:repo)
+            $ids.Count | Should -Be 10
+            $ids | Should -Contain 'Git.Git'
+            $ids | Should -Not -Contain 'Microsoft.VisualStudio.2022.Community'
+        }
+        It 'adds Visual Studio with -Extra vs' {
+            @(Get-WingetPackages $script:repo -Extra vs) | Should -Contain 'Microsoft.VisualStudio.2022.Community'
+        }
+        It 'rejects an unknown extra' {
+            Throws { Get-WingetPackages $script:repo -Extra nope } 'Unbekanntes Extra'
+        }
+        It 'dry run lists every package' {
+            $out = Install-WindowsDesktop $script:source -DryRun -Extra vs 6>&1 | Out-String
+            foreach ($id in Get-WingetPackages $script:repo -Extra vs) { $out | Should -Match ([regex]::Escape($id)) }
+        }
+    }
+
     Context 'config entries and file plan' {
         BeforeAll {
             $script:entries = @(Get-ConfigEntries $script:source 'Fedora')
@@ -171,7 +191,7 @@ Describe 'Windows installer' {
             $installedFonts = @(Get-ChildItem (Join-Path $env:LOCALAPPDATA 'Microsoft/Windows/Fonts') -Filter '*.ttf')
             $installedFonts.Count | Should -Be 40 -Because 'both Ioskeley families must install all 20 styles'
             @($script:listedPackages | Where-Object { $_ -eq 'Flow-Launcher.Flow-Launcher' }).Count | Should -Be 2
-            $script:packageCalls | Should -Be 12 -Because 'full installation did not process packages'
+            $script:packageCalls | Should -Be 20 -Because 'full installation did not process packages'
         }
         It 'runs the conflict preflight before any package' {
             [IO.File]::WriteAllText($script:target, 'conflict again')

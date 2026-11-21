@@ -247,14 +247,30 @@ function Get-ConfigEntries {
     }
 }
 
+function Get-WingetPackages {
+    param([string]$Root, [string[]]$Extra = @())
+    $rows = @(Get-Content -LiteralPath (Join-Path $Root 'manifests/winget.tsv') |
+        Where-Object { $_.Trim() -and -not $_.StartsWith('#') } |
+        ForEach-Object {
+            $cells = $_ -split "`t"
+            if ($cells.Count -ne 3) { throw "winget.tsv: 3 Spalten erwartet: $_" }
+            [pscustomobject]@{ Group = $cells[1]; Id = $cells[2] }
+        })
+    $known = @($rows.Group | Where-Object { $_ -ne 'base' } | Select-Object -Unique)
+    foreach ($name in $Extra) {
+        if ($name -notin $known) { throw "Unbekanntes Extra: $name (verfuegbar: $($known -join ', '))" }
+    }
+    return @($rows | Where-Object { $_.Group -eq 'base' -or $_.Group -in $Extra } | ForEach-Object Id)
+}
+
 function Install-WindowsDesktop {
-    param([string]$SourceRoot, [switch]$DryRun, [switch]$Backup, [string]$Distro, [switch]$NoAutostart)
+    param([string]$SourceRoot, [switch]$DryRun, [switch]$Backup, [string]$Distro, [switch]$NoAutostart, [string[]]$Extra = @())
+    $packages = Get-WingetPackages (Split-Path -Parent $SourceRoot) $Extra
     Assert-WindowsPrerequisites
     $selected = Select-WslDistro $Distro
     Write-Host "WSL2: $selected"
     $entries = @(Get-ConfigEntries $SourceRoot $selected -NoAutostart:$NoAutostart)
     $plan = @(Get-FilePlan $entries -Backup:$Backup)
-    $packages = @('wez.wezterm', 'ZedIndustries.Zed', 'glzr-io.glazewm', 'glzr-io.zebar', 'Microsoft.PowerShell', 'Flow-Launcher.Flow-Launcher')
     if ($DryRun) {
         Write-FilePlan $plan -DryRun
         foreach ($package in $packages) { Write-Host "Winget (falls fehlend): $package" }

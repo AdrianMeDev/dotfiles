@@ -1,0 +1,13 @@
+# logical	group	id
+# group: base (always) or vs (only with -Extra vs).
+wezterm	base	wez.wezterm
+zed	base	ZedIndustries.Zed
+glazewm	base	glzr-io.glazewm
+zebar	base	glzr-io.zebar
+flow	base	Flow-Launcher.Flow-Launcher
+powershell	base	Microsoft.PowerShell
+git	base	Git.Git
+dotnet-sdk	base	Microsoft.DotNet.SDK.10
+ollama	base	Ollama.Ollama
+claude-code	base	Anthropic.ClaudeCode
+visualstudio	vs	Microsoft.VisualStudio.2022.Community

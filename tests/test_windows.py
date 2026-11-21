@@ -35,6 +35,16 @@ class WindowsSetupTests(unittest.TestCase):
                 self.assertEqual(result.returncode, 17, result.stderr)
                 self.assertEqual(json.loads(capture.read_text()), ["-NoLogo", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", windows_path, "-DryRun", "-Distro", "Fedora Test", "-Backup", "-NoAutostart"])
 
+    def test_winget_manifest_schema(self):
+        rows = [line.split("\t") for line in (ROOT / "manifests/winget.tsv").read_text().splitlines() if line.strip() and not line.startswith("#")]
+        self.assertTrue(all(len(row) == 3 and all(row) for row in rows), rows)
+        names = [row[0] for row in rows]
+        self.assertEqual(len(names), len(set(names)))
+        self.assertLessEqual({row[1] for row in rows}, {"base", "vs"})
+        base = {row[0] for row in rows if row[1] == "base"}
+        self.assertEqual(base, {"wezterm", "zed", "glazewm", "zebar", "flow", "powershell", "git", "dotnet-sdk", "ollama", "claude-code"})
+        self.assertEqual([row[0] for row in rows if row[1] == "vs"], ["visualstudio"])
+
     @unittest.skipUnless(shutil.which("pwsh"), "PowerShell fehlt")
     def test_powershell_installer(self):
         pester = subprocess.run(
