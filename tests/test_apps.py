@@ -1,6 +1,10 @@
 #!/usr/bin/env python3
 """Tests for scripts/apps.sh with mocked installers, package manager, mise and ollama; nothing is installed."""
+import hashlib
+import json
 from pathlib import Path
+import shlex
+import subprocess
 import sys
 import unittest
 
@@ -141,6 +145,101 @@ pi() { :; }
         mocks = 'upstream_installer() { [[ $1 != ollama ]] || return 4; }'
         result, _ = self.apps(mocks=mocks, profile='headless', extras='ollama')
         self.assertNotEqual(result.returncode, 0)
+
+
+class GithubAssetTests(ModuleTestCase):
+    def run_github_asset(self, release_data, asset_bytes=b'payload', pattern=r'app-.*\.AppImage'):
+        (self.base / 'release.json').write_text(json.dumps(release_data))
+        (self.base / 'asset.bin').write_bytes(asset_bytes)
+        script = f'''
+set -Eeuo pipefail
+source "$REPO_DIR/scripts/common.sh"
+WORK_DIR="$HOME/work"
+mkdir -p "$WORK_DIR"
+download() {{
+    printf 'download %s %s\\n' "$1" "$2" >> "$CMD_LOG"
+    if [[ $1 == https://api.github.com/repos/* ]]; then
+        cp "$HOME/release.json" "$2"
+    else
+        cp "$HOME/asset.bin" "$2"
+    fi
+}}
+github_asset owner/repo {shlex.quote(pattern)} "$WORK_DIR/out.bin"
+'''
+        result = subprocess.run(['bash', '-c', script], cwd=self.base, env=self.env,
+                                stdin=subprocess.DEVNULL, capture_output=True, text=True, timeout=30)
+        commands = self.log.read_text().splitlines() if self.log.exists() else []
+        return result, commands
+
+    def test_valid_sha256_digest_succeeds(self):
+        payload = b'valid-appimage-binary'
+        digest = 'sha256:' + hashlib.sha256(payload).hexdigest()
+        release = {
+            'prerelease': False,
+            'draft': False,
+            'assets': [{
+                'name': 'app-1.0.AppImage',
+                'browser_download_url': 'https://example.com/app-1.0.AppImage',
+                'digest': digest,
+            }],
+        }
+        result, commands = self.run_github_asset(release, asset_bytes=payload)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertEqual((self.base / 'work/out.bin').read_bytes(), payload)
+        self.assertNotIn('Hinweis:', result.stdout)
+        self.assertEqual(commands[0], f'download https://api.github.com/repos/owner/repo/releases/latest {self.base}/work/release.json')
+        self.assertEqual(commands[1], f'download https://example.com/app-1.0.AppImage {self.base}/work/out.bin')
+
+    def test_digest_mismatch_is_rejected(self):
+        release = {
+            'prerelease': False,
+            'draft': False,
+            'assets': [{
+                'name': 'app-1.0.AppImage',
+                'browser_download_url': 'https://example.com/app-1.0.AppImage',
+                'digest': 'sha256:' + '0' * 64,
+            }],
+        }
+        result, _ = self.run_github_asset(release, asset_bytes=b'tampered-binary')
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn('SHA-256-Prüfung fehlgeschlagen.', result.stderr)
+
+    def test_prerelease_and_draft_are_rejected(self):
+        base_asset = {'name': 'app-1.0.AppImage', 'browser_download_url': 'https://example.com/app-1.0.AppImage'}
+        for flags in ({'prerelease': True, 'draft': False}, {'prerelease': False, 'draft': True}):
+            with self.subTest(flags=flags):
+                result, _ = self.run_github_asset({**flags, 'assets': [base_asset]})
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn('Kein stabiles Release.', result.stderr)
+
+    def test_ambiguous_or_missing_asset_is_rejected(self):
+        assets_cases = [
+            [],
+            [
+                {'name': 'app-1.0.AppImage', 'browser_download_url': 'https://example.com/1'},
+                {'name': 'app-2.0.AppImage', 'browser_download_url': 'https://example.com/2'},
+            ],
+        ]
+        for assets in assets_cases:
+            with self.subTest(count=len(assets)):
+                result, _ = self.run_github_asset({'prerelease': False, 'draft': False, 'assets': assets})
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn('Kein eindeutiges stabiles Release', result.stderr)
+
+    def test_missing_digest_prints_notice_and_succeeds(self):
+        payload = b'unsigned-binary'
+        release = {
+            'prerelease': False,
+            'draft': False,
+            'assets': [{
+                'name': 'app-1.0.AppImage',
+                'browser_download_url': 'https://example.com/app-1.0.AppImage',
+            }],
+        }
+        result, _ = self.run_github_asset(release, asset_bytes=payload)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn('Hinweis: Upstream liefert keinen SHA-256-Digest; Download ist HTTPS-gesichert.', result.stdout)
+        self.assertEqual((self.base / 'work/out.bin').read_bytes(), payload)
 
 
 if __name__ == '__main__':

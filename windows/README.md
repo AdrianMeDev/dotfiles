@@ -113,6 +113,7 @@ ist daher nicht vorgesehen.
 | `%USERPROFILE%\.glzr\glazewm\` | Tiling-Konfiguration und Startskripte |
 | `%USERPROFILE%\.glzr\zebar\` | Zebar-Einstellungen und eigenes `dotfiles`-Widget-Paket |
 | `%LOCALAPPDATA%\Microsoft\Windows\Fonts\` | Benutzer-Fonts; Registrierung unter `HKCU\Software\Microsoft\Windows NT\CurrentVersion\Fonts` |
+| `%LOCALAPPDATA%\Vial\` | Portables Vial-Release (`Vial.exe`, `.version`-Marker) plus Startmenü-Verknüpfung `Vial.lnk` |
 | Windows-Autostartordner | `Dotfiles-GlazeWM.vbs`, startet GlazeWM ohne Konsolenfenster |
 
 WezTerm verwendet Tokyo Night, die vorhandene Transparenz, Ioskeley Mono Term Nerd Font
@@ -215,10 +216,12 @@ pwsh -NoProfile -File .\windows\dot.ps1 update -Backup
 pwsh -NoProfile -File .\windows\dot.ps1 doctor
 ```
 
-`dot.ps1 update` aktualisiert die Windows-Pakete (`winget`), übernimmt geänderte
+`dot.ps1 update` aktualisiert die Windows-Pakete (`winget`), ein installiertes portables **Vial**
+(`%LOCALAPPDATA%\Vial`, nur bei neuerer Release-Version), übernimmt geänderte
 Konfigurationen und ruft anschließend in Arch WSL2 automatisch `dot update` auf
 (mit `-NoWsl` wird der WSL-Teil übersprungen). `dot.ps1 doctor` prüft analog
-Windows-Werkzeuge, Konfigurationen sowie `dot doctor` in WSL. Eigene Änderungen
+Windows-Werkzeuge, Vial (`.version` und `Vial.exe`), Konfigurationen sowie `dot doctor` in WSL.
+Für den Corne und das Layout `corne_v4.vil` siehe [`docs/CORNE.md`](../docs/CORNE.md). Eigene Änderungen
 an kopierten Dateien erzeugen beim nächsten Lauf einen Konflikt und werden mit
 `-Backup` gesichert. Winget prüft jedes Paket mit `list --id <Paket-ID> --exact --source winget`
 und überspringt vorhandene Pakete. Nur bei „keine Anwendung gefunden“ wird mit
@@ -309,6 +312,8 @@ Ein Lua-Verhaltenstest mit Neovim prüft WSL- und PowerShell-Domain sowie Tab-K�
   Monitor-Ab-/Anstecken und weiterhin nutzbare Windows-Taskleiste.
 - Anmelden, erneuter Start und Reload erzeugen genau eine Leiste pro Monitor;
   Abschalten des Autostarts und Wiederherstellung eines Backups funktionieren.
+- Corne anschließen, **Vial** über das Startmenü starten (`%LOCALAPPDATA%\Vial`),
+  `corne_v4.vil` laden und alle Vertrags-Bindings aus [`docs/CORNE.md`](../docs/CORNE.md) testen.
 
 Der Windows-Registry-Integrationstest verwendet ausschließlich einen zufälligen
 HKCU-Testschlüssel und entfernt ihn anschließend. Er prüft fehlende Schlüssel/Werte,

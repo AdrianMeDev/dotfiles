@@ -79,6 +79,7 @@ Fremde Verzeichnis-Symlinks müssen vorab manuell aufgelöst werden; der Install
 | `agents` | rendert `agent-config/` nach `~/.claude` und `~/.pi/agent` (Claude-Frontmatter der Skills wird eingefügt, `claude-frontmatter.txt` nicht kopiert); abweichende Dateien nur mit `--backup` ersetzt, idempotent |
 | `desktop` | Hyprland-Stack aus der Manifest-Gruppe `hypr` (Hyprland, Waybar, fuzzel, mako, hyprlock, hypridle, hyprpaper, cliphist, grim, slurp, Portal, Polkit-Agent); nur Arch/Fedora, nur Profil `desktop`, nicht unter WSL (Fedora über COPR `solopasha/hyprland`) |
 | `theme` | GTK/Qt dunkel, Cursor, Icons und Wallpaper (siehe [Theme-Modul](#theme-modul)); gleiche Bedingungen wie `desktop` |
+| `corne` | Vial-GUI (Arch: `vial-appimage` aus dem AUR; Fedora/Debian x86_64: entpacktes AppImage mit SHA-256-Prüfung nach `~/.local/opt/vial`) und `/etc/udev/rules.d/99-vial.rules`; nur Profil `desktop`, nicht unter WSL (siehe [Corne-Doku](docs/CORNE.md)) |
 | `flatpak` | Flathub für den Benutzer; ausgewählte optionale Desktop-Apps (nur bei `--profile desktop`) |
 | `fonts` | Ioskeley Mono und Ioskeley Mono Term Nerd Font 2.1.0 im Benutzerverzeichnis |
 | `dotfiles` | Konfliktprüfung, Git-Identität, optionale Backups und Stow-Verlinkung |
@@ -163,6 +164,17 @@ Dunkelmodus, `adw-gtk3-dark`, `Papirus-Dark` und den Cursor. Das Wallpaper wird 
 `theme/tokens.toml` nach `~/.local/share/dotfiles/wallpaper.png` erzeugt (vorhandene Dateien bleiben).
 GTK-/Qt-Konfiguration (`gtk-3.0`, `gtk-4.0`, `qt5ct`, `qt6ct`), Waybar, mako, fuzzel und Hyprland
 beziehen Farben, Fonts, Deckkraft, Blur und Rahmen aus denselben Tokens; `tests/test_theme.py` prüft das.
+
+### Corne & Vial
+
+`./install.sh --only corne` (Profil `desktop`, nicht unter WSL) installiert **Vial**
+(Arch: `vial-appimage` aus dem AUR; Fedora/Debian auf `x86_64`: stabiles Upstream-AppImage mit
+SHA-256-Prüfung nach `~/.local/opt/vial`, Wrapper `~/.local/bin/vial` und Desktop-Starter)
+sowie `/etc/udev/rules.d/99-vial.rules` (lädt per `udevadm` neu; abweichende Regeln nur mit `--backup`).
+Damit erkennt Vial den Corne ohne `sudo`. `dot doctor` prüft im Desktop-Profil `vial` und die udev-Regel.
+Alle 6 Layer, die Vertrags-Akkorde und die Anleitung zum Laden von `corne_v4.vil` stehen in
+[`docs/CORNE.md`](docs/CORNE.md); `tests/test_corne_layout.py` prüft die Erreichbarkeit aller
+Bindings aus `manifests/keybindings.tsv`.
 
 ## Git und private Einstellungen
 
@@ -475,6 +487,8 @@ Grafische Editor- und Clipboard-Tests erfolgen weiterhin auf dem jeweiligen Ziel
    Danach `dot update` und `dot doctor` prüfen.
 5. Hyprland und KDE anmelden; Bindings, Zwischenablage, Fonts und Tokyo-Night-Theme
    in WezTerm, Zed und Neovim prüfen. Ergebnis und VM-Version manuell festhalten.
+6. Corne anschließen, `vial` ohne `sudo` starten, `corne_v4.vil` laden und alle
+   Vertrags-Bindings über die Layer aus [`docs/CORNE.md`](docs/CORNE.md) testen.
 
 Installationsreferenzen: [mise](https://mise.jdx.dev/installing-mise.html), [uv](https://docs.astral.sh/uv/getting-started/installation/),
 [Starship](https://starship.rs/guide/), [WezTerm](https://wezterm.org/install/linux.html),

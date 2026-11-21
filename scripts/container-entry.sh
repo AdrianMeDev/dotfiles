@@ -216,6 +216,18 @@ if [[ $family != debian ]]; then
     [[ $before == "$(snapshot)" ]] || { printf 'desktop/theme --dry-run hat Dateien geschrieben.\n' >&2; exit 1; }
 fi
 
+printf '==> corne-Vorschau prüfen\n'
+before=$(snapshot)
+sys_before=$(find /etc -printf '%p %y %s %T@\n' | sort)
+preview=$(as_dev "$dot install --only corne --profile desktop --dry-run")
+printf '%s\n' "$preview"
+grep -qF 'Profil: desktop' <<< "$preview" || { printf 'dot install --only corne: Profil desktop nicht gesetzt.\n' >&2; exit 1; }
+grep -qF 'vial' <<< "$preview" || { printf 'dot install --only corne: Vial fehlt in der Vorschau.\n' >&2; exit 1; }
+[[ $before == "$(snapshot)" && $sys_before == "$(find /etc -printf '%p %y %s %T@\n' | sort)" ]] || {
+    printf 'corne --dry-run hat Dateien geschrieben.\n' >&2
+    exit 1
+}
+
 printf '==> dot update\n'
 as_dev 'zsh -c "dot update --dry-run"'
 as_dev 'zsh -c "dot update"'

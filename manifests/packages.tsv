@@ -32,6 +32,7 @@ dotnet-sdk	dev	dotnet-sdk	dotnet-sdk-10.0	-
 wezterm	dev	wezterm	wezterm	-
 zed	dev	zed	-	-
 ollama	dev	ollama	-	-
+vial	dev	vial-appimage	-	-
 hyprland	hypr	hyprland	hyprland	-
 xdg-desktop-portal-hyprland	hypr	xdg-desktop-portal-hyprland	xdg-desktop-portal-hyprland	-
 waybar	hypr	waybar	waybar	-

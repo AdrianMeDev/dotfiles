@@ -465,8 +465,20 @@ Describe 'Windows installer' {
             $script:entries = @(Get-ConfigEntries $script:source 'archlinux')
             $script:target = Join-Path $env:USERPROFILE '.config/wezterm/wezterm.lua'
             function Invoke-WebRequest { param($Uri, $OutFile, [switch]$UseBasicParsing) [IO.File]::WriteAllText($OutFile, 'mock archive') }
+            function Invoke-RestMethod {
+                param($Uri)
+                [pscustomobject]@{ tag_name = 'v0.7.5'; prerelease = $false; draft = $false; assets = @(
+                    [pscustomobject]@{ name = 'Vial-v0.7.5-portable.zip'; browser_download_url = 'https://example.invalid/Vial-v0.7.5-portable.zip'; digest = $null }) }
+            }
+            function New-VialShortcut { param($Target) $script:shortcuts += $Target }
+            $script:shortcuts = @()
             function Expand-Archive {
                 param($LiteralPath, $DestinationPath)
+                if ($LiteralPath -like '*vial.zip') {
+                    [IO.Directory]::CreateDirectory($DestinationPath) | Out-Null
+                    [IO.File]::WriteAllText((Join-Path $DestinationPath 'Vial.exe'), 'exe')
+                    return
+                }
                 $terminal = $LiteralPath -like '*term-nerd.zip'
                 $fontDirectory = if ($terminal) { Join-Path $DestinationPath 'Normal' } else { Join-Path $DestinationPath 'Normal/Hinted' }
                 [IO.Directory]::CreateDirectory($fontDirectory) | Out-Null
@@ -496,12 +508,99 @@ Describe 'Windows installer' {
             $installedFonts.Count | Should -Be 40 -Because 'both Ioskeley families must install all 20 styles'
             @($script:listedPackages | Where-Object { $_ -eq 'Flow-Launcher.Flow-Launcher' }).Count | Should -Be 2
             $script:packageCalls | Should -Be 20 -Because 'full installation did not process packages'
+            Get-Content -LiteralPath (Join-Path $env:LOCALAPPDATA 'Vial/.version') -Raw | Should -Be 'v0.7.5'
+            $script:shortcuts.Count | Should -Be 1 -Because 'the second run skips the installed release'
         }
         It 'runs the conflict preflight before any package' {
             [IO.File]::WriteAllText($script:target, 'conflict again')
             $before = $script:packageCalls
             Throws { Install-WindowsDesktop $script:source -NoWsl } 'Dateikonflikt'
             $script:packageCalls | Should -Be $before
+        }
+    }
+
+    Context 'vial release' {
+        BeforeAll {
+            function New-VialRelease {
+                param([string]$Digest)
+                [pscustomobject]@{ tag_name = $script:vialTag; prerelease = $false; draft = $false; assets = @(
+                    [pscustomobject]@{ name = "Vial-$script:vialTag-portable.zip"; browser_download_url = 'https://example.invalid/vial.zip'; digest = $Digest }) }
+            }
+            function Invoke-RestMethod { param($Uri) $script:restCalls++; return $script:release }
+            function Invoke-WebRequest { param($Uri, $OutFile, [switch]$UseBasicParsing) $script:downloads++; [IO.File]::WriteAllText($OutFile, 'vial archive') }
+            function Expand-Archive {
+                param($LiteralPath, $DestinationPath)
+                [IO.Directory]::CreateDirectory((Join-Path $DestinationPath 'Vial-portable')) | Out-Null
+                [IO.File]::WriteAllText((Join-Path $DestinationPath 'Vial-portable/Vial.exe'), "exe $script:vialTag")
+            }
+            function New-VialShortcut { param($Target) $script:shortcuts += $Target }
+            function Use-VialTemp { $t = Join-Path $script:temporary ([guid]::NewGuid().ToString('N')); [IO.Directory]::CreateDirectory($t) | Out-Null; return $t }
+        }
+        BeforeEach {
+            Use-TestProfile
+            $script:vialTag = 'v0.7.5'
+            $script:release = New-VialRelease
+            $script:restCalls = 0; $script:downloads = 0; $script:shortcuts = @()
+        }
+        It 'dry run does not use the network or write files' {
+            Install-WindowsDesktop $script:source -DryRun -NoWsl 6>$null
+            $script:restCalls | Should -Be 0
+            $script:downloads | Should -Be 0
+            Test-Path (Get-VialDirectory) | Should -BeFalse
+        }
+        It 'selects the portable asset and its SHA-256 digest' {
+            $hash = 'a' * 64
+            $script:release = New-VialRelease "sha256:$hash"
+            $asset = Get-VialReleaseAsset
+            $asset.Tag | Should -Be 'v0.7.5'
+            $asset.Sha256 | Should -Be $hash
+            $script:release.prerelease = $true
+            Throws { Get-VialReleaseAsset } 'stabiles Release'
+        }
+        It 'installs into LOCALAPPDATA with marker and shortcut, then skips' {
+            Install-VialRelease (Use-VialTemp) 6>$null
+            Install-VialRelease (Use-VialTemp) 6>$null
+            $dir = Get-VialDirectory
+            Get-Content -LiteralPath (Join-Path $dir '.version') -Raw | Should -Be 'v0.7.5'
+            Test-Path (Join-Path $dir 'Vial.exe') | Should -BeTrue
+            $script:downloads | Should -Be 1
+            $script:shortcuts.Count | Should -Be 1
+        }
+        It 'accepts a matching digest' {
+            $hash = (Get-FileHash -InputStream ([IO.MemoryStream]::new([Text.Encoding]::UTF8.GetBytes('vial archive'))) -Algorithm SHA256).Hash
+            $script:release = New-VialRelease "sha256:$hash"
+            Install-VialRelease (Use-VialTemp) 6>$null
+            Test-Path (Join-Path (Get-VialDirectory) '.version') | Should -BeTrue
+        }
+        It 'rejects a digest mismatch before extracting' {
+            $script:release = New-VialRelease "sha256:$('0' * 64)"
+            Throws { Install-VialRelease (Use-VialTemp) 6>$null } 'SHA-256'
+            Test-Path (Get-VialDirectory) | Should -BeFalse
+        }
+        It 'upgrades only on a newer tag with -Upgrade' {
+            Install-VialRelease (Use-VialTemp) 6>$null
+            Install-VialRelease (Use-VialTemp) -Upgrade 6>$null
+            $script:downloads | Should -Be 1
+            $script:vialTag = 'v0.7.4'; $script:release = New-VialRelease
+            Install-VialRelease (Use-VialTemp) -Upgrade 6>$null
+            $script:downloads | Should -Be 1 -Because 'an older release is not a downgrade'
+            $script:vialTag = 'v0.8.0'; $script:release = New-VialRelease
+            Install-VialRelease (Use-VialTemp) 6>$null
+            $script:downloads | Should -Be 1 -Because 'install keeps the installed version'
+            Install-VialRelease (Use-VialTemp) -Upgrade 6>$null
+            $script:downloads | Should -Be 2
+            Get-Content -LiteralPath (Join-Path (Get-VialDirectory) '.version') -Raw | Should -Be 'v0.8.0'
+        }
+        It 'conflicts on a foreign directory without -Backup and backs it up with -Backup' {
+            $dir = Get-VialDirectory
+            [IO.Directory]::CreateDirectory($dir) | Out-Null
+            [IO.File]::WriteAllText((Join-Path $dir 'mine.txt'), 'mine')
+            Throws { Install-VialRelease (Use-VialTemp) 6>$null } 'Dateikonflikt'
+            $script:downloads | Should -Be 0
+            Install-VialRelease (Use-VialTemp) -Backup 6>$null
+            Test-Path (Join-Path $dir 'mine.txt') | Should -BeFalse
+            @(Get-ChildItem (Split-Path -Parent $dir) -Filter 'Vial.backup-*').Count | Should -Be 1
+            Test-Path (Join-Path $dir '.version') | Should -BeTrue
         }
     }
 
