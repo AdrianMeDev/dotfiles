@@ -35,9 +35,25 @@ class WindowsSetupTests(unittest.TestCase):
                 self.assertEqual(result.returncode, 17, result.stderr)
                 self.assertEqual(json.loads(capture.read_text()), ["-NoLogo", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", windows_path, "-DryRun", "-Distro", "Fedora Test", "-Backup", "-NoAutostart"])
 
+    def test_winget_manifest_schema(self):
+        rows = [line.split("\t") for line in (ROOT / "manifests/winget.tsv").read_text().splitlines() if line.strip() and not line.startswith("#")]
+        self.assertTrue(all(len(row) == 3 and all(row) for row in rows), rows)
+        names = [row[0] for row in rows]
+        self.assertEqual(len(names), len(set(names)))
+        self.assertLessEqual({row[1] for row in rows}, {"base", "vs"})
+        base = {row[0] for row in rows if row[1] == "base"}
+        self.assertEqual(base, {"wezterm", "zed", "glazewm", "zebar", "flow", "powershell", "git", "dotnet-sdk", "ollama", "claude-code"})
+        self.assertEqual([row[0] for row in rows if row[1] == "vs"], ["visualstudio"])
+
     @unittest.skipUnless(shutil.which("pwsh"), "PowerShell fehlt")
     def test_powershell_installer(self):
-        result = subprocess.run(["pwsh", "-NoProfile", "-File", str(ROOT / "windows/tests/installer.Tests.ps1")], capture_output=True, text=True)
+        pester = subprocess.run(
+            ["pwsh", "-NoProfile", "-Command", 'if (Get-Module -ListAvailable Pester | Where-Object Version -ge ([version]"5.0")) { exit 0 } else { exit 1 }'],
+            capture_output=True, text=True,
+        )
+        if pester.returncode != 0:
+            self.skipTest("Pester 5 fehlt")
+        result = subprocess.run(["pwsh", "-NoProfile", "-File", str(ROOT / "windows/check.ps1")], capture_output=True, text=True)
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
 
     @unittest.skipUnless(shutil.which("nvim"), "Neovim für Lua-Verhaltenstest fehlt")

@@ -80,6 +80,7 @@ config.keys = {
 }
 
 if wezterm.target_triple:find 'windows' then
+  config.win32_system_backdrop = 'Acrylic'
   table.insert(config.keys, {
     key = 'p', mods = 'CTRL|SHIFT',
     action = act.SpawnCommandInNewTab { args = { 'pwsh.exe', '-NoLogo' } },

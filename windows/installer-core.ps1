@@ -104,6 +104,36 @@ function Write-FontRegistryPlan {
     } finally { if ($null -ne $key) { $key.Dispose() } }
 }
 
+# Windows dark mode for apps and system UI (HKCU, no admin). Reuses the generic HKCU reader above.
+function Get-DarkModeSubKey { return 'Software\Microsoft\Windows\CurrentVersion\Themes\Personalize' }
+function Get-DarkModePlan {
+    param([string]$SubKey = (Get-DarkModeSubKey))
+    foreach ($name in 'AppsUseLightTheme', 'SystemUsesLightTheme') {
+        $old = Read-FontRegistryValue $SubKey $name
+        $same = $null -ne $old -and $old.Kind -eq [Microsoft.Win32.RegistryValueKind]::DWord -and $old.Value -eq 0
+        $action = if ($same) { 'Skip' } elseif ($null -eq $old) { 'Create' } else { 'Replace' }
+        [pscustomobject]@{ Name = $name; Value = 0; Action = $action }
+    }
+}
+function Write-DarkModePlan {
+    param([object[]]$Plan, [string]$SubKey, [string]$BackupDirectory)
+    foreach ($entry in $Plan) { Write-Host "$($entry.Action): HKCU\$SubKey\$($entry.Name) = $($entry.Value)" }
+    if (-not @($Plan | Where-Object Action -ne 'Skip').Count) { return }
+    if (@($Plan | Where-Object Action -eq 'Replace').Count) {
+        [IO.Directory]::CreateDirectory($BackupDirectory) | Out-Null
+        $saved = Join-Path $BackupDirectory "Personalize.backup-$([guid]::NewGuid().ToString('N')).reg"
+        Invoke-Native 'reg.exe' @('export', "HKCU\$SubKey", $saved) | Out-Host
+        if (-not (Test-Path -LiteralPath $saved -PathType Leaf)) { throw "Registry-Backup fehlt: $saved" }
+        Write-Host "Registry-Backup: $saved"
+    }
+    $key = [Microsoft.Win32.Registry]::CurrentUser.CreateSubKey($SubKey)
+    try {
+        foreach ($entry in $Plan) {
+            if ($entry.Action -ne 'Skip') { $key.SetValue($entry.Name, [int]$entry.Value, [Microsoft.Win32.RegistryValueKind]::DWord) }
+        }
+    } finally { if ($null -ne $key) { $key.Dispose() } }
+}
+
 function Test-Windows11 {
     return ([Environment]::OSVersion.Platform -eq 'Win32NT' -and [Environment]::OSVersion.Version.Build -ge 22000)
 }
@@ -111,9 +141,7 @@ function Assert-WindowsPrerequisites {
     if (-not (Test-Windows11)) {
         throw 'Windows 11 ist erforderlich. Aus WSL bitte windows/install.sh verwenden.'
     }
-    foreach ($command in 'winget.exe', 'wsl.exe') {
-        if (-not (Get-Command $command -ErrorAction SilentlyContinue)) { throw "Voraussetzung fehlt: $command" }
-    }
+    if (-not (Get-Command 'winget.exe' -ErrorAction SilentlyContinue)) { throw 'Voraussetzung fehlt: winget.exe' }
     foreach ($variable in 'USERPROFILE', 'APPDATA', 'LOCALAPPDATA') {
         if (-not [Environment]::GetEnvironmentVariable($variable)) { throw "Umgebungsvariable fehlt: $variable" }
     }
@@ -121,12 +149,17 @@ function Assert-WindowsPrerequisites {
 
 function Select-WslDistro {
     param([string]$Requested)
+    if (-not (Get-Command 'wsl.exe' -ErrorAction SilentlyContinue)) {
+        if ($Requested) { throw "WSL-Distribution nicht gefunden: $Requested (wsl.exe fehlt)" }
+        return $null
+    }
     $names = @((Invoke-Native 'wsl.exe' @('--list', '--quiet')) -join "`n" -split "`n" |
         ForEach-Object { ($_ -replace "`0", '').Trim() } | Where-Object { $_ })
     if ($Requested) {
         if ($Requested -notin $names) { throw "WSL-Distribution nicht gefunden: $Requested" }
         $selected = $names | Where-Object { $_ -eq $Requested } | Select-Object -First 1
     } else {
+        if ($names.Count -eq 0) { return $null }
         $candidates = @($names | Where-Object { $_ -match '(?i)fedora' })
         if ($candidates.Count -ne 1) { throw "Fedora nicht eindeutig erkannt ($($candidates -join ', ')). -Distro <Name> angeben." }
         $selected = $candidates[0]
@@ -163,7 +196,7 @@ function Get-FilePlan {
         if (Test-Path -LiteralPath $entry.Path) {
             if (-not (Test-Path -LiteralPath $entry.Path -PathType Leaf)) { throw "Zieldatei ist ein Verzeichnis: $($entry.Path)" }
             $existing = [IO.File]::ReadAllBytes($entry.Path)
-            if ([Convert]::ToBase64String($existing) -eq [Convert]::ToBase64String($entry.Bytes)) { $action = 'Skip' }
+            if ([Convert]::ToBase64String($existing) -ceq [Convert]::ToBase64String($entry.Bytes)) { $action = 'Skip' }
             elseif ($Backup) { $action = 'Replace' }
             else { throw "Dateikonflikt: $($entry.Path). Mit -Backup sichern und ersetzen." }
         }
@@ -194,7 +227,7 @@ function Get-FlowConfigEntry {
         $settings = Get-Content -LiteralPath $path -Raw -ErrorAction Stop | ConvertFrom-Json -ErrorAction Stop
         if ($null -eq $settings -or $settings -isnot [pscustomobject]) { throw "Ungueltige Flow-Einstellungen: $path" }
     }
-    $desired = @{ Hotkey = 'Alt + Space'; HideOnStartup = $true }
+    $desired = @{ Hotkey = 'Alt + Space'; HideOnStartup = $true; Theme = 'TokyoNight' }
     if (-not $NoAutostart) { $desired.StartFlowLauncherOnSystemStartup = $true }
     $changed = -not $exists
     foreach ($name in $desired.Keys) {
@@ -208,6 +241,45 @@ function Get-FlowConfigEntry {
     else { New-CopyEntry $path $path }
 }
 
+# Mirrors scripts/agents.py render(): Claude-only frontmatter goes after line 1 of each top-level SKILL.md.
+function Get-AgentConfigEntries {
+    param([string]$Repo, [ValidateSet('all', 'pi', 'claude')] [string]$Only = 'all')
+    $src = Join-Path $Repo 'agent-config'
+    $roots = @{
+        claude = if ($env:CLAUDE_CONFIG_DIR) { $env:CLAUDE_CONFIG_DIR } else { Join-Path $env:USERPROFILE '.claude' }
+        pi     = if ($env:PI_CODING_AGENT_DIR) { $env:PI_CODING_AGENT_DIR } else { Join-Path $env:USERPROFILE '.pi/agent' }
+    }
+    $tools = if ($Only -eq 'all') { @('claude', 'pi') } else { @($Only) }
+    $files = {
+        param([string]$Base)
+        foreach ($file in Get-ChildItem -LiteralPath $Base -Recurse -File | Sort-Object FullName) {
+            [pscustomobject]@{ Rel = $file.FullName.Substring($Base.TrimEnd('\', '/').Length + 1).Replace('\', '/'); Full = $file.FullName }
+        }
+    }
+    foreach ($tool in $tools) {
+        foreach ($f in & $files (Join-Path $src $tool)) {
+            New-CopyEntry (Join-Path $roots[$tool] $f.Rel) $f.Full
+        }
+        foreach ($f in & $files (Join-Path $src 'skills')) {
+            if ($f.Rel.EndsWith('/claude-frontmatter.txt') -or $f.Rel -eq 'claude-frontmatter.txt') { continue }
+            $target = Join-Path $roots[$tool] "skills/$($f.Rel)"
+            $extra = Join-Path (Split-Path -Parent $f.Full) 'claude-frontmatter.txt'
+            if ($tool -ne 'claude' -or $f.Rel -notmatch '^[^/]+/SKILL\.md$' -or -not (Test-Path -LiteralPath $extra -PathType Leaf)) {
+                New-CopyEntry $target $f.Full
+                continue
+            }
+            $bytes = [IO.File]::ReadAllBytes($f.Full)
+            $newline = [Array]::IndexOf($bytes, [byte]10)
+            $first = if ($newline -ge 0) { [Text.Encoding]::ASCII.GetString($bytes, 0, $newline).TrimEnd("`r") } else { '' }
+            if ($first -ne '---') { throw "skills/$($f.Rel): erste Zeile muss --- sein, um Claude-Frontmatter einzufuegen." }
+            $front = [IO.File]::ReadAllBytes($extra)
+            if ($front.Length -eq 0 -or $front[-1] -ne 10) { $front += [byte]10 }
+            $merged = [byte[]]($bytes[0..$newline] + $front + $(if ($newline + 1 -lt $bytes.Length) { $bytes[($newline + 1)..($bytes.Length - 1)] } else { @() }))
+            [pscustomobject]@{ Path = $target; Bytes = $merged }
+        }
+    }
+}
+
 function Get-ConfigEntries {
     param([string]$SourceRoot, [string]$SelectedDistro, [switch]$NoAutostart)
     $repo = Split-Path -Parent $SourceRoot
@@ -216,8 +288,12 @@ function Get-ConfigEntries {
     $glaze = Join-Path $env:USERPROFILE '.glzr/glazewm'
     $zebar = Join-Path $env:USERPROFILE '.glzr/zebar'
     # JSON quoted strings are also Lua strings for WSL distro names, except Unicode escapes.
-    $luaName = $SelectedDistro.Replace('\', '\\').Replace('"', '\"').Replace("`r", '\r').Replace("`n", '\n')
-    New-TextEntry (Join-Path $wezterm 'distro.lua') "return `"$luaName`"`n"
+    if ($SelectedDistro) {
+        $luaName = $SelectedDistro.Replace('\', '\\').Replace('"', '\"').Replace("`r", '\r').Replace("`n", '\n')
+        New-TextEntry (Join-Path $wezterm 'distro.lua') "return `"$luaName`"`n"
+    } else {
+        New-TextEntry (Join-Path $wezterm 'distro.lua') "return nil`n"
+    }
     New-CopyEntry (Join-Path $wezterm 'base.lua') (Join-Path $repo 'wezterm/.config/wezterm/wezterm.lua')
     New-CopyEntry (Join-Path $wezterm 'wezterm.lua') (Join-Path $SourceRoot 'wezterm/wezterm.lua')
     # WezTerm prefers this file to .config/wezterm; treat it as part of the conflict plan.
@@ -238,25 +314,53 @@ function Get-ConfigEntries {
     foreach ($name in 'zpack.json', 'index.html', 'style.css', 'bar.mjs') {
         New-CopyEntry (Join-Path $zebar "dotfiles/$name") (Join-Path $SourceRoot "zebar/$name")
     }
-    Get-FlowConfigEntry -NoAutostart:$NoAutostart
+    New-CopyEntry (Join-Path $env:APPDATA 'FlowLauncher/Themes/TokyoNight.xaml') (Join-Path $SourceRoot 'flow/TokyoNight.xaml')
     if (-not $NoAutostart) {
         $startup = Join-Path $env:APPDATA 'Microsoft/Windows/Start Menu/Programs/Startup/Dotfiles-GlazeWM.vbs'
         $launcher = Join-Path $glaze 'start-glazewm.ps1'
         $command = 'powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -File "' + $launcher + '"'
         New-TextEntry $startup ('CreateObject("WScript.Shell").Run "' + $command.Replace('"', '""') + '", 0, False' + "`r`n")
     }
+    Get-AgentConfigEntries $repo
+    Get-FlowConfigEntry -NoAutostart:$NoAutostart
+}
+
+function Get-WingetPackages {
+    param([string]$Root, [string[]]$Extra = @(), [switch]$All)
+    $rows = @(Get-Content -LiteralPath (Join-Path $Root 'manifests/winget.tsv') |
+        Where-Object { $_.Trim() -and -not $_.StartsWith('#') } |
+        ForEach-Object {
+            $cells = $_ -split "`t"
+            if ($cells.Count -ne 3) { throw "winget.tsv: 3 Spalten erwartet: $_" }
+            [pscustomobject]@{ Group = $cells[1]; Id = $cells[2] }
+        })
+    $known = @($rows.Group | Where-Object { $_ -ne 'base' } | Select-Object -Unique)
+    foreach ($name in $Extra) {
+        if ($name -notin $known) { throw "Unbekanntes Extra: $name (verfuegbar: $($known -join ', '))" }
+    }
+    return @($rows | Where-Object { $All -or $_.Group -eq 'base' -or $_.Group -in $Extra } | ForEach-Object Id)
+}
+
+function Assert-FlowConfigWritable {
+    param([object[]]$Plan)
+    if (@($Plan | Where-Object Action -ne 'Skip').Count -and
+        (Get-Process -Name 'Flow.Launcher' -ErrorAction SilentlyContinue)) {
+        throw 'Flow Launcher vor der Aktualisierung ueber das Tray-Menue beenden und erneut ausfuehren.'
+    }
 }
 
 function Install-WindowsDesktop {
-    param([string]$SourceRoot, [switch]$DryRun, [switch]$Backup, [string]$Distro, [switch]$NoAutostart)
+    param([string]$SourceRoot, [switch]$DryRun, [switch]$Backup, [string]$Distro, [switch]$NoAutostart, [string[]]$Extra = @())
+    $packages = Get-WingetPackages (Split-Path -Parent $SourceRoot) $Extra
     Assert-WindowsPrerequisites
     $selected = Select-WslDistro $Distro
-    Write-Host "WSL2: $selected"
+    if ($selected) { Write-Host "WSL2: $selected" } else { Write-Host 'WSL2: keine Distribution, nur native Windows-Konfiguration.' }
     $entries = @(Get-ConfigEntries $SourceRoot $selected -NoAutostart:$NoAutostart)
     $plan = @(Get-FilePlan $entries -Backup:$Backup)
-    $packages = @('wez.wezterm', 'ZedIndustries.Zed', 'glzr-io.glazewm', 'glzr-io.zebar', 'Microsoft.PowerShell', 'Flow-Launcher.Flow-Launcher')
+    $darkPlan = @(Get-DarkModePlan)
     if ($DryRun) {
         Write-FilePlan $plan -DryRun
+        foreach ($entry in $darkPlan) { Write-Host "$($entry.Action): HKCU\$(Get-DarkModeSubKey)\$($entry.Name) = $($entry.Value) (Dark Mode)" }
         foreach ($package in $packages) { Write-Host "Winget (falls fehlend): $package" }
         Write-Host 'Fonts: Ioskeley Mono und Ioskeley Mono Term Nerd Font v2.1.0 (Download und Inhalts-/Registry-Konfliktpruefung erst ohne -DryRun).'
         return
@@ -291,10 +395,7 @@ function Install-WindowsDesktop {
         # Write Flow settings before winget: its installer may launch Flow immediately.
         $flowPath = Join-Path $env:APPDATA 'FlowLauncher/Settings/Settings.json'
         $flowPlan = @($plan | Where-Object Path -eq $flowPath)
-        if (@($flowPlan | Where-Object Action -ne 'Skip').Count -and
-            (Get-Process -Name 'Flow.Launcher' -ErrorAction SilentlyContinue)) {
-            throw 'Flow Launcher vor der Aktualisierung ueber das Tray-Menue beenden und erneut ausfuehren.'
-        }
+        Assert-FlowConfigWritable $flowPlan
         Write-FilePlan $flowPlan
         $plan = @($plan | Where-Object Path -ne $flowPath)
         # Every destination has now been checked before packages/configs/registry are changed.
@@ -302,6 +403,7 @@ function Install-WindowsDesktop {
             Install-WingetPackage $package
         }
         Write-FontRegistryPlan $registryPlan $fontRegistry (Join-Path $env:LOCALAPPDATA 'Microsoft/Windows/Fonts')
+        Write-DarkModePlan $darkPlan (Get-DarkModeSubKey) (Join-Path $env:LOCALAPPDATA 'dotfiles/backup')
         Write-FilePlan $plan
         Write-FilePlan $fontPlan
         Write-Host 'Flow Launcher einmal im Startmenue starten; danach Alt+Leertaste. Autostart wird beim Flow-Start uebernommen.'
@@ -309,4 +411,79 @@ function Install-WindowsDesktop {
     } finally {
         if (Test-Path -LiteralPath $temp) { Remove-Item -LiteralPath $temp -Recurse -Force }
     }
+}
+
+function Update-WingetPackage {
+    param([string]$Package)
+    if (-not (Test-WingetPackage $Package)) { Write-Host "Skip: $Package (nicht installiert)"; return }
+    # UPDATE_NOT_APPLICABLE also means the installed version is current.
+    Invoke-Native 'winget.exe' @('upgrade', '--exact', '--id', $Package, '--source', 'winget', '--accept-package-agreements', '--accept-source-agreements', '--disable-interactivity') @(0, -1978335189) | Out-Host
+}
+
+function Update-WindowsDesktop {
+    param([string]$SourceRoot, [switch]$DryRun, [switch]$Backup, [string]$Distro, [switch]$NoAutostart)
+    $packages = Get-WingetPackages (Split-Path -Parent $SourceRoot) -All
+    if ($DryRun) { return $packages }
+    Assert-WindowsPrerequisites
+    $selected = Select-WslDistro $Distro
+    foreach ($package in $packages) { Update-WingetPackage $package }
+    $plan = @(Get-FilePlan @(Get-ConfigEntries $SourceRoot $selected -NoAutostart:$NoAutostart) -Backup:$Backup)
+    $flowPath = Join-Path $env:APPDATA 'FlowLauncher/Settings/Settings.json'
+    Assert-FlowConfigWritable @($plan | Where-Object Path -eq $flowPath)
+    Write-FilePlan $plan
+}
+
+function Get-DoctorReport {
+    param([string]$SourceRoot, [string[]]$Extra = @(), [string]$Distro, [switch]$NoAutostart)
+    $repo = Split-Path -Parent $SourceRoot
+    $required = Get-WingetPackages $repo $Extra
+    foreach ($package in Get-WingetPackages $repo -All) {
+        try {
+            $installed = Test-WingetPackage $package
+            $status = if ($installed) { 'installiert' } elseif ($package -in $required) { 'fehlt' } else { 'optional, fehlt' }
+            [pscustomobject]@{ Problem = -not $installed -and $package -in $required; Message = "Winget $package - $status" }
+        } catch { [pscustomobject]@{ Problem = $true; Message = "Winget $package - $_" } }
+    }
+    try {
+        $version = Invoke-Native 'claude' @('--version')
+        [pscustomobject]@{ Problem = $false; Message = "Claude: $version" }
+    } catch { [pscustomobject]@{ Problem = $true; Message = "Claude: $_" } }
+
+    try {
+        $selected = Select-WslDistro $Distro
+        Get-ConfigEntries $SourceRoot $selected -NoAutostart:$NoAutostart | ForEach-Object {
+            $path = $_.Path
+            try {
+                $item = Get-FilePlan @($_) -Backup
+                if ($item.Action -ne 'Skip') {
+                    [pscustomobject]@{ Problem = $true; Message = "$($item.Action): $path" }
+                }
+            } catch { [pscustomobject]@{ Problem = $true; Message = "${path}: $_" } }
+        }
+    } catch { [pscustomobject]@{ Problem = $true; Message = "Konfiguration: $_" } }
+
+    try {
+        foreach ($item in Get-DarkModePlan) {
+            if ($item.Action -ne 'Skip') {
+                [pscustomobject]@{ Problem = $true; Message = "$($item.Action): HKCU\$(Get-DarkModeSubKey)\$($item.Name)" }
+            }
+        }
+        $dir = Join-Path $env:LOCALAPPDATA 'Microsoft/Windows/Fonts'
+        $subKey = 'Software\Microsoft\Windows NT\CurrentVersion\Fonts'
+        foreach ($family in 'IoskeleyMono', 'IoskeleyMonoTermNerdFontMono') {
+            $fonts = @(if (Test-Path -LiteralPath $dir -PathType Container) {
+                Get-ChildItem -LiteralPath $dir -Filter "$family-*.ttf" -File
+            })
+            if ($fonts.Count -ne 20) {
+                [pscustomobject]@{ Problem = $true; Message = "Fonts ${family}: $($fonts.Count) von 20 Dateien" }
+            }
+            foreach ($font in $fonts) {
+                $entry = [pscustomobject]@{ Path = $font.FullName; RegistryName = "$($font.BaseName) (TrueType)" }
+                $item = Get-FontRegistryPlan @($entry) $subKey -Backup
+                if ($item.Action -ne 'Skip') {
+                    [pscustomobject]@{ Problem = $true; Message = "$($item.Action): HKCU\$subKey\$($item.Name)" }
+                }
+            }
+        }
+    } catch { [pscustomobject]@{ Problem = $true; Message = "Registry: $_" } }
 }

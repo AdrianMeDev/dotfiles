@@ -11,16 +11,24 @@ package.preload.wezterm = function()
     font_with_fallback = function(fonts) return fonts end }
 end
 local original = dofile
+local distro
 _G.dofile = function(path)
   if path == '/test profile/.config/wezterm/base.lua' then
     return original(root .. '/wezterm/.config/wezterm/wezterm.lua')
   elseif path == '/test profile/.config/wezterm/distro.lua' then
-    return 'Fedora Linux'
+    return distro
   end
   return original(path)
 end
+distro = nil
+local native = dofile(root .. '/windows/wezterm/wezterm.lua')
+assert(native.default_domain == 'local')
+assert(native.wsl_domains == nil)
+assert(native.default_prog[1] == 'pwsh.exe')
+distro = 'Fedora Linux'
 local config = dofile(root .. '/windows/wezterm/wezterm.lua')
 assert(config.default_domain == 'WSL:Fedora Linux')
+assert(config.default_prog == nil)
 assert(config.wsl_domains[1].distribution == 'Fedora Linux')
 assert(config.color_scheme == 'Tokyo Night')
 assert(config.font[1] == 'IoskeleyMonoTerm Nerd Font Mono')
