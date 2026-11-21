@@ -31,7 +31,7 @@ install_desktop() {
     esac
 
     if [[ $DISTRO_FAMILY == fedora ]]; then
-        run sudo dnf copr enable -y solopasha/hyprland || return $?
+        run sudo dnf copr enable -y sdegler/hyprland || return $?
     fi
     local logical pkg packages=()
     while IFS=$'\t' read -r logical group _; do
