@@ -258,6 +258,111 @@ class DotCliTests(unittest.TestCase):
         self.assertNotEqual(self.run_dot('update', '--bogus').returncode, 0)
         self.assertNotEqual(self.run_dot('update', '--profile', 'x').returncode, 0)
 
+    # --- dot doctor -------------------------------------------------------
+
+    DOCTOR_TOOLS = ('mise', 'nvim', 'node', 'uv', 'starship', 'tree-sitter', 'lazygit', 'rg', 'fd', 'fzf', 'bat',
+                    'delta', 'shfmt', 'shellcheck', 'zsh', 'tmux', 'git', 'stow', 'podman')
+
+    def setup_doctor(self, omit=(), nvim='NVIM v0.12.1', missing='', extra=()):
+        bindir = self.base / 'fakebin'
+        bindir.mkdir()
+        self.log = self.base / 'calls.log'
+        for tool in (*self.DOCTOR_TOOLS, *extra):
+            if tool in omit or tool == 'git':
+                continue
+            version = nvim if tool == 'nvim' else f'{tool} 1.0.0'
+            body = f'#!/bin/sh\necho "{tool} $*" >> "{self.log}"\n'
+            if tool == 'mise':
+                body += f'if [ "$1" = ls ]; then printf %s "{missing}"; exit 0; fi\n'
+            if tool == 'shellcheck':
+                version = 'ShellCheck\\nversion: 0.10.0'
+            body += f'printf \'{version}\\n\'\n'
+            (bindir / tool).write_text(body)
+            (bindir / tool).chmod(0o755)
+        for basic in ('bash', 'env', 'git', 'sed', 'sort', 'head', 'cat', 'mkdir', 'dirname', 'readlink',
+                      'uname', 'rm', 'mktemp', 'tr', 'grep', 'id', 'stat', 'python3', 'awk', 'diff'):
+            found = shutil.which(basic)
+            if found and not (bindir / basic).exists():
+                (bindir / basic).symlink_to(found)
+        self.env['PATH'] = f'{self.home}/.local/bin:{bindir}'
+        self.env.pop('WSL_DISTRO_NAME', None)
+        self.env.pop('WSL_INTEROP', None)
+        local = self.home / '.gitconfig-local'
+        local.write_text('[user]\n\tname = T\n\temail = t@example.invalid\n')
+        local.chmod(0o600)
+
+    def snapshot(self):
+        return sorted((str(p.relative_to(self.home)), p.stat().st_mtime_ns, p.is_symlink())
+                      for p in self.home.rglob('*'))
+
+    def test_doctor_healthy(self):
+        self.setup_doctor()
+        before = self.snapshot()
+        result = self.run_dot('doctor')
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertNotIn('[FEHLER]', result.stdout)
+        self.assertNotIn('[WARN]', result.stdout.replace('PATH enthält', ''))
+        for line in ('Distro: fedora', 'nvim: NVIM v0.12.1', 'node: node 1.0.0', 'fzf: fzf 1.0.0',
+                     'shellcheck: 0.10.0'):
+            self.assertIn(line, result.stdout)
+        self.assertEqual(self.snapshot(), before)
+        self.assertNotIn('mise install', self.log.read_text())
+
+    def test_doctor_missing_tool_fails(self):
+        self.setup_doctor(omit=('lazygit',))
+        result = self.run_dot('doctor')
+        self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
+        self.assertIn('[FEHLER]  lazygit fehlt.', result.stdout)
+
+    def test_doctor_missing_fzf_fails(self):
+        self.setup_doctor(omit=('fzf',))
+        result = self.run_dot('doctor')
+        self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
+        self.assertIn('[FEHLER]  fzf fehlt.', result.stdout)
+
+    def test_doctor_outdated_nvim_fails(self):
+        self.setup_doctor(nvim='NVIM v0.11.4')
+        result = self.run_dot('doctor')
+        self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
+        self.assertIn('[FEHLER]  nvim 0.11.4 ist zu alt', result.stdout)
+
+    def test_doctor_missing_mise_tools_fail(self):
+        self.setup_doctor(missing='node  24.1.0  missing\n')
+        result = self.run_dot('doctor')
+        self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
+        self.assertIn('[FEHLER]  Fehlende mise-Tools', result.stdout)
+        self.assertIn('node  24.1.0', result.stdout)
+
+    def test_doctor_stow_conflict_fails_without_changes(self):
+        self.setup_doctor()
+        conflict = self.home / '.config/nvim/init.lua'
+        conflict.parent.mkdir(parents=True)
+        conflict.write_text('-- mine\n')
+        before = self.snapshot()
+        result = self.run_dot('doctor')
+        self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
+        self.assertIn('[FEHLER]  Stow-Links', result.stdout)
+        self.assertIn('Dateikonflikt: .config/nvim/init.lua', result.stdout)
+        self.assertEqual(conflict.read_text(), '-- mine\n')
+        self.assertEqual(self.snapshot(), before)
+
+    def test_doctor_warns_on_fnm_and_git_identity(self):
+        self.setup_doctor(extra=('fnm',))
+        (self.home / '.gitconfig-local').chmod(0o644)
+        result = self.run_dot('doctor')
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn('[WARN]    Legacy fnm', result.stdout)
+        self.assertIn('[WARN]    ~/.gitconfig-local: Rechte 644', result.stdout)
+        (self.home / '.gitconfig-local').unlink()
+        result = self.run_dot('doctor')
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn('~/.gitconfig-local fehlt', result.stdout)
+
+    def test_doctor_help_and_bad_option(self):
+        self.assertIn('dot doctor', self.run_dot('--help').stdout)
+        self.assertEqual(self.run_dot('doctor', '--help').returncode, 0)
+        self.assertNotEqual(self.run_dot('doctor', '--bogus').returncode, 0)
+
     def test_unknown_subcommand_fails_cleanly(self):
         result = self.run_dot('unknown-cmd')
         self.assertNotEqual(result.returncode, 0)

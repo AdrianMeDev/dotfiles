@@ -12,6 +12,8 @@ Verwendung:
   dot install [OPTIONEN...]   Führt install.sh mit den angegebenen Optionen aus.
   dot update [OPTIONEN...]    Aktualisiert System, mise-Tools, Flatpaks und zsh-Plugins
                               (--dry-run, --profile desktop|headless, --help).
+  dot doctor                  Prüft Umgebung, Tool-Versionen, mise, Stow-Links, Git-Identität
+                              und fnm-Überreste (read-only; Exit 1 bei [FEHLER]).
   dot help | -h | --help     Zeigt diese Hilfe.
 EOF
 }
@@ -37,6 +39,16 @@ case "$1" in
         # shellcheck source=scripts/update.sh
         source "$REPO_DIR/scripts/update.sh"
         dot_update "$@"
+        ;;
+    doctor)
+        shift
+        # shellcheck source=scripts/common.sh
+        source "$REPO_DIR/scripts/common.sh"
+        # shellcheck source=scripts/detect.sh
+        source "$REPO_DIR/scripts/detect.sh"
+        # shellcheck source=scripts/doctor.sh
+        source "$REPO_DIR/scripts/doctor.sh"
+        dot_doctor "$@"
         ;;
     help|-h|--help)
         usage
