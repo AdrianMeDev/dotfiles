@@ -6,24 +6,14 @@ wget	base	wget	wget	wget
 unzip	base	unzip	unzip	unzip
 zip	base	zip	zip	zip
 tar	base	tar	tar	tar
-jq	base	jq	jq	jq
+xz	base	xz	xz	xz-utils
 python3	base	python	python3	python3
-ripgrep	base	ripgrep	ripgrep	ripgrep
-fd	base	fd	fd-find	fd-find
-fzf	base	fzf	fzf	fzf
-bat	base	bat	bat	bat
 btop	base	btop	btop	btop
 htop	base	htop	htop	htop
 tree	base	tree	tree	tree
 tmux	base	tmux	tmux	tmux
 zsh	base	zsh	zsh	zsh
 stow	base	stow	stow	stow
-zoxide	base	zoxide	zoxide	zoxide
-direnv	base	direnv	direnv	direnv
-github-cli	base	github-cli	gh	gh
-shellcheck	base	shellcheck	ShellCheck	shellcheck
-# Fedora 45 retired shfmt (golang-mvdan-sh); M2 installs it everywhere via mise.
-shfmt	base	shfmt	-	shfmt
 base-devel	base	base-devel	gcc,gcc-c++,make	build-essential
 cmake	base	cmake	cmake	cmake
 pkg-config	base	pkgconf	pkgconf-pkg-config	pkg-config

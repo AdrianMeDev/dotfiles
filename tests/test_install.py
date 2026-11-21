@@ -620,6 +620,16 @@ class ConfigTests(unittest.TestCase):
         fzf = (REPO / 'zsh/.config/zsh/fzf.zsh').read_text()
         self.assertIn('bg:#1a1b26', fzf)
         self.assertFalse((REPO / 'zed/.config/zed/themes/Neovim-custom.json').exists())
+        mise = tomllib.loads((REPO / 'mise/.config/mise/config.toml').read_text())
+        self.assertEqual(mise['settings']['disable_tools'], ['python'])
+        self.assertEqual(mise['settings']['idiomatic_version_file_enable_tools'], ['node'])
+        self.assertEqual(mise['tools']['node'], 'lts')
+        for tool in (
+            'neovim', 'uv', 'starship', 'tree-sitter', 'lazygit', 'ripgrep',
+            'fd', 'fzf', 'bat', 'delta', 'shfmt', 'shellcheck', 'zoxide',
+            'direnv', 'gh', 'jq',
+        ):
+            self.assertIn(tool, mise['tools'])
 
     def test_ci_workflow(self):
         workflow = (REPO / '.github/workflows/ci.yml').read_text()

@@ -74,7 +74,7 @@ alles wird in der neuesten Version installiert und mit `dot update` aktualisiert
 - **Depends on:** –
 - **Size:** L, ~7 commits
 
-### M2 [ ] Tools über mise + `dot`-Befehl
+### M2 [~] Tools über mise + `dot`-Befehl
 - **Goal:** Alle Dev-Tools in neuester Version über mise; Installation, Update und Diagnose über `dot`.
 - **Includes:** globale mise-Config (Neovim, Node LTS, uv, Starship, tree-sitter, lazygit, ripgrep, fd, fzf, bat, delta …), Migration fnm → mise in zsh, `dot install|update|doctor`, Update-Pfad pro Familie
 - **Done when:** frischer Container → `dot install` → `nvim`, `node`, `uv` vorhanden; `dot update` aktualisiert System, mise und Plugins; `dot doctor` zeigt Versionen und Probleme
