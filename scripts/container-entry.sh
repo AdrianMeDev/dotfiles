@@ -19,33 +19,61 @@ chmod 0440 /etc/sudoers.d/dev
 
 as_dev() { sudo --preserve-env=GITHUB_TOKEN -u dev -i bash -c "$1"; }
 
-dot=/dotfiles/dot/.local/bin/dot
+# The repository is cloned by bootstrap.sh itself (no pre-cloned checkout), into ~/dotfiles.
+# shellcheck disable=SC2016 # expanded by the inner shell on purpose
+dot='$HOME/dotfiles/dot/.local/bin/dot'
+# /dotfiles is a read-only mount owned by another user; git is not installed yet, so use env config.
+# shellcheck disable=SC2016 # expanded by the inner shell on purpose
+bootstrap='GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=safe.directory GIT_CONFIG_VALUE_0=/dotfiles bash -s -- --repo /dotfiles'
 
-# --dry-run must not write anything below $HOME.
+# bootstrap.sh --dry-run (piped like curl | bash) must not write anything below $HOME.
 # shellcheck disable=SC2016 # expanded by the inner shell on purpose
 snapshot() { as_dev 'find "$HOME" -printf "%p %y %s %T@\n" | sort'; }
 before=$(snapshot)
-preview=$(as_dev "$dot install --dry-run")
+preview=$(as_dev "$bootstrap --dry-run < /dotfiles/bootstrap.sh")
 printf '%s\n' "$preview"
-grep -qF "Distro-Familie: $family" <<< "$preview" || { printf 'dot install --dry-run: Familie %s nicht erkannt.\n' "$family" >&2; exit 1; }
-[[ $before == "$(snapshot)" ]] || { printf 'dot install --dry-run hat Dateien geschrieben.\n' >&2; exit 1; }
+grep -qF "Distro-Familie: $family" <<< "$preview" || { printf 'bootstrap.sh --dry-run: Familie %s nicht erkannt.\n' "$family" >&2; exit 1; }
+grep -qF 'git' <<< "$preview" || { printf 'bootstrap.sh --dry-run: git-Installation fehlt in der Vorschau.\n' >&2; exit 1; }
+[[ $before == "$(snapshot)" ]] || { printf 'bootstrap.sh --dry-run hat Dateien geschrieben.\n' >&2; exit 1; }
+! as_dev 'command -v git >/dev/null' || { printf 'bootstrap.sh --dry-run hat git installiert.\n' >&2; exit 1; }
 
 for run in 1 2; do
-    printf '==> dot install (Lauf %s)\n' "$run"
-    as_dev "$dot install"
-    # The second run must be a no-op: no backup directory may have been created.
+    printf '==> bootstrap.sh (Lauf %s)\n' "$run"
+    as_dev "$bootstrap < /dotfiles/bootstrap.sh"
+    # Neither run may silently replace existing files with backups.
+    # shellcheck disable=SC2016 # expanded by the inner shell on purpose
+    backups=$(as_dev 'find "$HOME/.local/state/dotfiles/backups" -mindepth 1 -print 2>/dev/null || true')
+    [[ -z $backups ]] || { printf 'bootstrap.sh (Lauf %s) hat Backups erzeugt: %s\n' "$run" "$backups" >&2; exit 1; }
     if ((run == 1)); then
         # shellcheck disable=SC2016 # expanded by the inner shell on purpose
-        as_dev 'rm -rf "$HOME/.local/state/dotfiles/backups"'
+        as_dev 'git --version && git -C "$HOME/dotfiles" rev-parse --verify HEAD' >/dev/null
+        # shellcheck disable=SC2016 # expanded by the inner shell on purpose
+        repo_state=$(as_dev 'git -C "$HOME/dotfiles" rev-parse HEAD; git -C "$HOME/dotfiles" status --porcelain')
+    else
+        # shellcheck disable=SC2016 # expanded by the inner shell on purpose
+        [[ $repo_state == "$(as_dev 'git -C "$HOME/dotfiles" rev-parse HEAD; git -C "$HOME/dotfiles" status --porcelain')" ]] || {
+            printf 'Zweiter bootstrap.sh hat den Klon verändert.\n' >&2
+            exit 1
+        }
     fi
 done
-# shellcheck disable=SC2016 # expanded by the inner shell on purpose
-backups=$(as_dev 'ls -A "$HOME/.local/state/dotfiles/backups" 2>/dev/null || true')
-[[ -z $backups ]] || { printf 'Zweiter dot install hat Backups erzeugt: %s\n' "$backups" >&2; exit 1; }
 
 printf '==> Werkzeuge prüfen\n'
 as_dev 'zsh -c "command -v dot && node --version && uv --version"'
 as_dev 'zsh -c "claude --version && pi --version"'
+as_dev 'zsh -c "eza --version && yazi --version && tldr --version && just --version && lazydocker --version"'
+
+printf '==> Bootstrap-Links prüfen\n'
+sudo --preserve-env=GITHUB_TOKEN -u dev -i bash -s <<'EOF'
+    set -euo pipefail
+    for rel in dot/.local/bin/dot zsh/.zshenv mise/.config/mise/config.toml; do
+        link="$HOME/${rel#*/}"
+        [[ -L $link && $(readlink -f "$link") == "$HOME/dotfiles/$rel" ]] || {
+            printf 'Bootstrap-Link zeigt nicht in den Klon: %s\n' "$link" >&2
+            exit 1
+        }
+    done
+EOF
 
 printf '==> Agent-Config prüfen\n'
 sudo --preserve-env=GITHUB_TOKEN -u dev -i bash -s <<'EOF'
@@ -56,7 +84,7 @@ sudo --preserve-env=GITHUB_TOKEN -u dev -i bash -s <<'EOF'
         [[ -f $HOME/$f ]] || { printf 'Agent-Datei fehlt: %s\n' "$f" >&2; exit 1; }
     done
     # The theme is rendered (copied), not Stowed: it must equal the repo source.
-    cmp -s "$HOME/.pi/agent/themes/tokyo-night.json" /dotfiles/agent-config/pi/themes/tokyo-night.json || {
+    cmp -s "$HOME/.pi/agent/themes/tokyo-night.json" "$HOME/dotfiles/agent-config"/pi/themes/tokyo-night.json || {
         printf 'pi-Theme weicht vom Repo ab: ~/.pi/agent/themes/tokyo-night.json\n' >&2
         exit 1
     }
@@ -100,7 +128,7 @@ sudo --preserve-env=GITHUB_TOKEN -u dev -i bash -s <<'EOF'
         link="$HOME/.config/zed/$f"
         [[ -L $link ]] || { printf 'Zed-Link ist kein Symlink: %s\n' "$link" >&2; exit 1; }
         target=$(readlink -f "$link")
-        [[ $target == "/dotfiles/zed-config/.config/zed/$f" ]] || {
+        [[ $target == "$HOME/dotfiles/zed-config/.config/zed/$f" ]] || {
             printf 'Zed-Link zeigt falsch: %s -> %s\n' "$link" "$target" >&2
             exit 1
         }
@@ -125,7 +153,7 @@ sudo --preserve-env=GITHUB_TOKEN -u dev -i bash -s <<'EOF'
         link="$HOME/$home_rel"
         [[ -L $link ]] || { printf 'Theme-Link ist kein Symlink: %s\n' "$link" >&2; exit 1; }
         target=$(readlink -f "$link")
-        [[ $target == "/dotfiles/$rel" ]] || {
+        [[ $target == "$HOME/dotfiles/$rel" ]] || {
             printf 'Theme-Link zeigt falsch: %s -> %s\n' "$link" "$target" >&2
             exit 1
         }
@@ -147,7 +175,7 @@ sudo --preserve-env=GITHUB_TOKEN -u dev -i bash -s <<'EOF'
     rm -rf /tmp/x
     zsh -c "dot zed-template dotnet /tmp/x"
     for f in settings.json tasks.json debug.json; do
-        cmp -s "/tmp/x/.zed/$f" "/dotfiles/zed-config/projects/dotnet/.zed/$f" || {
+        cmp -s "/tmp/x/.zed/$f" "$HOME/dotfiles/zed-config/projects/dotnet/.zed/$f" || {
             printf 'Zed-Vorlage fehlt oder weicht ab: %s\n' "$f" >&2
             exit 1
         }
@@ -167,7 +195,7 @@ sudo --preserve-env=GITHUB_TOKEN -u dev -i bash -s <<'EOF'
         link="$HOME/.config/hypr/$f"
         [[ -L $link ]] || { printf 'Hypr-Link ist kein Symlink: %s\n' "$link" >&2; exit 1; }
         target=$(readlink -f "$link")
-        [[ $target == "/dotfiles/hypr/.config/hypr/$f" ]] || {
+        [[ $target == "$HOME/dotfiles/hypr/.config/hypr/$f" ]] || {
             printf 'Hypr-Link zeigt falsch: %s -> %s\n' "$link" "$target" >&2
             exit 1
         }

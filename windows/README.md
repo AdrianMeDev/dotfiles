@@ -17,9 +17,28 @@ Als normaler Windows-Benutzer ausführen; einzelne Winget-Pakete oder `wsl --ins
 können ihre eigene UAC-Abfrage anzeigen. Falls bereits eine WSL-Distribution
 eingerichtet ist, muss Windows-Interop in WSL aktiv sein.
 
-In Windows PowerShell 5.1 oder PowerShell 7, aus dem Repository:
+In Windows PowerShell 5.1 oder PowerShell 7, ohne vorheriges Klonen:
 
 ```powershell
+irm https://raw.githubusercontent.com/AdrianMeDev/dotfiles/main/bootstrap.ps1 | iex
+```
+
+Der Bootstrap installiert Git bei Bedarf über Winget, klont per HTTPS nach
+`$env:USERPROFILE\dotfiles` und startet `windows/dot.ps1 install`.
+Ein vorhandener Klon wird ohne Pull wiederverwendet; ein anderes, nicht leeres
+Zielverzeichnis wird abgelehnt. Anschließend liegen die Skripte im Klon.
+Für eine Vorschau ohne Klon oder Installation lässt sich der geladene Code mit
+Parametern ausführen (der Skriptdownload selbst benötigt Internet):
+
+```powershell
+& ([scriptblock]::Create((irm https://raw.githubusercontent.com/AdrianMeDev/dotfiles/main/bootstrap.ps1))) -DryRun
+```
+
+Ohne vorhandenen Klon zeigt diese Vorschau nur Git-/Klon-Schritte. Den vollständigen
+Installationsplan nach dem Klonen prüfen; lokale Aufrufe aus dem Repository:
+
+```powershell
+cd "$env:USERPROFILE\dotfiles"
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\bootstrap.ps1 -DryRun
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\bootstrap.ps1
 ```

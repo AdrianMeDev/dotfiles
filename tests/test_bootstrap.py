@@ -71,6 +71,34 @@ class BootstrapTests(unittest.TestCase):
         self.assertTrue((self.target / '.git').exists())
         self.assertEqual(self.dot_log.read_text().strip(), 'install --profile headless --backup')
 
+    def test_piped_bootstrap_preview_install_and_repeat(self):
+        def piped_boot(*args):
+            return subprocess.run(
+                [BASH, '-s', '--', '--repo', str(self.source), *args],
+                input=SCRIPT.read_text(), env=self.env(), capture_output=True,
+                text=True, timeout=60,
+            )
+
+        before = snapshot(self.home)
+        preview = piped_boot('--dry-run')
+        self.assertEqual(preview.returncode, 0, preview.stderr)
+        self.assertEqual(snapshot(self.home), before)
+        self.assertFalse(self.dot_log.exists())
+
+        first = piped_boot('--profile', 'headless')
+        self.assertEqual(first.returncode, 0, first.stderr)
+        self.assertTrue((self.target / '.git').is_dir())
+        # Compare all clone contents, including Git metadata, across the second run.
+        before = {str(p.relative_to(self.target)): p.read_bytes()
+                  for p in self.target.rglob('*') if p.is_file()}
+        second = piped_boot('--profile', 'headless')
+        self.assertEqual(second.returncode, 0, second.stderr)
+        after = {str(p.relative_to(self.target)): p.read_bytes()
+                 for p in self.target.rglob('*') if p.is_file()}
+        self.assertEqual(after, before)
+        self.assertEqual(self.dot_log.read_text().splitlines(),
+                         ['install --profile headless'] * 2)
+
     def test_custom_dir_and_branch(self):
         subprocess.run(['git', '-C', str(self.source), 'branch', 'feature'], check=True)
         target = self.base / 'elsewhere'

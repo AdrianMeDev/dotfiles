@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Läuft install.sh in frischen Distro-Containern: scripts/container-matrix.sh [arch|fedora|debian ...]
+# Runs bootstrap.sh in fresh distro containers: scripts/container-matrix.sh [arch|fedora|debian ...]
 set -euo pipefail
 
 REPO_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd -P)
@@ -27,11 +27,19 @@ fi
 env_args=()
 [[ -z ${GITHUB_TOKEN:-} ]] || env_args=(-e GITHUB_TOKEN)
 
+# Linked worktrees have a .git file pointing outside REPO_DIR. Keep that path
+# accessible for bootstrap's local clone without changing the host repository.
+mount_args=(-v "$REPO_DIR:/dotfiles:ro,z")
+if [[ -f $REPO_DIR/.git ]]; then
+    git_common_dir=$(git -C "$REPO_DIR" rev-parse --path-format=absolute --git-common-dir)
+    mount_args+=(-v "$git_common_dir:$git_common_dir:ro,z")
+fi
+
 failed=()
 passed=()
 for distro in "${distros[@]}"; do
     printf '==> %s (%s)\n' "$distro" "${IMAGES[$distro]}"
-    if "$engine" run --rm "${env_args[@]}" -v "$REPO_DIR:/dotfiles:ro,z" "${IMAGES[$distro]}" \
+    if "$engine" run --rm "${env_args[@]}" "${mount_args[@]}" "${IMAGES[$distro]}" \
         bash /dotfiles/scripts/container-entry.sh "$distro"; then
         passed+=("$distro")
     else
