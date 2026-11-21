@@ -67,7 +67,7 @@ alles wird in der neuesten Version installiert und mit `dot update` aktualisiert
 
 ## Milestones
 
-### M1 [ ] Multi-Distro-Kern
+### M1 [~] Multi-Distro-Kern
 - **Goal:** `install.sh` läuft auf Arch/CachyOS, Fedora und Debian/Ubuntu statt nur auf Fedora.
 - **Includes:** `detect` (Familie, WSL, Profil desktop/headless), `pkg`-Abstraktion (paru bzw. yay vorhanden, sonst paru bootstrappen), `manifests/packages.tsv`, `system`-Modul pro Familie, Fedora-Sperre entfernen, Tests umbauen, Podman-Container-Matrix + GitHub-Actions-CI
 - **Done when:** `./install.sh --only system` läuft real in `archlinux`-, `fedora`- und `debian`-Containern grün; `--dry-run` auf diesem CachyOS zeigt einen Arch-Plan
