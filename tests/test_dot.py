@@ -311,7 +311,8 @@ class DotCliTests(unittest.TestCase):
     # --- dot doctor -------------------------------------------------------
 
     DOCTOR_TOOLS = ('mise', 'nvim', 'node', 'uv', 'starship', 'tree-sitter', 'lazygit', 'rg', 'fd', 'fzf', 'bat',
-                    'delta', 'shfmt', 'shellcheck', 'zsh', 'tmux', 'git', 'stow', 'podman', 'claude', 'pi', 'ollama')
+                    'delta', 'shfmt', 'shellcheck', 'eza', 'yazi', 'tldr', 'just', 'lazydocker',
+                    'zsh', 'tmux', 'git', 'stow', 'podman', 'claude', 'pi', 'ollama')
 
     def setup_doctor(self, omit=(), nvim='NVIM v0.12.1', missing='', extra=(), agents=True):
         bindir = self.base / 'fakebin'
@@ -364,6 +365,13 @@ class DotCliTests(unittest.TestCase):
         result = self.run_dot('doctor')
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         self.assertIn('[WARN]    ollama fehlt (optional).', result.stdout)
+
+    def test_doctor_extra_tools_missing(self):
+        self.setup_doctor(omit=('eza', 'yazi', 'tldr', 'just', 'lazydocker'))
+        result = self.run_dot('doctor')
+        self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
+        for label in ('eza', 'yazi', 'tealdeer', 'just', 'lazydocker'):
+            self.assertIn(f'[FEHLER]  {label} fehlt.', result.stdout)
 
     def test_doctor_agent_config_ok_missing_modified(self):
         self.setup_doctor()

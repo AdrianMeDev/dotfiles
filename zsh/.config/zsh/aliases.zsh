@@ -9,6 +9,12 @@ alias pps='podman ps'
 alias pc='podman compose'
 alias ..='cd ..'
 alias ...='cd ../..'
-alias ll='ls -lah'
+if (( $+commands[eza] )); then
+    alias ls='eza --group-directories-first --icons=auto'
+    alias ll='eza -lah --group-directories-first --icons=auto'
+    alias lt='eza --tree --level=2 --icons=auto'
+else
+    alias ll='ls -lah'
+fi
 alias uvr='uv run'
 alias uvs='uv sync'

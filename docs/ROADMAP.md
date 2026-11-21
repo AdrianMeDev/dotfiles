@@ -123,7 +123,7 @@ alles wird in der neuesten Version installiert und mit `dot update` aktualisiert
 - **Depends on:** M2, M7
 - **Size:** M, ~5 commits
 
-### M9 [ ] Ein-Befehl-Bootstrap + Zusatztools
+### M9 [x] Ein-Befehl-Bootstrap + Zusatztools
 - **Goal:** Ein Befehl auf frischem CachyOS oder Windows, ohne vorher manuell zu klonen.
 - **Includes:** `bootstrap.sh` (curl|bash, HTTPS-Clone nach `~/dotfiles`, startet `dot install`), zsh als Login-Shell (mit Rückfrage), Zusatztools: eza, yazi, tealdeer, just, lazydocker/podman-tui
 - **Done when:** frischer Container und frische CachyOS-VM: ein Befehl → komplette Umgebung; zweiter Lauf ändert nichts
@@ -163,3 +163,4 @@ alles wird in der neuesten Version installiert und mit `dot update` aktualisiert
 - 2026-11-21: M6 Keybinding-Vertrag + Hyprland-Desktop abgeschlossen (`manifests/keybindings.tsv` + Paritätstests, Stow-Paket `hypr/` mit Lua-Config für Hyprland >= 0.57, `desktop`- und `theme`-Modul, `dot doctor` und Container-Matrix prüfen Hyprland)
 - 2026-11-21: M7 done (Native Windows 11 setup with bootstrap.ps1 and dot.ps1)
 - 2026-11-21: M8 WSL2-Arch-Integration abgeschlossen (`wsl --install archlinux`, `windows/wsl-bootstrap.sh`, `.wslconfig` mit `networkingMode=mirrored`, WezTerm-Arch-Domain, Zed Remote-WSL, `dot.ps1 update`/`doctor` für WSL, Arch-Container-Check)
+- 2026-11-21: M9 Ein-Befehl-Bootstrap + Zusatztools implementiert (Linux `curl | bash`, Windows `irm | iex`, zsh-Rückfrage, eza/yazi/tealdeer/just/lazydocker, Bootstrap-Containerprüfungen); frische CachyOS-VM-Abnahme siehe README, manuelle Freigabe offen.

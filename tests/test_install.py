@@ -374,8 +374,81 @@ printf 'cached theme\\n' > "$cache/themes.bin"
         self.install('--only', 'dotfiles')
         self.assertEqual(local.read_bytes(), before)
 
+    def prepare_login_shell(self, shell):
+        bin_dir = self.base / 'bin'
+        bin_dir.mkdir(exist_ok=True)
+        zsh = bin_dir / 'zsh'
+        zsh.write_text('#!/bin/sh\nexit 0\n')
+        getent = bin_dir / 'getent'
+        getent.write_text(f'#!/bin/sh\necho "user:x:1000:1000::/home/user:{shell}"\n')
+        chsh = bin_dir / 'chsh'
+        chsh.write_text('#!/bin/sh\nprintf \'%s\\n\' "$*" >> "$CHSH_TEST_LOG"\n')
+        for stub in (zsh, getent, chsh):
+            stub.chmod(0o755)
+        shells = self.base / 'shells'
+        shells.write_text(f'/bin/sh\n{zsh}\n')
+        self.env['PATH'] = str(bin_dir) + os.pathsep + self.env['PATH']
+        self.env['SHELLS_FILE'] = str(shells)
+        self.env['CHSH_TEST_LOG'] = str(self.base / 'chsh-calls')
+        return zsh
+
+    def run_pty(self, command, answers):
+        master, slave = pty.openpty()
+        process = subprocess.Popen(command, cwd=self.base, env=self.env, stdin=slave, stdout=slave, stderr=slave)
+        os.close(slave)
+        output = b''
+        try:
+            os.write(master, answers)
+            deadline = time.monotonic() + 30
+            while time.monotonic() < deadline:
+                if select.select([master], [], [], 0.1)[0]:
+                    try:
+                        output += os.read(master, 65536)
+                    except OSError:
+                        break
+                if process.poll() is not None:
+                    break
+            self.assertEqual(process.wait(timeout=3), 0, output.decode())
+        finally:
+            if process.poll() is None:
+                process.kill()
+                process.wait()
+            os.close(master)
+        return output.decode()
+
+    def test_zsh_login_shell_offer(self):
+        self.require_stow()
+        self.run_command(['git', 'config', '--global', 'user.name', 'Example Developer'])
+        self.run_command(['git', 'config', '--global', 'user.email', 'dev@example.com'])
+        zsh = self.prepare_login_shell('/bin/bash')
+        calls = Path(self.env['CHSH_TEST_LOG'])
+        installer = ['bash', str(REPO / 'install.sh'), '--only', 'dotfiles', '--backup']
+
+        result = self.install('--only', 'dotfiles', '--backup', '--dry-run')
+        self.assertIn('chsh -s', result.stdout)
+        self.assertFalse(calls.exists())
+
+        result = self.install('--only', 'dotfiles', '--backup')
+        self.assertIn(f'chsh -s {zsh}', result.stdout)
+        self.assertFalse(calls.exists())
+
+        output = self.run_pty(installer, b'n\n')
+        self.assertIn('[j/N]', output)
+        self.assertFalse(calls.exists())
+
+        output = self.run_pty(installer, b'j\n')
+        self.assertEqual(output.count('[j/N]'), 1)
+        self.assertEqual(calls.read_text(), f'-s {zsh}\n')
+
+        calls.unlink()
+        self.prepare_login_shell('/usr/bin/zsh')
+        output = self.run_pty(installer, b'j\n')
+        self.assertNotIn('[j/N]', output)
+        self.assertFalse(calls.exists())
+
     def test_git_identity_interactive(self):
         self.require_stow()
+        self.prepare_login_shell('/usr/bin/zsh')
         master, slave = pty.openpty()
         process = subprocess.Popen(['bash', str(REPO / 'install.sh'), '--only', 'dotfiles'],
                                    cwd=self.base, env=self.env, stdin=slave, stdout=slave, stderr=slave)
@@ -436,6 +509,30 @@ printf 'cached theme\\n' > "$cache/themes.bin"
             self.assertEqual(result.stderr, '')
             self.assertEqual(result.stdout, '')
         self.assertFalse((self.home / '.local/share/zsh/plugins').exists())
+
+    def test_zsh_eza_aliases(self):
+        zsh = self.prepare_zsh()
+        bin_dir = self.base / 'bin'
+        bin_dir.mkdir()
+        for cmd in ['mkdir', 'uname', 'dirname', 'basename', 'cat', 'rm', 'mv', 'chmod', 'grep']:
+            executable = shutil.which(cmd)
+            if executable:
+                (bin_dir / cmd).symlink_to(executable)
+        self.env['PATH'] = str(bin_dir)
+        probe = 'printf "%s\\n%s\\n%s\\n" "${aliases[ls]-}" "${aliases[ll]-}" "${aliases[lt]-}"'
+        without_eza = self.run_command([zsh, '-ic', probe])
+        self.assertEqual(without_eza.stderr, '')
+        self.assertEqual(without_eza.stdout.splitlines(), ['', 'ls -lah', ''])
+
+        eza = bin_dir / 'eza'
+        eza.write_text('#!/bin/sh\nexit 0\n')
+        eza.chmod(0o755)
+        with_eza = self.run_command([zsh, '-ic', probe])
+        self.assertEqual(with_eza.stderr, '')
+        ls_alias, ll_alias, lt_alias = with_eza.stdout.splitlines()
+        self.assertTrue(ls_alias.startswith('eza '), ls_alias)
+        self.assertTrue(ll_alias.startswith('eza '), ll_alias)
+        self.assertTrue(lt_alias.startswith('eza '), lt_alias)
 
     def test_fish_migration_preserves_private_and_foreign_files(self):
         self.require_stow()
@@ -857,9 +954,11 @@ class ConfigTests(unittest.TestCase):
         for tool in (
             'neovim', 'uv', 'starship', 'tree-sitter', 'lazygit', 'ripgrep',
             'fd', 'fzf', 'bat', 'delta', 'shfmt', 'shellcheck', 'zoxide',
-            'direnv', 'gh', 'jq',
+            'direnv', 'gh', 'jq', 'eza', 'yazi', 'tealdeer', 'just', 'lazydocker',
         ):
             self.assertIn(tool, mise['tools'])
+        for tool in ('eza', 'yazi', 'tealdeer', 'just', 'lazydocker'):
+            self.assertEqual(mise['tools'][tool], 'latest')
 
     def test_ci_workflow(self):
         workflow = (REPO / '.github/workflows/ci.yml').read_text()

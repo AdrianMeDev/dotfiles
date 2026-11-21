@@ -11,22 +11,27 @@ Für **Windows 11 mit Arch Linux unter WSL2** gibt es ein separates
 
 ## Installation
 
-Auf dem frisch installierten System zuerst Git installieren, dieses Repository klonen
-und als normaler Benutzer starten. HTTPS-Klonen funktioniert auch vor der SSH-Einrichtung.
+Auf einem frischen Linux als normaler Benutzer mit sudo, Bash, curl und Internetzugang starten.
+Git und Python werden bei Bedarf installiert, das Repository per HTTPS nach `~/dotfiles`
+geklont und `dot install` ausgeführt. Ein vorheriger Klon ist nicht nötig.
 
 ```bash
-# Arch / CachyOS:
-sudo pacman -S --needed git
-# Fedora:
-sudo dnf install -y git
-# Debian / Ubuntu:
-sudo apt-get update && sudo apt-get install -y git
-
-# Dieses Repository nach ~/dotfiles klonen, dann:
-cd ~/dotfiles
-./install.sh --dry-run
-./install.sh
+# Vorschau ohne Installation oder Klon:
+curl -fsSL https://raw.githubusercontent.com/AdrianMeDev/dotfiles/main/bootstrap.sh | bash -s -- --dry-run
+# Installation:
+curl -fsSL https://raw.githubusercontent.com/AdrianMeDev/dotfiles/main/bootstrap.sh | bash
 ```
+
+`--repo URL`, `--dir PFAD` und `--branch NAME` steuern den Klon; weitere Optionen
+wie `--profile headless`, `--extras java,rust` und `--backup` gehen an `dot install`
+(`bash -s -- --backup`). Vorhandene Klone werden unverändert wiederverwendet, ohne Pull.
+Die Vorschau vor dem Klonen zeigt nur die Bootstrap-Schritte; den vollständigen Modulplan
+zeigt danach `~/dotfiles/install.sh --dry-run`.
+
+Nach erfolgreicher Verlinkung fragt der Installer im Terminal:
+`Login-Shell auf …/zsh umstellen? [j/N]`. Nur eine Bestätigung mit `j` oder `y` führt
+`chsh -s` aus; danach neu anmelden. Ohne Terminal erscheint stattdessen der manuelle
+Befehl. Ist zsh bereits Login-Shell, entfällt die Rückfrage.
 
 Nach der Installation steht der Befehl `dot` (Stow-Paket `dot`, `~/.local/bin/dot`) bereit:
 `dot install [OPTIONEN]` ruft `install.sh` auf, `dot update [--dry-run] [--profile …]` aktualisiert
@@ -69,7 +74,7 @@ Fremde Verzeichnis-Symlinks müssen vorab manuell aufgelöst werden; der Install
 | Modul | Inhalt |
 | --- | --- |
 | `system` | System-Update (`pacman`/`dnf`/`apt-get`), Compiler/Build-Werkzeuge, Git/GitHub CLI, Stow, zsh, tmux, zoxide, direnv, fzf, ripgrep, fd, bat, jq, btop/htop, tree, ShellCheck, shfmt (Arch/Debian), Clipboard, Podman, Flatpak (bei `desktop`) sowie auf Arch der AUR-Helfer |
-| `tools` | mise und alle Dev-CLI-Tools über mise in der neuesten Version (Neovim >= 0.12, Node LTS, uv, Starship, tree-sitter, lazygit, ripgrep, fd, fzf, bat, delta …; Konfiguration: `mise/config.toml`), Extras `java`/`rust` |
+| `tools` | mise und alle Dev-CLI-Tools über mise in der neuesten Version (Neovim >= 0.12, Node LTS, uv, Starship, tree-sitter, lazygit, ripgrep, fd, fzf, bat, delta, eza, yazi, tealdeer, just, lazydocker; Konfiguration: `mise/.config/mise/config.toml`), Extras `java`/`rust` |
 | `apps` | .NET SDK 10 (Arch/Fedora), WezTerm, Zed, Claude Code (nativer Installer), pi (npm über mise-Node), optional Ollama (Extras `ollama`, `ollama-models`) |
 | `agents` | rendert `agent-config/` nach `~/.claude` und `~/.pi/agent` (Claude-Frontmatter der Skills wird eingefügt, `claude-frontmatter.txt` nicht kopiert); abweichende Dateien nur mit `--backup` ersetzt, idempotent |
 | `desktop` | Hyprland-Stack aus der Manifest-Gruppe `hypr` (Hyprland, Waybar, fuzzel, mako, hyprlock, hypridle, hyprpaper, cliphist, grim, slurp, Portal, Polkit-Agent); nur Arch/Fedora, nur Profil `desktop`, nicht unter WSL (Fedora über COPR `solopasha/hyprland`) |
@@ -83,6 +88,9 @@ bei `--profile desktop`, `dev` für gezielte Abfragen wie `.NET SDK` oder `wezte
 Auf Arch verwendet der Installer `paru` oder `yay`, falls vorhanden, und installiert sonst `paru`.
 Auf Debian wird `.NET SDK` in `manifests/packages.tsv` übersprungen.
 Ohne Optionen werden alle Module in dieser Reihenfolge ausgeführt.
+Die zusätzlichen CLI-Werkzeuge sind `eza` (Dateilisten, zsh-Aliase `ls`/`ll`/`lt`),
+`yazi` (Dateimanager), `tldr` (Kurzreferenzen über tealdeer), `just` (Projektaufgaben)
+und `lazydocker` (Container-TUI; benötigt einen erreichbaren Docker-kompatiblen Socket).
 Einzelne Module ziehen ihre Voraussetzungen nicht automatisch nach:
 
 ```bash
@@ -437,16 +445,36 @@ CONTAINER_ENGINE=docker bash scripts/container-matrix.sh arch debian
 ```
 
 Ohne `CONTAINER_ENGINE` nutzt das Skript `podman` oder fällt auf `docker` zurück und führt
-pro Container als normaler Benutzer aus: `dot install --dry-run` (Familie erkannt, nichts geschrieben),
-zweimal `dot install` (der zweite Lauf darf keine Backups erzeugen), dann `dot`, `nvim` (>= 0.12), `node`,
-`uv`, `claude --version` und `pi --version` über `zsh -c`, die Dateien unter `~/.claude` und `~/.pi/agent`
+pro Container als normaler Benutzer aus: gepiptes `bootstrap.sh --dry-run` (git fehlt,
+Familie erkannt, nichts unter `$HOME` geschrieben), zweimal `bootstrap.sh --repo /dotfiles`
+(Git wird installiert, Bootstrap klont selbst nach `~/dotfiles`; keine Backups und beim
+zweiten Lauf unveränderter Klon). Symlink-Ziele müssen im Klon liegen. Danach prüft sie
+`dot`, `nvim` (>= 0.12), `node`, `uv`, `claude --version`, `pi --version` sowie
+`eza`, `yazi`, `tldr`, `just` und `lazydocker` über `zsh -c`, die Dateien unter `~/.claude` und `~/.pi/agent`
 (gerendertes Claude-Frontmatter, keine `claude-frontmatter.txt`), `dot update --dry-run`,
 `dot update` und `dot doctor`. Auf Arch/Fedora prüft die Matrix zusätzlich die `hypr`-Links
 (`hyprland.lua`, `bindings.lua`) und führt `desktop` und `theme` mit `--profile desktop --dry-run` aus
 (schreibt nichts). Ist `GITHUB_TOKEN` gesetzt, wird er an die Container durchgereicht.
 Die GitHub-Actions-CI (`.github/workflows/ci.yml`) führt sowohl `scripts/check.sh` als auch
 die Container-Matrix für `arch`, `fedora` und `debian` automatisch aus.
+Der Bootstrap klont den aktuellen Commit des eingebundenen Repos; nicht committete
+Installationsänderungen werden nicht mitgeklont. Bei Git-Worktrees bindet die Matrix
+auch das externe Git-Verzeichnis schreibgeschützt ein.
 Grafische Editor- und Clipboard-Tests erfolgen weiterhin auf dem jeweiligen Zielsystem.
+
+### Manuelle Abnahme auf einer frischen CachyOS-VM (noch offen)
+
+1. VM-Snapshot erstellen; als normaler Benutzer ohne `~/dotfiles` die obige
+   `curl | bash`-Vorschau und anschließend die Installation ausführen.
+2. Git-Identität eingeben, zsh-Rückfrage bestätigen, ab- und anmelden.
+   `getent passwd "$USER"` muss zsh als Login-Shell zeigen.
+3. In zsh `eza --version`, `yazi --version`, `tldr --version`, `just --version`,
+   `lazydocker --version` und `dot doctor` ausführen; `ls`/`ll`/`lt` prüfen.
+4. `git -C ~/dotfiles status --short` und vorhandene Backups notieren, denselben
+   Bootstrap erneut starten: keine neuen Backups, keine Repo-Änderungen.
+   Danach `dot update` und `dot doctor` prüfen.
+5. Hyprland und KDE anmelden; Bindings, Zwischenablage, Fonts und Tokyo-Night-Theme
+   in WezTerm, Zed und Neovim prüfen. Ergebnis und VM-Version manuell festhalten.
 
 Installationsreferenzen: [mise](https://mise.jdx.dev/installing-mise.html), [uv](https://docs.astral.sh/uv/getting-started/installation/),
 [Starship](https://starship.rs/guide/), [WezTerm](https://wezterm.org/install/linux.html),

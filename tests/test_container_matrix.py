@@ -20,6 +20,11 @@ class ContainerMatrixTests(unittest.TestCase):
     def setUp(self):
         temp = tempfile.TemporaryDirectory(prefix='dotfiles-matrix-')
         self.addCleanup(temp.cleanup)
+        self.repo = Path(temp.name) / 'repo'
+        (self.repo / 'scripts').mkdir(parents=True)
+        (self.repo / '.git').mkdir()
+        self.script = self.repo / 'scripts/container-matrix.sh'
+        shutil.copyfile(SCRIPT, self.script)
         self.log = Path(temp.name) / 'calls.log'
         self.engine = Path(temp.name) / 'engine'
         self.engine.write_text(
@@ -35,7 +40,7 @@ class ContainerMatrixTests(unittest.TestCase):
         if token is not None:
             env['GITHUB_TOKEN'] = token
         return subprocess.run(
-            [shutil.which('bash') or '/bin/bash', str(SCRIPT), *args],
+            [shutil.which('bash') or '/bin/bash', str(self.script), *args],
             env=env, stdin=subprocess.DEVNULL, capture_output=True, text=True, timeout=30,
         )
 
@@ -48,8 +53,33 @@ class ContainerMatrixTests(unittest.TestCase):
         calls = self.calls()
         self.assertEqual(len(calls), 3)
         for call, (distro, image) in zip(calls, IMAGES.items()):
-            self.assertIn(f'run --rm -v {REPO}:/dotfiles:ro,z {image}', call)
+            self.assertIn(f'run --rm -v {self.repo}:/dotfiles:ro,z {image}', call)
             self.assertTrue(call.endswith(f'scripts/container-entry.sh {distro}'), call)
+
+    def test_linked_worktree_mounts_external_git_metadata_read_only(self):
+        common = self.repo.parent / 'external.git'
+        git_dir = common / 'worktrees/test'
+        git_dir.mkdir(parents=True)
+        (common / 'objects').mkdir()
+        (common / 'refs').mkdir()
+        for directory in (common, git_dir):
+            (directory / 'HEAD').write_text('ref: refs/heads/main\n')
+        (git_dir / 'commondir').write_text('../..\n')
+        (self.repo / '.git').rmdir()
+        (self.repo / '.git').write_text(f'gitdir: {git_dir}\n')
+
+        res = self.run_matrix('debian')
+
+        self.assertEqual(res.returncode, 0, res.stderr)
+        self.assertIn(f'-v {self.repo}:/dotfiles:ro,z -v {common}:{common}:ro,z',
+                      self.calls()[0])
+
+    def test_broken_worktree_fails_before_starting_containers(self):
+        (self.repo / '.git').rmdir()
+        (self.repo / '.git').write_text(f'gitdir: {self.repo.parent}/missing\n')
+        res = self.run_matrix('debian')
+        self.assertNotEqual(res.returncode, 0)
+        self.assertEqual(self.calls(), [])
 
     def test_github_token_is_forwarded_by_name_only(self):
         res = self.run_matrix('arch', token='secret-value')
