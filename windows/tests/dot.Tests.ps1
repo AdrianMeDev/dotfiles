@@ -183,12 +183,12 @@ Describe 'Windows dot commands' {
     }
     It 'reports Vial status read-only in doctor' {
         $report = @(Get-DoctorReport $script:source -NoWsl)
-        ($report | Where-Object Problem).Message | Should -Match 'Vial: nicht installiert'
+        (($report | Where-Object Problem).Message -join "`n") | Should -Match 'Vial: nicht installiert'
         $dir = Join-Path $env:LOCALAPPDATA 'Vial'
         [IO.Directory]::CreateDirectory($dir) | Out-Null
         [IO.File]::WriteAllText((Join-Path $dir '.version'), 'v0.7.5')
         $report = @(Get-DoctorReport $script:source -NoWsl)
-        ($report | Where-Object Problem).Message | Should -Match 'Vial.exe fehlt'
+        (($report | Where-Object Problem).Message -join "`n") | Should -Match 'Vial.exe fehlt'
         [IO.File]::WriteAllText((Join-Path $dir 'Vial.exe'), 'exe')
         $report = @(Get-DoctorReport $script:source -NoWsl)
         $report.Message | Should -Contain 'Vial: v0.7.5'
