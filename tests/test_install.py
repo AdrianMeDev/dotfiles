@@ -152,6 +152,53 @@ class InstallerTests(unittest.TestCase):
         (self.home / '.gitconfig-local').symlink_to(REPO / 'README.md')
         self.install('--only', 'dotfiles', '--backup', success=False)
 
+    def test_stow_local_ignore_skips_ignored_paths_and_foreign_targets(self):
+        spec = importlib.util.spec_from_file_location('links', REPO / 'scripts/links.py')
+        links = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(links)
+
+        repo = self.base / 'repo'
+        (repo / 'manifests').mkdir(parents=True)
+        (repo / 'manifests/stow.txt').write_text('pkg\n')
+
+        pkg = repo / 'pkg'
+        (pkg / 'projects/dotnet').mkdir(parents=True)
+        (pkg / 'nested/local-only').mkdir(parents=True)
+        (pkg / '.config/app').mkdir(parents=True)
+        (pkg / '.stow-local-ignore').write_text(
+            '# comment\n'
+            '\n'
+            '/README\\.md\n'
+            '/projects/\n'
+            'local-only\n'
+            '\\.bak$\n'
+        )
+        (pkg / 'README.md').write_text('package readme\n')
+        (pkg / 'projects/dotnet/settings.json').write_text('{}\n')
+        (pkg / 'nested/README.md').write_text('not root-anchored\n')
+        (pkg / 'nested/local-only/secret.txt').write_text('ignored subtree\n')
+        (pkg / '.config/app/notes.bak').write_text('ignored suffix\n')
+        (pkg / '.config/app/settings.json').write_text('{}\n')
+
+        external = self.base / 'external'
+        external.mkdir()
+        (self.home / '.stow-local-ignore').write_text('existing\n')
+        (self.home / 'README.md').write_text('home readme\n')
+        (self.home / 'projects').symlink_to(external, target_is_directory=True)
+        (self.home / 'nested/local-only').parent.mkdir(parents=True)
+        (self.home / 'nested/local-only').symlink_to(external, target_is_directory=True)
+        (self.home / '.config/app').mkdir(parents=True)
+        (self.home / '.config/app/notes.bak').write_text('home backup\n')
+
+        self.assertEqual(links.conflicts(repo, self.home), [])
+
+        (self.home / 'nested/README.md').write_text('conflict\n')
+        (self.home / '.config/app/settings.json').write_text('conflict\n')
+        self.assertEqual(
+            links.conflicts(repo, self.home),
+            [self.home / '.config/app/settings.json', self.home / 'nested/README.md'],
+        )
+
     def test_existing_git_identity_survives_backup_and_repeat(self):
         self.require_stow()
         self.run_command(['git', 'config', '--global', 'user.name', 'Example Developer'])

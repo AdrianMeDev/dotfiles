@@ -81,7 +81,7 @@ alles wird in der neuesten Version installiert und mit `dot update` aktualisiert
 - **Depends on:** M1
 - **Size:** M, ~6 commits
 
-### M3 [ ] Zed integrieren
+### M3 [~] Zed integrieren
 - **Goal:** Die neue Zed-Config ist Teil des Setups – Linux per Stow, Windows aus derselben Quelle.
 - **Includes:** `zed-config/` als einzige Quelle, `zed/` entfernen, eigenen Installer ablösen, `dot zed-template angular|django|dotnet PFAD`, Windows-Installer-Pfade anpassen, Zed-Paket je Distro
 - **Done when:** nach `dot install` sind die Zed-Dateien verlinkt, `dot zed-template dotnet /tmp/x` legt `.zed/` an, Windows-Tests grün
