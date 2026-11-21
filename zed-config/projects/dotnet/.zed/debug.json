@@ -1,0 +1,28 @@
+// C# / .NET – Debugging über netcoredbg.
+// Voraussetzung: Debug-Adapter-Extension "zed-netcoredbg" als Dev-Extension
+// installiert (siehe README). ANPASSEN: Projektname + Target-Framework.
+[
+  {
+    "label": ".NET: API starten (Debug)",
+    "adapter": "netcoredbg",
+    "request": "launch",
+    "program": "$ZED_WORKTREE_ROOT/src/MyApp.Api/bin/Debug/net10.0/MyApp.Api.dll",
+    "cwd": "$ZED_WORKTREE_ROOT/src/MyApp.Api",
+    "env": {
+      "ASPNETCORE_ENVIRONMENT": "Development",
+      "ASPNETCORE_URLS": "http://localhost:5080"
+    },
+    "stopAtEntry": false,
+    "build": "dev: build"
+  },
+  {
+    "label": ".NET: Konsolen-App starten (Debug)",
+    "adapter": "netcoredbg",
+    "request": "launch",
+    "program": "$ZED_WORKTREE_ROOT/src/MyApp.Cli/bin/Debug/net10.0/MyApp.Cli.dll",
+    "args": [],
+    "cwd": "$ZED_WORKTREE_ROOT/src/MyApp.Cli",
+    "stopAtEntry": false,
+    "build": "dev: build"
+  }
+]

@@ -1,0 +1,88 @@
+// C# / .NET – Tasks. "dev: *" sind über <space> r r/b/t/l/f erreichbar.
+// ANPASSEN: "src/MyApp.Api" → dein Startprojekt.
+[
+  {
+    "label": "dev: run",
+    "command": "dotnet",
+    "args": ["watch", "run", "--project", "src/MyApp.Api"],
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "allow_concurrent_runs": false,
+    "reveal": "no_focus",
+    "tags": ["dotnet"]
+  },
+  {
+    "label": "dev: build",
+    "command": "dotnet",
+    "args": ["build"],
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "reveal": "no_focus",
+    "hide": "on_success",
+    "tags": ["dotnet"]
+  },
+  {
+    "label": "dev: test",
+    "command": "dotnet",
+    "args": ["test"],
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "reveal": "always",
+    "tags": ["dotnet"]
+  },
+  {
+    "label": "dev: lint",
+    "command": "dotnet",
+    "args": ["format", "--verify-no-changes"],
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "reveal": "always",
+    "tags": ["dotnet"]
+  },
+  {
+    "label": "dev: format",
+    "command": "dotnet",
+    "args": ["format"],
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "reveal": "no_focus",
+    "hide": "on_success",
+    "tags": ["dotnet"]
+  },
+  {
+    "label": "dotnet: test (Filter = Auswahl)",
+    "command": "dotnet",
+    "args": ["test", "--filter", "${ZED_SELECTED_TEXT:FullyQualifiedName~}"],
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "reveal": "always",
+    "tags": ["dotnet"]
+  },
+  {
+    "label": "dotnet: restore",
+    "command": "dotnet",
+    "args": ["restore"],
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "reveal": "always",
+    "tags": ["dotnet"]
+  },
+  {
+    "label": "dotnet: clean",
+    "command": "dotnet",
+    "args": ["clean"],
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "reveal": "no_focus",
+    "hide": "on_success",
+    "tags": ["dotnet"]
+  },
+  {
+    "label": "ef: migrations add (Name = Auswahl)",
+    "command": "dotnet",
+    "args": ["ef", "migrations", "add", "${ZED_SELECTED_TEXT:NeueMigration}", "--project", "src/MyApp.Api"],
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "reveal": "always",
+    "tags": ["dotnet"]
+  },
+  {
+    "label": "ef: database update",
+    "command": "dotnet",
+    "args": ["ef", "database", "update", "--project", "src/MyApp.Api"],
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "reveal": "always",
+    "tags": ["dotnet"]
+  }
+]

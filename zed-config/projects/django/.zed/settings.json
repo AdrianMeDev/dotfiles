@@ -1,0 +1,23 @@
+// Django – Projekteinstellungen
+// Python-Umgebung: <space> c v (Toolchain wählen) – gilt für LSP, Tasks, Terminal, Debugger.
+{
+  "file_types": {
+    "Django": ["**/templates/**/*.html", "**/templates/**/*.txt"]
+  },
+  "languages": {
+    "Django": {
+      "tab_size": 2,
+      "language_servers": ["django-language-server", "!django-template-lsp", "..."]
+    }
+  },
+  "lsp": {
+    "basedpyright": {
+      "settings": {
+        "basedpyright.analysis": {
+          "typeCheckingMode": "standard",
+          "reportAttributeAccessIssue": "warning"
+        }
+      }
+    }
+  }
+}

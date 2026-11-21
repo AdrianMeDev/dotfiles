@@ -1,224 +1,253 @@
+// ============================================================================
+//  Zed – globale Einstellungen
+//  Angular · Django · C#/.NET · Vim · lokale KI (Ollama) · Claude Code + pi (ACP)
+//
+//  Linux:   ~/.config/zed/settings.json
+//  Windows: %APPDATA%\Zed\settings.json   (gilt auch für WSL-Projekte, da die
+//           Zed-Oberfläche unter Windows läuft und WSL als "Remote" öffnet)
+// ============================================================================
 {
-  // ============================================================
-  // VIM / NEOVIM FEEL
-  // ============================================================
-
-  "icon_theme": "Zed (Default)",
-  "cli_default_open_behavior": "existing_window",
-  "theme": "Tokyo Night",
-  "vim_mode": true,
-  "show_edit_predictions": true,
-
-  "which_key": {
-    "enabled": true,
-    "delay_ms": 300
-  },
-
-  "buffer_font_family": "Ioskeley Mono",
-  "buffer_font_size": 15,
-  "buffer_line_height": "comfortable",
-
-  "experimental.theme_overrides": {
-    "background.appearance": "blurred",
-    "background": "#00000080",
-    "editor.background": "#00000000",
-    "editor.gutter.background": "#00000000",
-    "tab_bar.background": "#00000000",
-    "panel.background": "#00000000",
-    "panel.overlay_background": "#00000000",
-    "surface.background": "#00000000",
-    "toolbar.background": "#00000000",
-    "terminal.background": "#00000000",
-    "status_bar.background": "#00000000",
-    "title_bar.background": "#00000000",
-    "title_bar.inactive_background": "#00000000"
-  },
-
-  // VS Code Keymap bleibt als Fallback für Bereiche,
-  // die nicht vom Vim Mode abgedeckt werden.
+  // ── Editor-Grundlagen ─────────────────────────────────────────────────────
   "base_keymap": "VSCode",
+  "vim_mode": true,
+  "which_key": { "enabled": true, "delay_ms": 350 },
+
+  "theme": { "mode": "system", "dark": "One Dark", "light": "One Light" },
+  "ui_font_size": 15,
+  "buffer_font_size": 14,
+  "buffer_font_family": ".ZedMono",
 
   "relative_line_numbers": "enabled",
   "cursor_blink": false,
+  "vertical_scroll_margin": 8,
+  "scroll_beyond_last_line": "one_page",
+  "show_whitespaces": "selection",
+  "preferred_line_length": 120,
+  "soft_wrap": "none",
 
-  // Möglichst wenig UI, weil wir alles per Tastatur bedienen.
-  "scrollbar": {
-    "show": "never",
-  },
-
-  "minimap": {
-    "show": "never",
-  },
-
-  "tab_bar": {
-    "show": true,
-    "show_nav_history_buttons": false,
-    "show_tab_bar_buttons": false,
-  },
-
-  "toolbar": {
-    "breadcrumbs": false,
-    "quick_actions": false,
-    "selections_menu": false,
-    "agent_review": false,
-    "code_actions": false,
-  },
-
-  // ============================================================
-  // EXTENSIONS
-  // ============================================================
-
-  "auto_install_extensions": {
-    "angular": true,
-    "html": true,
-    "csharp": true,
-  },
-
-  // ============================================================
-  // EDIT PREDICTIONS (lokales Ollama-Modell)
-  // ============================================================
-
-  "edit_predictions": {
-    "provider": "ollama",
-    "ollama": {
-      "api_url": "http://localhost:11434",
-      "model": "qwen2.5-coder:7b-base",
-      "prompt_format": "qwen",
-      "max_output_tokens": 512
-    }
-  },
-
-  "terminal": {
-    "font_family": "IoskeleyMonoTerm Nerd Font Mono",
-    "line_height": "standard",
-    "shell": { "program": "zsh" },
-  },
+  "restore_on_startup": "last_session",
+  "session": { "restore_unsaved_buffers": true },
+  "confirm_quit": false,
+  "autosave": "on_focus_change",
+  "format_on_save": "on",
   "ensure_final_newline_on_save": true,
   "remove_trailing_whitespace_on_save": true,
 
-  // ============================================================
-  // LANGUAGE SERVER CONFIG
-  // ============================================================
+  "vim": {
+    "use_system_clipboard": "always",
+    "use_smartcase_find": true,
+    "toggle_relative_line_numbers": true,
+    "highlight_on_yank_duration": 200
+  },
+
+  // ── Oberfläche ────────────────────────────────────────────────────────────
+  "tab_bar": { "show": true, "show_nav_history_buttons": false },
+  "tabs": { "file_icons": true, "git_status": true, "show_diagnostics": "errors" },
+  "toolbar": { "breadcrumbs": true, "quick_actions": false },
+  "scrollbar": { "show": "auto", "cursors": true, "git_diff": true, "diagnostics": "all" },
+  "inlay_hints": {
+    "enabled": true,
+    "show_type_hints": true,
+    "show_parameter_hints": true,
+    "show_other_hints": true,
+    "edit_debounce_ms": 700
+  },
+  "diagnostics": { "inline": { "enabled": true } },
+
+  "project_panel": { "dock": "left", "auto_reveal_entries": true, "auto_fold_dirs": true, "git_status": true },
+  "outline_panel": { "dock": "left" },
+
+  "terminal": {
+    "dock": "bottom",
+    "copy_on_select": true,
+    "working_directory": "current_project_directory",
+    "toolbar": { "breadcrumbs": false },
+    "detect_venv": { "on": { "directories": [".venv", "venv", ".env"], "activate_script": "default" } }
+  },
+
+  "git": {
+    "git_gutter": "tracked_files",
+    "inline_blame": { "enabled": true, "delay_ms": 600 }
+  },
+
+  "file_scan_exclusions": [
+    "**/.git", "**/.svn", "**/.hg", "**/.DS_Store", "**/Thumbs.db",
+    "**/node_modules/.cache", "**/.angular", "**/__pycache__", "**/.pytest_cache",
+    "**/.mypy_cache", "**/.ruff_cache", "**/bin/Debug", "**/bin/Release", "**/obj"
+  ],
+
+  "telemetry": { "diagnostics": false, "metrics": false },
+
+  // Extensions werden beim ersten Start automatisch installiert
+  "auto_install_extensions": {
+    "angular": true,
+    "django": true,
+    "csharp": true,
+    "html": true,
+    "scss": true,
+    "toml": true,
+    "xml": true,
+    "sql": true,
+    "dockerfile": true,
+    "docker-compose": true,
+    "env": true,
+    "git-firefly": true
+  },
+
+  // ── Sprachen ──────────────────────────────────────────────────────────────
+  "languages": {
+    "Python": {
+      "tab_size": 4,
+      "language_servers": ["basedpyright", "ruff", "!pyright", "!pylsp", "..."],
+      "code_actions_on_format": { "source.organizeImports.ruff": true },
+      "formatter": { "language_server": { "name": "ruff" } }
+    },
+    "TypeScript": {
+      "tab_size": 2,
+      "prettier": { "allowed": true },
+      "code_actions_on_format": { "source.fixAll.eslint": true }
+    },
+    "TSX": { "tab_size": 2, "prettier": { "allowed": true } },
+    "JavaScript": { "tab_size": 2, "prettier": { "allowed": true } },
+    "HTML": { "tab_size": 2, "prettier": { "allowed": true } },
+    "CSS": { "tab_size": 2, "prettier": { "allowed": true } },
+    "SCSS": { "tab_size": 2, "prettier": { "allowed": true } },
+    "JSON": { "tab_size": 2 },
+    "JSONC": { "tab_size": 2 },
+    "YAML": { "tab_size": 2 },
+    "CSharp": {
+      "tab_size": 4,
+      "language_servers": ["roslyn", "!omnisharp", "!csharp-ls", "..."],
+      "formatter": "language_server"
+    },
+    "Markdown": {
+      "soft_wrap": "editor_width",
+      "format_on_save": "off",
+      "remove_trailing_whitespace_on_save": false
+    }
+  },
 
   "lsp": {
-    "eslint": {
+    "basedpyright": {
       "settings": {
-        // Wichtig bei Angular-Monorepos / verschachtelten Projekten
-        "workingDirectory": {
-          "mode": "auto",
-        },
-      },
+        "basedpyright.analysis": { "typeCheckingMode": "standard" }
+      }
     },
-
-    "angular": {
-      "initialization_options": {
-        // Falls du größere Angular-Projekte hast.
-        "max_ts_server_memory": 8192,
-      },
+    "vtsls": {
+      "settings": {
+        "typescript": {
+          "inlayHints": {
+            "parameterNames": { "enabled": "literals" },
+            "functionLikeReturnTypes": { "enabled": true }
+          }
+        }
+      }
     },
+    "eslint": {
+      "settings": { "workingDirectory": { "mode": "auto" } }
+    }
   },
 
-  // ============================================================
-  // LANGUAGES
-  // ============================================================
+  // ── Debugger ──────────────────────────────────────────────────────────────
+  "debugger": { "dock": "bottom" },
 
-  "languages": {
-    "CSharp": {
-      "language_servers": ["roslyn", "..."],
-      "format_on_save": "on",
-      "formatter": "language_server",
-      "tab_size": 4,
-    },
-    // ----------------------------------------------------------
-    // Angular / TypeScript
-    // ----------------------------------------------------------
-
-    "TypeScript": {
-      // Angular Language Service
-      // + TypeScript LSP
-      // + ESLint
-      "language_servers": ["angular", "vtsls", "eslint"],
-
-      // Kein Prettier.
-      "prettier": {
-        "allowed": false,
-      },
-
-      // ESLint soll der einzige Formatter sein.
-      // formatter [] verhindert, dass danach Prettier/vtsls nochmal
-      // über die Datei läuft.
-      "formatter": [],
-
-      "format_on_save": "on",
-
-      "code_actions_on_format": {
-        "source.fixAll.eslint": true,
-      },
-
-      "tab_size": 2,
-    },
-
-    // ----------------------------------------------------------
-    // JavaScript
-    // ----------------------------------------------------------
-
-    "JavaScript": {
-      "language_servers": ["vtsls", "eslint"],
-
-      "prettier": {
-        "allowed": false,
-      },
-
-      "formatter": [],
-
-      "format_on_save": "on",
-
-      "code_actions_on_format": {
-        "source.fixAll.eslint": true,
-      },
-
-      "tab_size": 2,
-    },
-
-    // ----------------------------------------------------------
-    // Angular Templates
-    // ----------------------------------------------------------
-
-    "HTML": {
-      "language_servers": ["angular", "vscode-html-language-server"],
-
-      // Ich würde Templates vom HTML-LSP formatieren lassen.
-      // ESLint bleibt für TS verantwortlich.
-      "formatter": "language_server",
-
-      "format_on_save": "on",
-
-      "tab_size": 2,
-    },
-
-    // ----------------------------------------------------------
-    // Django / Python
-    // ----------------------------------------------------------
-
-    "Python": {
-      // Explizit nur basedpyright + Ruff.
-      "language_servers": ["basedpyright", "ruff"],
-
-      "format_on_save": "on",
-
-      // Ruff = Formatter
-      "formatter": {
-        "language_server": {
-          "name": "ruff",
+  // ── KI: lokale Modelle über Ollama ────────────────────────────────────────
+  //  Vorher ziehen:  ollama pull qwen3-coder:30b
+  //                  ollama pull qwen2.5-coder:7b
+  //                  ollama pull qwen2.5-coder:7b-base
+  //  Weniger VRAM? qwen3-coder:30b → qwen2.5-coder:14b ersetzen.
+  "language_models": {
+    "ollama": {
+      "api_url": "http://localhost:11434",
+      "auto_discover": true,
+      "available_models": [
+        {
+          "name": "qwen3-coder:30b",
+          "display_name": "Qwen3 Coder 30B (lokal)",
+          "max_tokens": 65536,
+          "supports_tools": true,
+          "supports_thinking": false,
+          "supports_images": false,
+          "keep_alive": "15m"
         },
-      },
-
-      // Ruff = Import Sorter
-      "code_actions_on_format": {
-        "source.organizeImports.ruff": true,
-      },
-
-      "tab_size": 4,
-    },
+        {
+          "name": "qwen2.5-coder:7b",
+          "display_name": "Qwen2.5 Coder 7B (lokal, schnell)",
+          "max_tokens": 32768,
+          "supports_tools": true,
+          "supports_thinking": false,
+          "supports_images": false,
+          "keep_alive": "15m"
+        }
+      ]
+    }
+    // Optional – Claude per API direkt in Zeds eigenem Agent (nicht nötig,
+    // wenn du Claude Code über ACP nutzt). API-Key setzt du im Agent-Panel.
+    // "anthropic": {}
   },
+
+  // Zeds eigener Agent + Inline-Assistent → lokal
+  "agent": {
+    "dock": "right",
+    "default_profile": "write",
+    "default_model": { "provider": "ollama", "model": "qwen3-coder:30b" },
+    "inline_assistant_model": { "provider": "ollama", "model": "qwen3-coder:30b" },
+    "commit_message_model": { "provider": "ollama", "model": "qwen2.5-coder:7b" },
+    "thread_summary_model": { "provider": "ollama", "model": "qwen2.5-coder:7b" },
+    "commit_message_instructions": "Conventional Commits: <type>(<scope>): <beschreibung>. Kurz, Imperativ.",
+    "play_sound_when_agent_done": true,
+    "notify_when_agent_waiting": "primary_screen",
+    "tool_permissions": {
+      "default": "confirm",
+      "tools": {
+        "terminal": {
+          "default": "confirm",
+          "always_allow": [
+            { "pattern": "^git\\s+(status|diff|log|show|branch)\\b" },
+            { "pattern": "^(ls|pwd|rg|grep|cat|head|tail|find)\\b" },
+            { "pattern": "^(npx\\s+)?ng\\s+(build|test|lint)\\b" },
+            { "pattern": "^npm\\s+(run\\s+)?(test|lint|build)\\b" },
+            { "pattern": "^dotnet\\s+(build|test|restore|format)\\b" },
+            { "pattern": "^(python\\s+-m\\s+)?(pytest|ruff)\\b" },
+            { "pattern": "^python\\s+manage\\.py\\s+(check|test|showmigrations)\\b" }
+          ],
+          "always_confirm": [
+            { "pattern": "^sudo\\b" },
+            { "pattern": "^git\\s+(push|reset|rebase|clean)\\b" }
+          ],
+          "always_deny": [
+            { "pattern": "rm\\s+-rf\\s+(/|~|\\$HOME)(\\s|$)" },
+            { "pattern": "git\\s+push\\s+(.*\\s)?(-f|--force)(\\s|$)" }
+          ]
+        }
+      }
+    }
+  },
+
+  // Externe Agents über ACP: Claude Code und pi.
+  // Am einfachsten über die Befehlspalette "zed: acp registry" installieren –
+  // Zed trägt diese Einträge dann selbst ein und hält sie aktuell.
+  "agent_servers": {
+    "claude-acp": { "type": "registry" },
+    "pi-acp": { "type": "registry" }
+    // Alternative ohne Registry (pi lokal installiert):
+    // "pi": { "type": "custom", "command": "npx", "args": ["-y", "pi-acp"], "env": {} }
+  },
+
+  // Inline-Vervollständigung (Ghost-Text) → lokal über Ollama (FIM-Basismodell)
+  "show_edit_predictions": true,
+  "edit_predictions": {
+    "provider": "ollama",
+    "mode": "eager",
+    "ollama": {
+      "api_url": "http://localhost:11434",
+      "model": "qwen2.5-coder:7b-base",
+      "prompt_format": "infer",
+      "max_output_tokens": 256
+    },
+    "disabled_globs": [
+      "**/.env", "**/.env.*", "**/*.pem", "**/*.key", "**/secrets/**",
+      "**/appsettings.*.local.json", "**/.config/zed/settings.json"
+    ]
+  }
 }

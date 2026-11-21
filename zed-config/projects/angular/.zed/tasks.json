@@ -1,0 +1,87 @@
+// Angular – Tasks. "dev: *" sind über <space> r r/b/t/l/f erreichbar.
+[
+  {
+    "label": "dev: run",
+    "command": "npx",
+    "args": ["ng", "serve"],
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "allow_concurrent_runs": false,
+    "reveal": "no_focus",
+    "tags": ["angular"]
+  },
+  {
+    "label": "dev: build",
+    "command": "npx",
+    "args": ["ng", "build"],
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "reveal": "no_focus",
+    "hide": "on_success",
+    "tags": ["angular"]
+  },
+  {
+    "label": "dev: test",
+    "command": "npx",
+    "args": ["ng", "test", "--watch=false"],
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "reveal": "always",
+    "tags": ["angular"]
+  },
+  {
+    "label": "dev: lint",
+    "command": "npx",
+    "args": ["ng", "lint"],
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "reveal": "always",
+    "tags": ["angular"]
+  },
+  {
+    "label": "dev: format",
+    "command": "npx",
+    "args": ["prettier", "--write", "src"],
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "reveal": "no_focus",
+    "hide": "on_success",
+    "tags": ["angular"]
+  },
+  {
+    "label": "ng: Tests aktuelle Datei",
+    "command": "npx",
+    "args": ["ng", "test", "--watch=false", "--include=$ZED_RELATIVE_FILE"],
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "reveal": "always",
+    "tags": ["angular"]
+  },
+  {
+    "label": "ng: Tests (watch)",
+    "command": "npx",
+    "args": ["ng", "test"],
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "allow_concurrent_runs": false,
+    "reveal": "no_focus",
+    "tags": ["angular"]
+  },
+  {
+    "label": "ng: generate component (Name = Auswahl)",
+    "command": "npx",
+    "args": ["ng", "generate", "component", "${ZED_SELECTED_TEXT:neue-komponente}"],
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "reveal": "always",
+    "tags": ["angular"]
+  },
+  {
+    "label": "ng: generate service (Name = Auswahl)",
+    "command": "npx",
+    "args": ["ng", "generate", "service", "${ZED_SELECTED_TEXT:neuer-service}"],
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "reveal": "always",
+    "tags": ["angular"]
+  },
+  {
+    "label": "npm: install",
+    "command": "npm",
+    "args": ["install"],
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "reveal": "always",
+    "tags": ["angular"]
+  }
+]

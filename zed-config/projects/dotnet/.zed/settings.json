@@ -1,0 +1,11 @@
+// C# / .NET – Projekteinstellungen
+{
+  "languages": {
+    "CSharp": {
+      "tab_size": 4,
+      "language_servers": ["roslyn", "!omnisharp", "!csharp-ls", "..."],
+      "formatter": "language_server"
+    }
+  },
+  "file_scan_exclusions": ["**/bin", "**/obj", "**/TestResults", "..."]
+}

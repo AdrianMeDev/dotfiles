@@ -1,0 +1,96 @@
+// Django – Tasks. "dev: *" sind über <space> r r/b/t/l/f erreichbar.
+// "python" ist die gewählte Toolchain/venv (Zed aktiviert sie automatisch).
+[
+  {
+    "label": "dev: run",
+    "command": "python",
+    "args": ["manage.py", "runserver"],
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "allow_concurrent_runs": false,
+    "reveal": "no_focus",
+    "tags": ["django"]
+  },
+  {
+    "label": "dev: build",
+    "command": "python",
+    "args": ["manage.py", "check"],
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "reveal": "always",
+    "tags": ["django"]
+  },
+  {
+    "label": "dev: test",
+    "command": "python",
+    "args": ["manage.py", "test"],
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "reveal": "always",
+    "tags": ["django"]
+  },
+  {
+    "label": "dev: lint",
+    "command": "ruff",
+    "args": ["check", "."],
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "reveal": "always",
+    "tags": ["django"]
+  },
+  {
+    "label": "dev: format",
+    "command": "ruff",
+    "args": ["format", "."],
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "reveal": "no_focus",
+    "hide": "on_success",
+    "tags": ["django"]
+  },
+  {
+    "label": "pytest: aktuelle Datei",
+    "command": "python",
+    "args": ["-m", "pytest", "$ZED_RELATIVE_FILE", "-x", "-q"],
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "reveal": "always",
+    "tags": ["django"]
+  },
+  {
+    "label": "django: makemigrations",
+    "command": "python",
+    "args": ["manage.py", "makemigrations"],
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "reveal": "always",
+    "tags": ["django"]
+  },
+  {
+    "label": "django: migrate",
+    "command": "python",
+    "args": ["manage.py", "migrate"],
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "reveal": "always",
+    "tags": ["django"]
+  },
+  {
+    "label": "django: showmigrations",
+    "command": "python",
+    "args": ["manage.py", "showmigrations"],
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "reveal": "always",
+    "tags": ["django"]
+  },
+  {
+    "label": "django: shell",
+    "command": "python",
+    "args": ["manage.py", "shell"],
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "use_new_terminal": true,
+    "reveal": "always",
+    "tags": ["django"]
+  },
+  {
+    "label": "django: createsuperuser",
+    "command": "python",
+    "args": ["manage.py", "createsuperuser"],
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "use_new_terminal": true,
+    "reveal": "always",
+    "tags": ["django"]
+  }
+]

@@ -1,0 +1,13 @@
+// Angular – Projekteinstellungen (ergänzen die globalen Settings)
+{
+  "languages": {
+    "TypeScript": {
+      "language_servers": ["angular", "vtsls", "eslint", "!typescript-language-server", "..."],
+      "code_actions_on_format": { "source.fixAll.eslint": true }
+    },
+    "HTML": {
+      "language_servers": ["angular", "..."]
+    }
+  },
+  "file_scan_exclusions": ["**/.angular", "**/dist", "**/coverage", "..."]
+}

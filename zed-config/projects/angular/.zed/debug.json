@@ -1,0 +1,34 @@
+// Angular – Debugging über vscode-js-debug (in Zed eingebaut).
+// Ablauf: <space> r r (ng serve) → F4 → Konfiguration wählen.
+[
+  {
+    // Linux nativ: Zed startet Chrome/Chromium selbst
+    "label": "Angular: Chrome starten (localhost:4200)",
+    "adapter": "JavaScript",
+    "type": "chrome",
+    "request": "launch",
+    "url": "http://localhost:4200",
+    "webRoot": "$ZED_WORKTREE_ROOT"
+  },
+  {
+    // Windows + WSL: Chrome unter Windows mit
+    //   chrome.exe --remote-debugging-port=9222 --user-data-dir=%TEMP%\chrome-debug
+    // starten, dann hier anhängen (WSL-Netzwerk "mirrored" empfohlen).
+    "label": "Angular: an Chrome anhängen (Port 9222)",
+    "adapter": "JavaScript",
+    "type": "chrome",
+    "request": "attach",
+    "port": 9222,
+    "urlFilter": "http://localhost:4200/*",
+    "webRoot": "$ZED_WORKTREE_ROOT"
+  },
+  {
+    "label": "Node: aktuelle Datei",
+    "adapter": "JavaScript",
+    "type": "node",
+    "request": "launch",
+    "program": "$ZED_FILE",
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "skipFiles": ["<node_internals>/**"]
+  }
+]

@@ -1,0 +1,37 @@
+// Django – Debugging über debugpy (in Zed eingebaut). Start: F4.
+// pytest-Tests erkennt Zed zusätzlich automatisch (Gutter ▶ / <space> r n).
+[
+  {
+    "label": "Django: runserver",
+    "adapter": "Debugpy",
+    "request": "launch",
+    "program": "manage.py",
+    "args": ["runserver"],
+    "django": true,
+    "cwd": "$ZED_WORKTREE_ROOT"
+  },
+  {
+    "label": "Django: Tests",
+    "adapter": "Debugpy",
+    "request": "launch",
+    "program": "manage.py",
+    "args": ["test"],
+    "django": true,
+    "cwd": "$ZED_WORKTREE_ROOT"
+  },
+  {
+    "label": "pytest: aktuelle Datei",
+    "adapter": "Debugpy",
+    "request": "launch",
+    "module": "pytest",
+    "args": ["$ZED_FILE", "-x"],
+    "cwd": "$ZED_WORKTREE_ROOT"
+  },
+  {
+    "label": "Python: aktuelle Datei",
+    "adapter": "Debugpy",
+    "request": "launch",
+    "program": "$ZED_FILE",
+    "cwd": "$ZED_WORKTREE_ROOT"
+  }
+]

@@ -1,0 +1,5 @@
+context: fork
+agent: Explore
+background: false
+model: sonnet
+effort: medium
