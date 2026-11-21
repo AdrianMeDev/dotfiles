@@ -116,7 +116,7 @@ alles wird in der neuesten Version installiert und mit `dot update` aktualisiert
 - **Depends on:** M3, M4, M5, M6
 - **Size:** L, ~8 commits
 
-### M8 [~] WSL2-Arch-Integration
+### M8 [x] WSL2-Arch-Integration
 - **Goal:** Der Windows-Bootstrap richtet WSL Arch ein und startet darin den Linux-Installer.
 - **Includes:** `wsl --install archlinux`, Benutzer + sudo, `.wslconfig` (mirrored networking für Ollama), WezTerm-Default-Domain Arch, Zed Remote-WSL, `dot.ps1 update` aktualisiert auch WSL
 - **Done when:** frische Win11-VM: ein Befehl → WezTerm öffnet zsh in Arch, Zed öffnet ein WSL-Projekt mit LSP, Claude läuft in WSL
@@ -162,3 +162,4 @@ alles wird in der neuesten Version installiert und mit `dot update` aktualisiert
 - 2026-11-21: M5 Einheitliches Theme: Terminal, Editoren, CLI abgeschlossen (`theme/tokens.toml`, Theme-Paritätstests, Zed/WezTerm/Neovim/tmux/Starship/fzf/bat/delta/lazygit/btop/yazi/Claude Code/pi, Container-Matrix prüft Theme-Links, `bat`-Cache und pi-Theme)
 - 2026-11-21: M6 Keybinding-Vertrag + Hyprland-Desktop abgeschlossen (`manifests/keybindings.tsv` + Paritätstests, Stow-Paket `hypr/` mit Lua-Config für Hyprland >= 0.57, `desktop`- und `theme`-Modul, `dot doctor` und Container-Matrix prüfen Hyprland)
 - 2026-11-21: M7 done (Native Windows 11 setup with bootstrap.ps1 and dot.ps1)
+- 2026-11-21: M8 WSL2-Arch-Integration abgeschlossen (`wsl --install archlinux`, `windows/wsl-bootstrap.sh`, `.wslconfig` mit `networkingMode=mirrored`, WezTerm-Arch-Domain, Zed Remote-WSL, `dot.ps1 update`/`doctor` für WSL, Arch-Container-Check)
