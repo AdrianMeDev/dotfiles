@@ -1,21 +1,27 @@
-# Fedora COSMIC Dotfiles
+# Linux Developer Dotfiles
 
 Persönliches Developer-Setup mit GNU Stow und einem modularen Bash-Installer.
 Die vorhandenen Vim-Keybindings und das reduzierte Terminal-Layout bleiben erhalten.
-Ziel ist **Fedora Workstation/COSMIC mit DNF** oder eine Fedora-Distribution unter WSL2,
-kein Atomic-/rpm-ostree-System.
+Unterstützt werden **Arch/CachyOS, Fedora und Debian/Ubuntu** (inklusive WSL2),
+keine Atomic-/rpm-ostree-Systeme.
 Der Desktop selbst, Treiber und Monitor-/Theme-Einstellungen werden nicht umgestellt.
 
-Für **Windows 11 mit Fedora unter WSL2** gibt es ein separates
+Für **Windows 11 mit WSL2** gibt es ein separates
 [Windows-Setup mit WezTerm, Zed, GlazeWM, Zebar und Flow Launcher](windows/README.md).
 
 ## Installation
 
-Auf dem frisch installierten Fedora zuerst Git installieren, dieses Repository klonen
+Auf dem frisch installierten System zuerst Git installieren, dieses Repository klonen
 und als normaler Benutzer starten. HTTPS-Klonen funktioniert auch vor der SSH-Einrichtung.
 
 ```bash
+# Arch / CachyOS:
+sudo pacman -S --needed git
+# Fedora:
 sudo dnf install -y git
+# Debian / Ubuntu:
+sudo apt-get update && sudo apt-get install -y git
+
 # Dieses Repository nach ~/dotfiles klonen, dann:
 cd ~/dotfiles
 ./install.sh --dry-run
@@ -31,12 +37,14 @@ Nach Prüfung der gemeldeten Pfade kannst du sie sichern und ersetzen lassen:
 ```
 
 `--dry-run` lädt nichts herunter, fragt keine Identität ab und schreibt keine Dateien.
-Auf CachyOS ist die vollständige Fedora-Vorschau erlaubt; die Systeminstallation wird abgelehnt.
-Fedora unter WSL2 wird unterstützt; der Installer benötigt dort kein systemd und DNF lässt den
-von Windows bereitgestellten Kernel beim Upgrade aus. Die grafische COSMIC-Desktopumgebung ist
-für WSL kein Installationsziel.
-Nur Dotfiles lassen sich auch auf anderen Linux-Systemen mit Bash, Python >= 3.11,
-Git und GNU Stow verlinken:
+Die Distro-Familie (`arch`, `fedora`, `debian`) sowie das Profil (`desktop` oder `headless`)
+werden automatisch erkannt. In WSL2, Containern oder ohne grafische Session wählt der
+Installer standardmäßig `headless` (ohne Desktop- und Flatpak-Pakete); bei Bedarf lässt sich
+das Profil explizit mit `--profile desktop` oder `--profile headless` überschreiben.
+Unter WSL2 ist kein systemd nötig; auf Fedora unter WSL lässt DNF den von Windows
+bereitgestellten Kernel beim Upgrade aus.
+Auf nicht unterstützten Distributionen lassen sich reine Dotfiles verlinken, sofern Bash,
+Python >= 3.11, Git und GNU Stow vorhanden sind:
 
 ```bash
 ./install.sh --only dotfiles --dry-run --backup
@@ -52,39 +60,44 @@ Fremde Verzeichnis-Symlinks müssen vorab manuell aufgelöst werden; der Install
 
 | Modul | Inhalt |
 | --- | --- |
-| `system` | DNF-Update, Compiler/Build-Werkzeuge, Git/GitHub CLI, Stow, zsh, tmux, zoxide, direnv, fzf, ripgrep, fd, bat, jq, btop/htop, tree, ShellCheck, shfmt, Clipboard, Podman und Flatpak |
-| `development` | Starship, fnm + Node 24, tree-sitter CLI, mise, uv + Python 3.14, .NET SDK 10, Neovim >= 0.12, WezTerm und Zed |
-| `flatpak` | Flathub für den Benutzer; ausgewählte optionale Desktop-Apps |
+| `system` | System-Update (`pacman`/`dnf`/`apt-get`), Compiler/Build-Werkzeuge, Git/GitHub CLI, Stow, zsh, tmux, zoxide, direnv, fzf, ripgrep, fd, bat, jq, btop/htop, tree, ShellCheck, shfmt (Arch/Debian), Clipboard, Podman, Flatpak (bei `desktop`) sowie auf Arch der AUR-Helfer |
+| `development` | Starship, fnm + Node 24, tree-sitter CLI, mise, uv + Python 3.14, .NET SDK 10 (Arch/Fedora), Neovim >= 0.12, WezTerm und Zed |
+| `flatpak` | Flathub für den Benutzer; ausgewählte optionale Desktop-Apps (nur bei `--profile desktop`) |
 | `fonts` | Ioskeley Mono und Ioskeley Mono Term Nerd Font 2.1.0 im Benutzerverzeichnis |
 | `dotfiles` | Konfliktprüfung, Git-Identität, optionale Backups und Stow-Verlinkung |
 
-Die Paketlisten liegen in `manifests/`. Ohne Optionen werden alle Module in dieser Reihenfolge ausgeführt.
+Die zentrale Paketliste liegt in `manifests/packages.tsv` (Gruppen `base` immer, `desktop` nur
+bei `--profile desktop`, `dev` für gezielte Abfragen wie `.NET SDK` oder `wezterm`).
+Auf Arch verwendet der Installer `paru` oder `yay`, falls vorhanden, und installiert sonst `paru`.
+Auf Debian wird `.NET SDK` in `manifests/packages.tsv` übersprungen.
+Ohne Optionen werden alle Module in dieser Reihenfolge ausgeführt.
 Einzelne Module ziehen ihre Voraussetzungen nicht automatisch nach:
 
 ```bash
 ./install.sh --only system
 ./install.sh --only development
+./install.sh --profile headless --only system
 ./install.sh --extras java,rust,firefox,discord,spotify
 ./install.sh --only system --extras rpmfusion
 ```
 
-Extras: `java` (21 über mise), `rust` (stable über rustup), `rpmfusion` (free/nonfree),
-`firefox`, `discord`, `spotify`. Extras müssen bei `--only` zum ausgewählten Modul passen.
-Es werden keine Apps ohne entsprechende Auswahl installiert. Podman läuft rootless;
-es wird kein Docker-Daemon eingerichtet. Container nicht mit `sudo` starten.
+Extras: `java` (21 über mise), `rust` (stable über rustup), `rpmfusion` (free/nonfree, nur Fedora;
+auf Arch und Debian übersprungen), `firefox`, `discord`, `spotify`. Extras müssen bei `--only` zum
+ausgewählten Modul passen. Es werden keine Apps ohne entsprechende Auswahl installiert. Podman läuft
+rootless; es wird kein Docker-Daemon eingerichtet. Container nicht mit `sudo` starten.
 
 Der Installer benutzt offizielle HTTPS-Installer für fnm, mise, uv, Starship und Zed.
 Diese werden zuerst in ein temporäres Verzeichnis geladen und dann als Benutzer ausgeführt.
-WezTerm wird aus einem verfügbaren Fedora-Paket installiert; ohne solches Paket wird
+WezTerm wird aus einem verfügbaren Distro-Paket (Arch/Fedora) installiert; ohne solches Paket wird
 auf x86_64 das stabile Upstream-AppImage ohne FUSE entpackt. Auf aarch64 ohne passendes
 Paket stoppt dieses Modul mit einer Anleitung. Es gibt keinen automatischen Nightly-COPR-Wechsel.
 Neovim wird bei Bedarf aus dem stabilen offiziellen Linux-Archiv installiert;
 ein Release unter 0.12 wird für diese Konfiguration abgelehnt.
 GitHub-Release-Downloads werden gegen den Asset-Digest geprüft, sofern Upstream einen liefert.
 
-Wiederholungen erzeugen keine doppelten Links oder Shell-Initialisierungen. DNF aktualisiert
-Systempakete; bereits vorhandene externe Werkzeuge werden nicht automatisch neu installiert.
-Node/Python-Major-Versionen, Fedora-Pakete, LSPs und einige Upstream-Installer sind nicht auf
+Wiederholungen erzeugen keine doppelten Links oder Shell-Initialisierungen. Der Systempaketmanager
+aktualisiert Systempakete; bereits vorhandene externe Werkzeuge werden nicht automatisch neu installiert.
+Node/Python-Major-Versionen, Distro-Pakete, LSPs und einige Upstream-Installer sind nicht auf
 exakte Patchstände festgelegt: Das Setup ist wiederholbar, aber kein bitidentisches Systemabbild.
 Neovims Plugin-Versionen stehen in `nvim-pack-lock.json`; Plugin-Updates bewusst prüfen und committen.
 
@@ -207,7 +220,7 @@ Optional selbst umstellen: `chsh -s "$(command -v zsh)"`.
 
 ### Bestehende Fish-Installation umstellen
 
-Zuerst zsh installieren (auf Fedora über das `system`-Modul), dann
+Zuerst zsh installieren (über das `system`-Modul), dann
 `./install.sh --only dotfiles --backup` ausführen und ein neues Terminal öffnen.
 Der Installer entfernt nach erfolgreicher Verlinkung ausschließlich bekannte alte Fish-Dateisymlinks,
 die auf diesen Checkout zeigen, auch wenn deren Quelldateien bereits entfernt wurden.
@@ -348,8 +361,19 @@ Dann wird zusätzlich deren echter Start mit gesperrten Download-Befehlen und Vi
 `DOTFILES_NVIM_PLUGINS` kann auf vorhandene vertrauenswürdige Neovim-Plugin-Quellen (`opt/`) zeigen:
 Der Offline-Test prüft dann Plugin-Konfiguration, Explorer, LSP-Aktivierung und Speichern/Formatter-Zuständigkeit mit abgeschalteten Downloads und Builds sowie simulierten LSP-Antworten. Der Cache muss die sieben aktuellen Plugins enthalten.
 
-Eine vollständige Fedora-Installation und grafische Editor-/Clipboard-Tests müssen auf dem Zielsystem
-erfolgen. Die lokale Prüfung auf CachyOS ersetzt keine Fedora-VM-Abnahme.
+Für echte Distro-Tests gibt es eine Container-Matrix (`archlinux`, `fedora`, `debian`):
+
+```bash
+bash scripts/container-matrix.sh
+# Einzelne Distro oder Engine wählen:
+CONTAINER_ENGINE=docker bash scripts/container-matrix.sh arch debian
+```
+
+Ohne `CONTAINER_ENGINE` nutzt das Skript `podman` oder fällt auf `docker` zurück und führt
+`./install.sh --only system` als normaler Benutzer im jeweiligen Container aus.
+Die GitHub-Actions-CI (`.github/workflows/ci.yml`) führt sowohl `scripts/check.sh` als auch
+die Container-Matrix für `arch`, `fedora` und `debian` automatisch aus.
+Grafische Editor- und Clipboard-Tests erfolgen weiterhin auf dem jeweiligen Zielsystem.
 
 Installationsreferenzen: [fnm](https://github.com/Schniz/fnm),
 [mise](https://mise.jdx.dev/installing-mise.html), [uv](https://docs.astral.sh/uv/getting-started/installation/),
