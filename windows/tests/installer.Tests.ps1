@@ -118,6 +118,35 @@ Describe 'Windows installer' {
         }
     }
 
+    Context 'wslconfig' {
+        BeforeEach {
+            $script:wslPath = Join-Path $env:USERPROFILE '.wslconfig'
+            Remove-Item -LiteralPath $script:wslPath -ErrorAction SilentlyContinue
+        }
+        AfterAll { Remove-Item -LiteralPath (Join-Path $env:USERPROFILE '.wslconfig') -ErrorAction SilentlyContinue }
+        It 'creates mirrored networking, then skips' {
+            $entry = Get-WslConfigEntry
+            [Text.Encoding]::UTF8.GetString($entry.Bytes) | Should -Match '(?m)^\[wsl2\]\r?\nnetworkingMode=mirrored'
+            Write-FilePlan @(Get-FilePlan @($entry))
+            (Get-FilePlan @(Get-WslConfigEntry)).Action | Should -Be 'Skip'
+        }
+        It 'preserves unrelated sections and keys' {
+            [IO.File]::WriteAllText($script:wslPath, "[wsl2]`nmemory=8GB`n[experimental]`nautoMemoryReclaim=gradual`n")
+            $text = [Text.Encoding]::UTF8.GetString((Get-WslConfigEntry).Bytes)
+            $text | Should -Be "[wsl2]`nnetworkingMode=mirrored`nmemory=8GB`n[experimental]`nautoMemoryReclaim=gradual`n"
+            [IO.File]::WriteAllText($script:wslPath, "[experimental]`nsparseVhd=true`n")
+            $text = [Text.Encoding]::UTF8.GetString((Get-WslConfigEntry).Bytes)
+            $text | Should -Be "[experimental]`nsparseVhd=true`n`n[wsl2]`nnetworkingMode=mirrored`n"
+        }
+        It 'conflicts on networkingMode=nat without Backup and replaces with Backup' {
+            [IO.File]::WriteAllText($script:wslPath, "[wsl2]`nnetworkingMode=nat`nmemory=8GB`n")
+            Throws { Get-FilePlan @(Get-WslConfigEntry) } 'Dateikonflikt'
+            $plan = @(Get-FilePlan @(Get-WslConfigEntry) -Backup)
+            $plan[0].Action | Should -Be 'Replace'
+            [Text.Encoding]::UTF8.GetString($plan[0].Bytes) | Should -Be "[wsl2]`nnetworkingMode=mirrored`nmemory=8GB`n"
+        }
+    }
+
     Context 'winget packages' {
         BeforeAll { $script:repo = Split-Path -Parent $script:source }
         It 'returns the ten base packages' {
@@ -155,6 +184,22 @@ Describe 'Windows installer' {
             $zedText.Contains('"show_edit_predictions": true') | Should -BeTrue -Because 'Zed edit predictions disabled'
             ($zedText.Contains('"provider": "ollama"') -and $zedText.Contains('"model": "qwen2.5-coder:7b-base"')) | Should -BeTrue -Because 'Zed Ollama edit prediction missing'
             ($zedText.Contains('"panel.background": "#00000000"') -and $zedText.Contains('"surface.background": "#00000000"')) | Should -BeTrue -Because 'Zed panels are not transparent'
+        }
+        It 'stages wsl_connections as valid JSONC for the distro only' {
+            $zedPath = Join-Path $env:APPDATA 'Zed/settings.json'
+            $text = [Text.Encoding]::UTF8.GetString(@($script:entries | Where-Object Path -eq $zedPath)[0].Bytes)
+            $json = ($text -split "`r?`n" | Where-Object { $_.TrimStart() -notlike '//*' }) -join "`n" -replace ',(\s*[}\]])', '$1'
+            $parsed = $json | ConvertFrom-Json
+            $parsed.wsl_connections[0].distro_name | Should -Be 'archlinux'
+            $source = [IO.File]::ReadAllText((Join-Path $script:source '../zed-config/.config/zed/settings.json'))
+            $source | Should -Not -Match 'wsl_connections'
+            $none = @(Get-ConfigEntries $script:source $null | Where-Object Path -eq $zedPath)[0]
+            [Text.Encoding]::UTF8.GetString($none.Bytes) | Should -Not -Match 'wsl_connections'
+            $off = @(Get-ConfigEntries $script:source 'archlinux' -NoWsl | Where-Object Path -eq $zedPath)[0]
+            [Text.Encoding]::UTF8.GetString($off.Bytes) | Should -Not -Match 'wsl_connections'
+        }
+        It 'omits .wslconfig with NoWsl' {
+            @(Get-ConfigEntries $script:source 'archlinux' -NoWsl | Where-Object Path -like '*.wslconfig').Count | Should -Be 0
         }
         It 'stages <_> identical to its source' -ForEach 'keymap.json', 'tasks.json', 'debug.json' {
             $path = Join-Path $env:APPDATA "Zed/$_"
