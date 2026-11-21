@@ -600,6 +600,19 @@ class ConfigTests(unittest.TestCase):
         self.assertIn('bg:#1a1b26', fzf)
         self.assertFalse((REPO / 'zed/.config/zed/themes/Neovim-custom.json').exists())
 
+    def test_ci_workflow(self):
+        workflow = (REPO / '.github/workflows/ci.yml').read_text()
+        self.assertIn('permissions:\n  contents: read', workflow)
+        self.assertIn('fetch-depth: 0', workflow)
+        self.assertIn('bash scripts/check.sh', workflow)
+        self.assertIn('fail-fast: false', workflow)
+        self.assertIn('distro: [arch, fedora, debian]', workflow)
+        self.assertIn('bash scripts/container-matrix.sh ${{ matrix.distro }}', workflow)
+        uses = re.findall(r'uses:\s*(\S+)', workflow)
+        self.assertTrue(uses)
+        for action in uses:
+            self.assertRegex(action, r'@[0-9a-f]{40}$', f'action not pinned to a SHA: {action}')
+
     def test_secret_scanner_redaction(self):
         spec = importlib.util.spec_from_file_location('scanner', REPO / 'scripts/check-secrets.py')
         module = importlib.util.module_from_spec(spec)
