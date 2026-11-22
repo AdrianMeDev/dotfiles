@@ -217,7 +217,7 @@ class KeybindingTests(unittest.TestCase):
 
     def test_required_actions(self):
         actions = {r[0] for r in load_contract()}
-        required = {'close', 'terminal', 'launcher', 'resize-mode', 'fullscreen', 'floating', 'reload',
+        required = {'close', 'terminal', 'browser', 'file-manager', 'editor', 'git-ui', 'launcher', 'resize-mode', 'fullscreen', 'floating', 'reload',
                     'pause', 'lock', 'clipboard-history', 'screenshot'}
         for n in range(1, 10):
             required |= {f'focus-workspace-{n}', f'move-workspace-{n}'}
@@ -259,6 +259,10 @@ class KeybindingTests(unittest.TestCase):
             self.assertIn(tool, execs['ALT + V'])
         for tool in ('grim', 'slurp', 'wl-copy'):
             self.assertIn(tool, execs['ALT + SHIFT + S'])
+        self.assertIn('xdg-settings get default-web-browser', execs['ALT + B'])
+        # Tools come from mise, which only a login shell puts on PATH.
+        for combo, tool in (('ALT + E', 'yazi'), ('ALT + N', 'nvim'), ('ALT + G', 'lazygit')):
+            self.assertEqual(execs[combo], f'wezterm start -- zsh -lic {tool}')
 
     def test_caps_escape_swap_is_limited_to_the_laptop_keyboard(self):
         text = (REPO / 'hypr/.config/hypr/hyprland.lua').read_text(encoding='utf-8')

@@ -37,6 +37,10 @@ focus-workspace-9	global	alt+9	focus --workspace 9
 move-workspace-9	global	alt+shift+9	move --workspace 9
 close	global	alt+q	close
 terminal	global	alt+enter	shell-exec wezterm.exe
+browser	global	alt+b	shell-exec explorer.exe https://www.google.com
+file-manager	global	alt+e	shell-exec explorer.exe
+editor	global	alt+n	shell-exec wezterm.exe start -- zsh -lic nvim
+git-ui	global	alt+g	shell-exec wezterm.exe start -- zsh -lic lazygit
 launcher	global	alt+space	flow:alt+space
 resize-mode	global	alt+r	wm-enable-binding-mode --name resize
 fullscreen	global	alt+f	toggle-fullscreen

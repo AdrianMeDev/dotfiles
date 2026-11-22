@@ -518,6 +518,10 @@ Gleiche Kürzel unter Linux (Hyprland >= 0.57, Lua-Config) und Windows (GlazeWM,
 | `Alt+Shift+h/j/k/l`                   | Fenster verschieben                                        |
 | `Alt+Shift+Left/Down/Up/Right`        | Fenster verschieben (Pfeile)                               |
 | `Alt+Enter`                           | WezTerm öffnen                                             |
+| `Alt+B`                               | Browser (Linux: Standard-Browser; Windows: Startseite)     |
+| `Alt+E`                               | Dateimanager (Linux: yazi in WezTerm; Windows: Explorer)   |
+| `Alt+N`                               | Neovim in WezTerm                                          |
+| `Alt+G`                               | lazygit in WezTerm                                         |
 | `Alt+Space`                           | Launcher (Linux: fuzzel, Windows: Flow Launcher)           |
 | `Alt+Q`                               | Fenster schließen                                          |
 | `Alt+R`                               | Resize-Modus starten                                       |
