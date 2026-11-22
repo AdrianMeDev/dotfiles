@@ -158,8 +158,8 @@ Neovims Plugin-Versionen stehen in `nvim-pack-lock.json`; Plugin-Updates bewusst
 
 ## Hyprland-Desktop
 
-Das Stow-Paket `hypr/` verlinkt immer (auch headless) `~/.config/hypr`, `waybar`, `fuzzel`, `mako`,
-`gtk-3.0`/`gtk-4.0` und `qt5ct`/`qt6ct`. Die Pakete selbst installiert `./install.sh --only desktop`
+Das Stow-Paket `hypr/` verlinkt immer (auch headless) `~/.config/hypr`, `waybar`, `fuzzel`, `mako`
+und `qt5ct`/`qt6ct`. Die GTK-Einstellungen (`gtk-3.0`/`gtk-4.0`) werden nicht verlinkt, sondern vom Theme-Modul kopiert (siehe unten). Die Pakete selbst installiert `./install.sh --only desktop`
 (nur Arch/Fedora, Profil `desktop`, nicht unter WSL; auf Debian wird das Modul übersprungen).
 
 ### Lua-Konfiguration (Hyprland >= 0.57)
@@ -194,6 +194,10 @@ Dunkelmodus, `adw-gtk3-dark`, `Papirus-Dark` und den Cursor. Das Wallpaper wird 
 `theme/tokens.toml` nach `~/.local/share/dotfiles/wallpaper.png` erzeugt (vorhandene Dateien bleiben).
 GTK-/Qt-Konfiguration (`gtk-3.0`, `gtk-4.0`, `qt5ct`, `qt6ct`), Waybar, mako, fuzzel und Hyprland
 beziehen Farben, Fonts, Deckkraft, Blur und Rahmen aus denselben Tokens; `tests/test_theme.py` prüft das.
+Die GTK-Dateien (`settings.ini`, `gtk.css` in `theme/gtk-3.0` und `theme/gtk-4.0`) kopiert das Modul einmalig nach
+`~/.config`, damit KDEs GTK-Sync nicht ins Repository schreibt: fehlende Ziele werden angelegt, alte Stow-Links
+ersetzt, identische Dateien übersprungen. Abweichende Dateien (z. B. von KDE) bleiben unverändert und werden
+nur mit `--backup` gesichert und ersetzt; unter Hyprland setzt `gsettings` die wichtigen Werte ohnehin.
 Der Gesamtüberblick steht unter [Einheitliches Theme](#einheitliches-theme-themetokenstoml).
 
 ### Corne & Vial
