@@ -45,6 +45,10 @@ hl.config({
   },
 })
 
+-- Swap Caps Lock and Escape on the built-in laptop keyboard only. The Corne
+-- already sends Escape from its own key, a global swap would turn it into Caps Lock.
+hl.device({ name = "at-translated-set-2-keyboard", kb_layout = "us", kb_options = "caps:swapescape" })
+
 -- Autostart. hl.exec_cmd runs immediately; hl.dsp.exec_cmd only builds a
 -- dispatcher for hl.bind and would do nothing here.
 hl.on("hyprland.start", function()

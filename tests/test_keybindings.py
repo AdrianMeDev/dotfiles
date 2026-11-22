@@ -260,6 +260,13 @@ class KeybindingTests(unittest.TestCase):
         for tool in ('grim', 'slurp', 'wl-copy'):
             self.assertIn(tool, execs['ALT + SHIFT + S'])
 
+    def test_caps_escape_swap_is_limited_to_the_laptop_keyboard(self):
+        text = (REPO / 'hypr/.config/hypr/hyprland.lua').read_text(encoding='utf-8')
+        self.assertNotIn('kb_options', re.search(r'(?s)hl\.config\(\{.*?\n\}\)', text).group(0))
+        device = re.search(r'hl\.device\(\{ name = "at-translated-set-2-keyboard",(.*)\}\)', text)
+        self.assertIsNotNone(device)
+        self.assertIn('kb_options = "caps:swapescape"', device.group(1))
+
     def test_hyprland_combo_normalization(self):
         self.assertEqual(normalize_hypr_combo('ALT + SHIFT + H'), 'alt+shift+h')
         self.assertEqual(normalize_hypr_combo('SHIFT + SUPER + RETURN'), 'win+shift+enter')
