@@ -22,7 +22,7 @@ hl.config({
   input = {
     kb_layout = "us",
     follow_mouse = 1,
-    touchpad = { natural_scroll = true },
+    touchpad = { natural_scroll = false },
   },
   general = {
     gaps_in = 4,
