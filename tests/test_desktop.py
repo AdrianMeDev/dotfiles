@@ -8,7 +8,8 @@ import unittest
 
 REPO = Path(__file__).resolve().parents[1]
 COMMON = ['hyprland', 'xdg-desktop-portal-hyprland', 'waybar', 'fuzzel', 'mako', 'hyprlock',
-          'hypridle', 'hyprpaper', 'cliphist', 'grim', 'slurp', 'wireplumber', 'brightnessctl', 'playerctl']
+          'hypridle', 'hyprpaper', 'cliphist', 'grim', 'slurp', 'wireplumber', 'brightnessctl', 'playerctl', 'gnome-keyring',
+          'pavucontrol', 'libnotify', 'blueman']
 
 
 class DesktopTests(unittest.TestCase):
@@ -52,7 +53,7 @@ install_desktop
         self.assertEqual(len(commands), 1, commands)
         self.assertTrue(commands[0].startswith('pacman -S --needed --noconfirm '), commands)
         packages = commands[0].split()
-        for name in [*COMMON, 'polkit-kde-agent']:
+        for name in [*COMMON, 'polkit-kde-agent', 'networkmanager']:
             self.assertIn(name, packages)
 
     def test_fedora_enables_copr_then_installs(self):
@@ -61,7 +62,7 @@ install_desktop
         self.assertEqual(commands[0], 'dnf copr enable -y sdegler/hyprland')
         self.assertTrue(commands[1].startswith('dnf install -y '), commands)
         packages = commands[1].split()
-        for name in [*COMMON, 'polkit-kde']:
+        for name in [*COMMON, 'polkit-kde', 'NetworkManager-tui']:
             self.assertIn(name, packages)
         self.assertEqual(len(commands), 2)
 

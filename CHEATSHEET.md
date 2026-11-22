@@ -529,7 +529,7 @@ Gleiche Kürzel unter Linux (Hyprland >= 0.57, Lua-Config) und Windows (GlazeWM,
 | `Alt+F`                               | Vollbild umschalten                                        |
 | `Alt+Shift+Space`                     | Floating umschalten                                        |
 | `Alt+Shift+R`                         | WM-Konfiguration neu laden                                 |
-| `Alt+Shift+P`                         | Tiling und globale Kürzel pausieren/fortsetzen             |
+| `Alt+Shift+P`                         | Tiling und globale Kürzel pausieren/fortsetzen (Submap `paused`, nur `Alt+Shift+P` bleibt aktiv) |
 | `Alt+Shift+X`                         | Sperren (Linux: hyprlock; Windows: `Win+L`)                |
 | `Alt+V`                               | Zwischenablage-Verlauf (Linux: cliphist; Windows: `Win+V`) |
 | `Alt+Shift+S`                         | Screenshot (Linux: grim/slurp; Windows: `Win+Shift+S`)     |
@@ -549,10 +549,19 @@ funktionieren auch auf dem Sperrbildschirm.
 
 | Taste                    | Aktion                                   |
 | ------------------------ | ---------------------------------------- |
-| Lautstärke +/-           | `wpctl`, 5 %-Schritte, max. 100 %        |
+| Lautstärke +/-           | `wpctl`, 5 %-Schritte, max. 100 %, Benachrichtigung |
 | Stumm / Mikrofon stumm   | Ausgang / Eingang stumm schalten         |
-| Helligkeit +/-           | `brightnessctl`, 5 %-Schritte            |
+| Helligkeit +/-           | `brightnessctl`, 5 %-Schritte, Benachrichtigung |
+| Waybar-Lautstärke        | Scrollen = ±5 %, Klick = `pavucontrol`   |
 | Play/Pause, Next, Prev   | `playerctl`                              |
+
+### Waybar-Klicks (nur Linux)
+
+| Modul     | Klick                                              |
+| --------- | -------------------------------------------------- |
+| Lautstärke | `pavucontrol` (schwebend), Scrollen ±5 %          |
+| Netzwerk  | `nmtui` in WezTerm (schwebend)                     |
+| Bluetooth | `blueman-manager` (schwebend)                      |
 
 ## `dot` (Linux und Windows)
 

@@ -119,11 +119,13 @@ class ContainerMatrixTests(unittest.TestCase):
         for module in ('desktop', 'theme'):
             self.assertIn('--only $module --profile desktop --dry-run', entry)
             self.assertIn(module, entry)
+        self.assertIn('hyprland-session.target', entry)
         self.assertIn('if [[ $family != debian ]]', entry)
         # The preview must be compared against a snapshot of $HOME.
         self.assertRegex(entry, r'before=\$\(snapshot\)\n\s+for module in desktop theme')
         for link in ('hyprland.lua', 'bindings.lua', 'media.lua'):
             self.assertTrue((REPO / 'hypr/.config/hypr' / link).is_file())
+        self.assertTrue((REPO / 'hypr/.config/systemd/user/hyprland-session.target').is_file())
 
 
 if __name__ == '__main__':

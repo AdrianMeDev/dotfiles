@@ -11,5 +11,5 @@ window#waybar { color: #a9b1d6; background: #1a1b26; }
 #workspaces button.active { color: #1a1b26; background: #7aa2f7; }
 #workspaces button.urgent { color: #1a1b26; background: #f7768e; }
 #workspaces button:hover { background: transparent; box-shadow: inset 0 0 0 1px #7dcfff; }
-#clock, #network, #battery { color: #a9b1d6; }
-#network, #battery { margin-right: 8px; }
+#clock, #wireplumber, #network, #bluetooth, #battery { color: #a9b1d6; }
+#wireplumber, #network, #bluetooth, #battery { margin-right: 8px; }

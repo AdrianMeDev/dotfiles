@@ -149,6 +149,11 @@ class CorneLayoutTests(unittest.TestCase):
                     self.assertTrue(chord_reachable(self.layout, set(mods), key),
                                     f'{windows_combo} unreachable')
 
+    def test_layer_4_sends_altgr_umlauts_for_eurkey(self):
+        codes = {code for row in self.layout[4] for code in row}
+        for letter in 'ASOU':
+            self.assertIn(f'RALT(KC_{letter})', codes)
+
     def test_resize_mode_is_covered(self):
         modes = {mode for _, mode, _, _ in contract()}
         self.assertEqual(modes, {'global', 'resize'})

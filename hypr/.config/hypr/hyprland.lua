@@ -20,7 +20,7 @@ hl.config({
   -- Bibata ships Xcursor images.
   cursor = { enable_hyprcursor = false },
   input = {
-    kb_layout = "us",
+    kb_layout = "eu",
     follow_mouse = 1,
     touchpad = { natural_scroll = false },
   },
@@ -47,20 +47,29 @@ hl.config({
 
 -- Swap Caps Lock and Escape on the built-in laptop keyboard only. The Corne
 -- already sends Escape from its own key, a global swap would turn it into Caps Lock.
-hl.device({ name = "at-translated-set-2-keyboard", kb_layout = "us", kb_options = "caps:swapescape" })
+hl.device({ name = "at-translated-set-2-keyboard", kb_layout = "eu", kb_options = "caps:swapescape" })
 
 -- Autostart. hl.exec_cmd runs immediately; hl.dsp.exec_cmd only builds a
 -- dispatcher for hl.bind and would do nothing here.
 hl.on("hyprland.start", function()
+  -- Without uwsm nothing activates graphical-session.target, which xdg-desktop-portal needs.
+  hl.exec_cmd("dbus-update-activation-environment --systemd WAYLAND_DISPLAY XDG_CURRENT_DESKTOP HYPRLAND_INSTANCE_SIGNATURE XDG_SESSION_TYPE")
+  hl.exec_cmd("systemctl --user start hyprland-session.target")
   hl.exec_cmd("waybar")
   hl.exec_cmd("mako")
   hl.exec_cmd("hypridle")
+  -- Secret Service (org.freedesktop.secrets) for Brave, Zed and gh; asks for a keyring password on first use.
+  hl.exec_cmd("gnome-keyring-daemon --start --components=secrets")
+  -- polkit-kde lives in /usr/libexec/kf6 on Fedora and in /usr/lib on Arch.
+  hl.exec_cmd("sh -c 'for a in /usr/libexec/kf6/polkit-kde-authentication-agent-1 /usr/lib/polkit-kde-authentication-agent-1; do [ -x \"$a\" ] && exec \"$a\"; done'")
   hl.exec_cmd("hyprpaper")
   hl.exec_cmd("wl-paste --watch cliphist store")
 end)
 
 -- Window rules
 hl.window_rule({ name = "float-pavucontrol", match = { class = "^(org.pulseaudio.pavucontrol)$" }, float = true })
+hl.window_rule({ name = "float-blueman", match = { class = "^(\\.?blueman-manager(-wrapped)?)$" }, float = true })
+hl.window_rule({ name = "float-nmtui", match = { class = "^(nmtui)$" }, float = true })
 hl.window_rule({ name = "float-polkit", match = { class = "^(org.kde.polkit-kde-authentication-agent-1)$" }, float = true })
 
 -- Key bindings live in bindings.lua (same directory).

@@ -204,6 +204,11 @@ sudo --preserve-env=GITHUB_TOKEN -u dev -i bash -s <<'EOF'
             exit 1
         }
     done
+    unit="$HOME/.config/systemd/user/hyprland-session.target"
+    [[ -L $unit && $(readlink -f "$unit") == "$HOME/dotfiles/hypr/.config/systemd/user/hyprland-session.target" ]] || {
+        printf 'Hypr-Session-Target fehlt oder zeigt falsch: %s\n' "$unit" >&2
+        exit 1
+    }
 EOF
 if [[ $family != debian ]]; then
     # The container is headless, so force the desktop profile; the preview must write nothing.

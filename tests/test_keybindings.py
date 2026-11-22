@@ -246,6 +246,9 @@ class KeybindingTests(unittest.TestCase):
     def test_hyprland_parity(self):
         found = parse_hyprland(HYPR_BINDINGS.read_text(encoding='utf-8'))
         self.assertEqual(len(found), len(set(found)), 'duplicate Hyprland binding in a mode')
+        # The `paused` submap's exit key is the second half of the global `pause` row (wm-toggle-pause).
+        self.assertIn(('paused', 'alt+shift+p'), found)
+        found.remove(('paused', 'alt+shift+p'))
         expected = {(mode, combo) for _, mode, combo, _ in load_contract()}
         self.assertEqual(sorted(expected - set(found)), [], 'contract row not bound in Hyprland')
         self.assertEqual(sorted(set(found) - expected), [], 'Hyprland binding outside the contract')
@@ -273,6 +276,13 @@ class KeybindingTests(unittest.TestCase):
                           ('XF86AudioPlay', 'playerctl'), ('XF86AudioNext', 'playerctl'), ('XF86AudioPrev', 'playerctl')):
             with self.subTest(key=key):
                 self.assertTrue(binds[key].startswith(tool + ' '), binds[key])
+        for key, kind in (('XF86AudioRaiseVolume', 'volume'), ('XF86AudioLowerVolume', 'volume'),
+                          ('XF86AudioMute', 'volume'), ('XF86AudioMicMute', 'mic'),
+                          ('XF86MonBrightnessUp', 'brightness'), ('XF86MonBrightnessDown', 'brightness')):
+            with self.subTest(key=key, feedback=kind):
+                self.assertTrue(binds[key].endswith(f' && sh $HOME/.config/hypr/osd.sh {kind}'), binds[key])
+        osd = (REPO / 'hypr/.config/hypr/osd.sh').read_text(encoding='utf-8')
+        self.assertIn('x-canonical-private-synchronous', osd)
         self.assertIn('require("media")', (REPO / 'hypr/.config/hypr/hyprland.lua').read_text(encoding='utf-8'))
         packages = (REPO / 'manifests/packages.tsv').read_text(encoding='utf-8')
         for logical in ('wireplumber', 'brightnessctl', 'playerctl'):
@@ -284,6 +294,48 @@ class KeybindingTests(unittest.TestCase):
         device = re.search(r'hl\.device\(\{ name = "at-translated-set-2-keyboard",(.*)\}\)', text)
         self.assertIsNotNone(device)
         self.assertIn('kb_options = "caps:swapescape"', device.group(1))
+
+    def test_eurkey_layout_for_altgr_umlauts(self):
+        text = (REPO / 'hypr/.config/hypr/hyprland.lua').read_text(encoding='utf-8')
+        self.assertIn('kb_layout = "eu"', re.search(r'(?s)hl\.config\(\{.*?\n\}\)', text).group(0))
+        device = re.search(r'hl\.device\(\{ name = "at-translated-set-2-keyboard",(.*)\}\)', text)
+        self.assertIn('kb_layout = "eu"', device.group(1))
+        self.assertNotIn('kb_layout = "us"', text)
+
+    def test_pause_is_a_submap_with_a_single_exit(self):
+        text = HYPR_BINDINGS.read_text(encoding='utf-8')
+        self.assertIn('hl.bind("ALT + SHIFT + P", hl.dsp.submap("paused"))', text)
+        block = re.search(r'(?s)hl\.define_submap\("paused", function\(\)(.*?)\nend\)', text).group(1)
+        self.assertEqual(re.findall(r'hl\.bind\("([^"]+)"', block), ['ALT + SHIFT + P'])
+        self.assertIn('hl.dsp.submap("reset")', block)
+
+    def test_hyprctl_dispatch_uses_lua_syntax(self):
+        for path in (REPO / 'hypr/.config/hypr').iterdir():
+            if path.suffix in ('.lua', '.conf'):
+                for cmd in re.findall(r'hyprctl dispatch (\S+)', path.read_text(encoding='utf-8')):
+                    self.assertTrue(cmd.startswith(("'hl.", '"hl.')), f'{path.name}: legacy dispatch {cmd}')
+
+    def test_autostart_activates_the_graphical_session_target(self):
+        text = (REPO / 'hypr/.config/hypr/hyprland.lua').read_text(encoding='utf-8')
+        env = text.index('dbus-update-activation-environment --systemd')
+        start = text.index('systemctl --user start hyprland-session.target')
+        self.assertLess(env, start)
+        self.assertLess(start, text.index('hl.exec_cmd("waybar")'))
+        unit = (REPO / 'hypr/.config/systemd/user/hyprland-session.target').read_text(encoding='utf-8')
+        self.assertRegex(unit, r'(?m)^BindsTo=graphical-session\.target$')
+
+    def test_autostart_runs_the_polkit_agent_from_both_distro_paths(self):
+        text = (REPO / 'hypr/.config/hypr/hyprland.lua').read_text(encoding='utf-8')
+        fedora = text.index('/usr/libexec/kf6/polkit-kde-authentication-agent-1')
+        arch = text.index('/usr/lib/polkit-kde-authentication-agent-1')
+        self.assertLess(fedora, arch)
+        self.assertIn('exec \\"$a\\"', text)
+
+    def test_autostart_starts_the_secret_service(self):
+        text = (REPO / 'hypr/.config/hypr/hyprland.lua').read_text(encoding='utf-8')
+        self.assertIn('hl.exec_cmd("gnome-keyring-daemon --start --components=secrets")', text)
+        self.assertRegex((REPO / 'manifests/packages.tsv').read_text(encoding='utf-8'),
+                         r'(?m)^gnome-keyring\thypr\tgnome-keyring\tgnome-keyring\t')
 
     def test_hyprland_combo_normalization(self):
         self.assertEqual(normalize_hypr_combo('ALT + SHIFT + H'), 'alt+shift+h')

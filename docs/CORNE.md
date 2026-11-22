@@ -58,7 +58,7 @@ Linke Hälfte                                         Rechte Hälfte
                      ·      ·      ·                 ·      ·      ·
 ```
 
-(Mit US-International-Layout ergeben `RAlt+A/S/O/U` die Zeichen `ä`, `ß`, `ö`, `ü`; `RAlt+O` und `RAlt+U` liegen auf der rechten oberen Buchstabenreihe `O` bzw. `U`.)
+(Mit dem EurKEY-Layout (Linux: xkb `eu`; Windows: manuell installieren, siehe `windows/README.md`) ergeben `RAlt+A/S/O/U` die Zeichen `ä`, `ß`, `ö`, `ü`; `RAlt+O` und `RAlt+U` liegen auf der rechten oberen Buchstabenreihe `O` bzw. `U`.)
 
 ### Layer 5 – Zahlen & Operatoren (`MO(5)` oder `LT(5, Bspc)` halten)
 
