@@ -185,7 +185,7 @@ _doc_corne() {
     if [[ $profile != desktop ]] || is_wsl; then return 0; fi
     # shellcheck source=scripts/corne.sh
     source "$REPO_DIR/scripts/corne.sh"
-    if have vial; then _doc_ok 'Vial vorhanden.'; else _doc_warn 'Vial fehlt (dot install --only corne).'; fi
+    if have Vial || have vial; then _doc_ok 'Vial vorhanden.'; else _doc_warn 'Vial fehlt (dot install --only corne).'; fi
     target=$(corne_udev_path)
     if [[ ! -f $target ]]; then
         _doc_warn "Vial-udev-Regel fehlt: $target (dot install --only corne)."

@@ -9,7 +9,8 @@ corne_udev_rule() {
 corne_udev_path() { printf '%s\n' "${VIAL_UDEV_RULE:-/etc/udev/rules.d/99-vial.rules}"; }
 
 corne_install_vial() {
-    if have vial; then log 'Vial ist vorhanden.'; return 0; fi
+    # vial-appimage installs /usr/bin/Vial; other installs provide vial.
+    if have Vial || have vial; then log 'Vial ist vorhanden.'; return 0; fi
     if [[ $DISTRO_FAMILY == arch ]]; then
         local pkg pkgs=()
         while IFS= read -r pkg; do pkgs+=("aur:$pkg"); done < <(pkg_names vial)

@@ -464,9 +464,9 @@ class DotCliTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         self.assertIn('~/.gitconfig-local fehlt', result.stdout)
 
-    def desktop_doctor(self, vial=True, rule=None, setup=True):
+    def desktop_doctor(self, vial=True, rule=None, setup=True, binary='vial'):
         if setup:
-            self.setup_doctor(extra=('vial',) if vial else ())
+            self.setup_doctor(extra=(binary,) if vial else ())
             self.env.pop('container')
             self.env['WAYLAND_DISPLAY'] = 'wayland-0'
             self.env['VIAL_UDEV_RULE'] = str(self.base / '99-vial.rules')
@@ -481,6 +481,10 @@ class DotCliTests(unittest.TestCase):
         result = self.desktop_doctor(rule=CORNE_RULE)
         self.assertIn('[OK]      Vial vorhanden.', result.stdout)
         self.assertIn(f'[OK]      Vial-udev-Regel: {self.base}/99-vial.rules', result.stdout)
+
+    def test_doctor_corne_desktop_accepts_capitalised_vial(self):
+        result = self.desktop_doctor(rule=CORNE_RULE, binary='Vial')
+        self.assertIn('[OK]      Vial vorhanden.', result.stdout)
 
     def test_doctor_corne_desktop_warns(self):
         result = self.desktop_doctor(vial=False)

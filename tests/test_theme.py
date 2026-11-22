@@ -429,7 +429,7 @@ class ParityTests(unittest.TestCase):
         env = dict(re.findall(r'hl\.env\("(\w+)", "([^"]+)"\)', read('hypr/.config/hypr/hyprland.lua')))
         font = load_tokens()['font']
         for version in (3, 4):
-            folder = root / f'gtk-{version}.0'
+            folder = REPO / f'theme/gtk-{version}.0'
             config = configparser.ConfigParser()
             config.read(folder / 'settings.ini')
             settings = config['Settings']
