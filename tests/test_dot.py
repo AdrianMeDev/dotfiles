@@ -553,6 +553,15 @@ class DotCliTests(unittest.TestCase):
         self.env['DOT_POLKIT_AGENTS'] = f'{self.base}/missing-agent'
         self.assertIn('[WARN]    Polkit-Agent fehlt', self.run_dot('doctor').stdout)
 
+    def test_doctor_checks_secret_service(self):
+        self.setup_doctor()
+        self.fake_hyprland()
+        self.assertIn('[WARN]    Secret Service fehlt', self.run_dot('doctor').stdout)
+        keyring = self.base / 'fakebin/gnome-keyring-daemon'
+        keyring.write_text('#!/bin/sh\n')
+        keyring.chmod(0o755)
+        self.assertIn('[OK]      Secret Service: gnome-keyring vorhanden.', self.run_dot('doctor').stdout)
+
     def test_doctor_warns_on_old_hyprland_and_leftover_conf(self):
         self.setup_doctor()
         self.fake_hyprland(version='0.56.2')

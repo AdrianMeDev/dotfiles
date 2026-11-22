@@ -138,6 +138,14 @@ _doc_desktop() {
         _doc_warn 'Polkit-Agent fehlt (polkit-kde-agent); GUI-Passwortabfragen schlagen fehl (dot install --only desktop --profile desktop).'
     fi
 
+    if ! have gnome-keyring-daemon; then
+        _doc_warn 'Secret Service fehlt (gnome-keyring); Brave, Zed und gh speichern Zugangsdaten unverschlüsselt (dot install --only desktop --profile desktop).'
+    elif [[ -n ${HYPRLAND_INSTANCE_SIGNATURE:-} ]] && have busctl && ! busctl --user status org.freedesktop.secrets > /dev/null 2>&1; then
+        _doc_warn 'Secret Service: org.freedesktop.secrets ist nicht aktiv (gnome-keyring-daemon --start --components=secrets).'
+    else
+        _doc_ok 'Secret Service: gnome-keyring vorhanden.'
+    fi
+
     if have waybar; then
         version=$(waybar --version 2>&1 | head -n 1) || true
         _doc_ok "waybar: ${version:-Version unbekannt}"

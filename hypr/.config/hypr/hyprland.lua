@@ -58,6 +58,8 @@ hl.on("hyprland.start", function()
   hl.exec_cmd("waybar")
   hl.exec_cmd("mako")
   hl.exec_cmd("hypridle")
+  -- Secret Service (org.freedesktop.secrets) for Brave, Zed and gh; asks for a keyring password on first use.
+  hl.exec_cmd("gnome-keyring-daemon --start --components=secrets")
   -- polkit-kde lives in /usr/libexec/kf6 on Fedora and in /usr/lib on Arch.
   hl.exec_cmd("sh -c 'for a in /usr/libexec/kf6/polkit-kde-authentication-agent-1 /usr/lib/polkit-kde-authentication-agent-1; do [ -x \"$a\" ] && exec \"$a\"; done'")
   hl.exec_cmd("hyprpaper")

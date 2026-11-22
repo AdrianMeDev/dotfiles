@@ -324,6 +324,12 @@ class KeybindingTests(unittest.TestCase):
         self.assertLess(fedora, arch)
         self.assertIn('exec \\"$a\\"', text)
 
+    def test_autostart_starts_the_secret_service(self):
+        text = (REPO / 'hypr/.config/hypr/hyprland.lua').read_text(encoding='utf-8')
+        self.assertIn('hl.exec_cmd("gnome-keyring-daemon --start --components=secrets")', text)
+        self.assertRegex((REPO / 'manifests/packages.tsv').read_text(encoding='utf-8'),
+                         r'(?m)^gnome-keyring\thypr\tgnome-keyring\tgnome-keyring\t')
+
     def test_hyprland_combo_normalization(self):
         self.assertEqual(normalize_hypr_combo('ALT + SHIFT + H'), 'alt+shift+h')
         self.assertEqual(normalize_hypr_combo('SHIFT + SUPER + RETURN'), 'win+shift+enter')
