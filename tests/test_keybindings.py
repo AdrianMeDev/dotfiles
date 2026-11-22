@@ -308,6 +308,15 @@ class KeybindingTests(unittest.TestCase):
                 for cmd in re.findall(r'hyprctl dispatch (\S+)', path.read_text(encoding='utf-8')):
                     self.assertTrue(cmd.startswith(("'hl.", '"hl.')), f'{path.name}: legacy dispatch {cmd}')
 
+    def test_autostart_activates_the_graphical_session_target(self):
+        text = (REPO / 'hypr/.config/hypr/hyprland.lua').read_text(encoding='utf-8')
+        env = text.index('dbus-update-activation-environment --systemd')
+        start = text.index('systemctl --user start hyprland-session.target')
+        self.assertLess(env, start)
+        self.assertLess(start, text.index('hl.exec_cmd("waybar")'))
+        unit = (REPO / 'hypr/.config/systemd/user/hyprland-session.target').read_text(encoding='utf-8')
+        self.assertRegex(unit, r'(?m)^BindsTo=graphical-session\.target$')
+
     def test_hyprland_combo_normalization(self):
         self.assertEqual(normalize_hypr_combo('ALT + SHIFT + H'), 'alt+shift+h')
         self.assertEqual(normalize_hypr_combo('SHIFT + SUPER + RETURN'), 'win+shift+enter')

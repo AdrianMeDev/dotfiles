@@ -52,6 +52,9 @@ hl.device({ name = "at-translated-set-2-keyboard", kb_layout = "eu", kb_options 
 -- Autostart. hl.exec_cmd runs immediately; hl.dsp.exec_cmd only builds a
 -- dispatcher for hl.bind and would do nothing here.
 hl.on("hyprland.start", function()
+  -- Without uwsm nothing activates graphical-session.target, which xdg-desktop-portal needs.
+  hl.exec_cmd("dbus-update-activation-environment --systemd WAYLAND_DISPLAY XDG_CURRENT_DESKTOP HYPRLAND_INSTANCE_SIGNATURE XDG_SESSION_TYPE")
+  hl.exec_cmd("systemctl --user start hyprland-session.target")
   hl.exec_cmd("waybar")
   hl.exec_cmd("mako")
   hl.exec_cmd("hypridle")
