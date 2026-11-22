@@ -127,6 +127,11 @@ class CorneTests(ModuleTestCase):
         self.assertIn('aktuell', result.stdout)
         self.assertEqual(self.rule.stat().st_mtime_ns, mtime)
 
+    def test_capitalised_vial_binary_skips_install(self):
+        result, commands = self.ok('Vial() { :; }', family='arch')
+        self.assertEqual(commands, RELOAD)
+        self.assertIn('Vial ist vorhanden', result.stdout)
+
     def test_conflicting_rule_needs_backup(self):
         self.rule.parent.mkdir(parents=True)
         self.rule.write_text('# custom\n')
