@@ -861,6 +861,7 @@ target="$XDG_DATA_HOME/fonts/IoskeleyMono"
             node = install / 'node'
             node.write_text('#!/bin/sh\nprintf "v' + version + '\\n"\n')
             node.chmod(0o755)
+        self.run_command([mise, 'reshim'])
         node_project = self.base / 'node project'
         (node_project / 'subdir').mkdir(parents=True)
         (node_project / '.node-version').write_text('22.0.0\n')
