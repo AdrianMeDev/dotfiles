@@ -276,7 +276,8 @@ function Get-FilePlan {
             if (-not (Test-Path -LiteralPath $entry.Path -PathType Leaf)) { throw "Zieldatei ist ein Verzeichnis: $($entry.Path)" }
             $existing = [IO.File]::ReadAllBytes($entry.Path)
             if ([Convert]::ToBase64String($existing) -ceq [Convert]::ToBase64String($entry.Bytes)) { $action = 'Skip' }
-            elseif ($Backup -or $entry.Generated) { $action = 'Replace' }
+            # Only New-TextEntry sets Generated; StrictMode throws on a missing property.
+            elseif ($Backup -or ($entry.PSObject.Properties['Generated'] -and $entry.Generated)) { $action = 'Replace' }
             else { throw "Dateikonflikt: $($entry.Path). Mit -Backup sichern und ersetzen." }
         }
         [pscustomobject]@{ Path = $entry.Path; Bytes = $entry.Bytes; Action = $action }

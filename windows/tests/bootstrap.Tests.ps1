@@ -57,6 +57,7 @@ param([string]$Verb, [switch]$DryRun, [switch]$Backup, [string[]]$Extra, [string
             New-Item -ItemType Directory -Path (Split-Path $script:standalone) | Out-Null
             Copy-Item -LiteralPath $script:bootstrap -Destination $script:standalone
             $global:cloneCalls = 0
+            $global:pullCalls = 0
             $global:gitInstalls = 0
             $global:gitPresent = $true
             function Test-Git { $global:gitPresent }
@@ -66,9 +67,10 @@ param([string]$Verb, [switch]$DryRun, [switch]$Backup, [string[]]$Extra, [string
                 New-Item -ItemType Directory -Path (Join-Path $Path 'windows'), (Join-Path $Path '.git') -Force | Out-Null
                 Copy-Item -LiteralPath $global:fake -Destination (Join-Path $Path 'windows/dot.ps1')
             }
+            function Update-GitClone([string]$Path) { $global:pullCalls++ }
         }
         BeforeEach {
-            $global:cloneCalls = 0; $global:gitInstalls = 0; $global:gitPresent = $true
+            $global:cloneCalls = 0; $global:pullCalls = 0; $global:gitInstalls = 0; $global:gitPresent = $true
             $script:target = Join-Path $TestDrive 'clone'
             Remove-Item -LiteralPath $script:target -Recurse -Force -ErrorAction SilentlyContinue
             Remove-Item -LiteralPath (Join-Path $script:target 'windows/args.json') -ErrorAction SilentlyContinue
@@ -92,6 +94,7 @@ param([string]$Verb, [switch]$DryRun, [switch]$Backup, [string[]]$Extra, [string
             & $script:standalone -TargetDir $script:target *> $null
             & $script:standalone -TargetDir $script:target *> $null
             $global:cloneCalls | Should -Be 1
+            $global:pullCalls | Should -Be 1
             Test-Path -LiteralPath (Join-Path $script:target 'windows/args.json') | Should -BeTrue
         }
         It 'writes nothing on -DryRun' {
@@ -107,8 +110,14 @@ param([string]$Verb, [switch]$DryRun, [switch]$Backup, [string[]]$Extra, [string
             ((& $script:standalone -TargetDir $script:target 2>&1 | ForEach-Object { "$_" }) -join ' ') | Should -Match 'kein Git-Klon'
             $global:cloneCalls | Should -Be 0
         }
+        It 'keeps the session open when run via irm | iex' {
+            $code = "function Test-Windows11 { `$false }; Get-Content -Raw -LiteralPath '$script:bootstrap' | Invoke-Expression; 'still-open'"
+            $out = (pwsh -NoProfile -Command $code 2>&1 | ForEach-Object { "$_" }) -join ' '
+            $out | Should -Match 'Windows 11 ist erforderlich'
+            $out | Should -Match 'still-open'
+        }
         AfterAll {
-            Remove-Variable -Scope Global -Name cloneCalls, gitInstalls, gitPresent, fake -ErrorAction SilentlyContinue
+            Remove-Variable -Scope Global -Name cloneCalls, pullCalls, gitInstalls, gitPresent, fake -ErrorAction SilentlyContinue
         }
     }
 }
