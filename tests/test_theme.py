@@ -49,6 +49,8 @@ EXCEPTIONS = {
     'glazewm.corner_radius': 'DWM only knows rounded/square/small_rounded corners, no radius in px; '
                              'style "rounded" stands in for border.radius.',
     'glazewm.blur': 'GlazeWM has no blur; Acrylic is enabled in WezTerm (win32_system_backdrop) only.',
+    'glazewm.opacity': 'GlazeWM transparency is off: it applies to every window and stacks with the '
+                       'own window.opacity of WezTerm and Zed (0.75 * 0.75 = 0.56).',
     'zebar.opacity': 'The bar mirrors Waybar and stays opaque (bg), so no alpha_hex is applied.',
     'starship.foreground': 'Starship palette foreground uses fg_dark, matching the tmux/fzf text color.',
 }
@@ -365,7 +367,7 @@ class ParityTests(unittest.TestCase):
 
     def test_glazewm(self):
         tokens = load_tokens()
-        p, window = tokens['palette'], tokens['window']
+        p = tokens['palette']
         text = read('windows/glazewm/config.yaml')
         effects = re.search(r'(?ms)^window_effects:\n(.*?)^\S', text).group(1)
         for group in ('focused_window', 'other_windows'):
@@ -373,9 +375,8 @@ class ParityTests(unittest.TestCase):
             color = p['border_active'] if group == 'focused_window' else p['border']
             self.assertIn(f"border: {{ enabled: true, color: '{color}' }}", body, group)
             self.assertIn("corner_style: { enabled: true, style: rounded }", body, group)
-            self.assertIn(f"transparency: {{ enabled: true, opacity: '{round(window['opacity'] * 100)}%' }}",
-                          body, group)
-        for key in ('glazewm.border_width', 'glazewm.corner_radius', 'glazewm.blur'):
+            self.assertIn("transparency: { enabled: false, opacity: '100%' }", body, group)
+        for key in ('glazewm.border_width', 'glazewm.corner_radius', 'glazewm.blur', 'glazewm.opacity'):
             self.assertIn(key, EXCEPTIONS)
         self.assert_colors_in_contract('windows/glazewm/config.yaml')
 
