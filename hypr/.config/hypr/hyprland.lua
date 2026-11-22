@@ -4,6 +4,10 @@
 -- Theme values come from theme/tokens.toml and are checked by tests/test_theme.py.
 
 -- qt6ct also accepts the qt5ct platform theme name.
+-- Display managers start Hyprland with a minimal PATH; user-local tools
+-- (e.g. the WezTerm AppImage wrapper from scripts/apps.sh) live in ~/.local/bin.
+hl.env("PATH", os.getenv("HOME") .. "/.local/bin:" .. (os.getenv("PATH") or "/usr/local/bin:/usr/bin"))
+
 hl.env("QT_QPA_PLATFORMTHEME", "qt5ct")
 hl.env("XCURSOR_THEME", "Bibata-Modern-Classic")
 hl.env("XCURSOR_SIZE", "24")
@@ -41,13 +45,14 @@ hl.config({
   },
 })
 
--- Autostart
+-- Autostart. hl.exec_cmd runs immediately; hl.dsp.exec_cmd only builds a
+-- dispatcher for hl.bind and would do nothing here.
 hl.on("hyprland.start", function()
-  hl.dsp.exec_cmd("waybar")
-  hl.dsp.exec_cmd("mako")
-  hl.dsp.exec_cmd("hypridle")
-  hl.dsp.exec_cmd("hyprpaper")
-  hl.dsp.exec_cmd("wl-paste --watch cliphist store")
+  hl.exec_cmd("waybar")
+  hl.exec_cmd("mako")
+  hl.exec_cmd("hypridle")
+  hl.exec_cmd("hyprpaper")
+  hl.exec_cmd("wl-paste --watch cliphist store")
 end)
 
 -- Window rules
