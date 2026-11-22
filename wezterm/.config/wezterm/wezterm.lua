@@ -20,6 +20,9 @@ config.audible_bell = 'Disabled'
 if wezterm.target_triple:find 'linux' then
   local ok, shell = wezterm.run_child_process { 'sh', '-c', 'command -v zsh' }
   if ok then config.default_prog = { shell:gsub('%s+$', ''), '-l' } end
+  -- The 20240203 release maps no Wayland windows on Hyprland >= 0.57: the GUI
+  -- starts but stays invisible. XWayland works; drop this with a newer release.
+  config.enable_wayland = false
 end
 
 config.font_size = 14
