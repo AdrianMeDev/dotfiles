@@ -276,6 +276,13 @@ class KeybindingTests(unittest.TestCase):
                           ('XF86AudioPlay', 'playerctl'), ('XF86AudioNext', 'playerctl'), ('XF86AudioPrev', 'playerctl')):
             with self.subTest(key=key):
                 self.assertTrue(binds[key].startswith(tool + ' '), binds[key])
+        for key, kind in (('XF86AudioRaiseVolume', 'volume'), ('XF86AudioLowerVolume', 'volume'),
+                          ('XF86AudioMute', 'volume'), ('XF86AudioMicMute', 'mic'),
+                          ('XF86MonBrightnessUp', 'brightness'), ('XF86MonBrightnessDown', 'brightness')):
+            with self.subTest(key=key, feedback=kind):
+                self.assertTrue(binds[key].endswith(f' && sh $HOME/.config/hypr/osd.sh {kind}'), binds[key])
+        osd = (REPO / 'hypr/.config/hypr/osd.sh').read_text(encoding='utf-8')
+        self.assertIn('x-canonical-private-synchronous', osd)
         self.assertIn('require("media")', (REPO / 'hypr/.config/hypr/hyprland.lua').read_text(encoding='utf-8'))
         packages = (REPO / 'manifests/packages.tsv').read_text(encoding='utf-8')
         for logical in ('wireplumber', 'brightnessctl', 'playerctl'):

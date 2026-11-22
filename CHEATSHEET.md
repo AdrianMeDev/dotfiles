@@ -549,9 +549,10 @@ funktionieren auch auf dem Sperrbildschirm.
 
 | Taste                    | Aktion                                   |
 | ------------------------ | ---------------------------------------- |
-| Lautstärke +/-           | `wpctl`, 5 %-Schritte, max. 100 %        |
+| Lautstärke +/-           | `wpctl`, 5 %-Schritte, max. 100 %, Benachrichtigung |
 | Stumm / Mikrofon stumm   | Ausgang / Eingang stumm schalten         |
-| Helligkeit +/-           | `brightnessctl`, 5 %-Schritte            |
+| Helligkeit +/-           | `brightnessctl`, 5 %-Schritte, Benachrichtigung |
+| Waybar-Lautstärke        | Scrollen = ±5 %, Klick = `pavucontrol`   |
 | Play/Pause, Next, Prev   | `playerctl`                              |
 
 ## `dot` (Linux und Windows)

@@ -7,7 +7,7 @@
   "spacing": 10,
   "modules-left": ["hyprland/workspaces"],
   "modules-center": ["clock"],
-  "modules-right": ["network", "battery"],
+  "modules-right": ["wireplumber", "network", "battery"],
   "hyprland/workspaces": {
     "format": "{name}",
     "persistent-workspaces": { "*": 9 },
@@ -16,6 +16,13 @@
   },
   "clock": {
     "format": "{:%d.%m.%Y, %H:%M}",
+    "tooltip": false
+  },
+  "wireplumber": {
+    "format": "{volume}%",
+    "format-muted": "muted",
+    "on-click": "pavucontrol",
+    "scroll-step": 5,
     "tooltip": false
   },
   "network": {

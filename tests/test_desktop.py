@@ -8,7 +8,8 @@ import unittest
 
 REPO = Path(__file__).resolve().parents[1]
 COMMON = ['hyprland', 'xdg-desktop-portal-hyprland', 'waybar', 'fuzzel', 'mako', 'hyprlock',
-          'hypridle', 'hyprpaper', 'cliphist', 'grim', 'slurp', 'wireplumber', 'brightnessctl', 'playerctl', 'gnome-keyring']
+          'hypridle', 'hyprpaper', 'cliphist', 'grim', 'slurp', 'wireplumber', 'brightnessctl', 'playerctl', 'gnome-keyring',
+          'pavucontrol', 'libnotify']
 
 
 class DesktopTests(unittest.TestCase):
