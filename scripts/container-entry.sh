@@ -195,7 +195,7 @@ EOF
 printf '==> Hyprland-Links und desktop/theme-Vorschau prüfen\n'
 sudo --preserve-env=GITHUB_TOKEN -u dev -i bash -s <<'EOF'
     set -euo pipefail
-    for f in hyprland.lua bindings.lua; do
+    for f in hyprland.lua bindings.lua media.lua; do
         link="$HOME/.config/hypr/$f"
         [[ -L $link ]] || { printf 'Hypr-Link ist kein Symlink: %s\n' "$link" >&2; exit 1; }
         target=$(readlink -f "$link")

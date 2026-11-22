@@ -22,7 +22,7 @@ hl.config({
   input = {
     kb_layout = "us",
     follow_mouse = 1,
-    touchpad = { natural_scroll = true },
+    touchpad = { natural_scroll = false },
   },
   general = {
     gaps_in = 4,
@@ -45,6 +45,10 @@ hl.config({
   },
 })
 
+-- Swap Caps Lock and Escape on the built-in laptop keyboard only. The Corne
+-- already sends Escape from its own key, a global swap would turn it into Caps Lock.
+hl.device({ name = "at-translated-set-2-keyboard", kb_layout = "us", kb_options = "caps:swapescape" })
+
 -- Autostart. hl.exec_cmd runs immediately; hl.dsp.exec_cmd only builds a
 -- dispatcher for hl.bind and would do nothing here.
 hl.on("hyprland.start", function()
@@ -61,3 +65,5 @@ hl.window_rule({ name = "float-polkit", match = { class = "^(org.kde.polkit-kde-
 
 -- Key bindings live in bindings.lua (same directory).
 require("bindings")
+-- Volume, brightness and playback keys live in media.lua.
+require("media")

@@ -96,6 +96,7 @@ Die folgenden Kürzel kommen direkt aus `zed-config/.config/zed/keymap.json`.
 | `Space w h/l/j`       | Linkes / rechtes / unteres Dock umschalten          |
 | `Ctrl-h/j/k/l`        | Fokus zwischen Panes und Panels                     |
 | `Shift-h` / `Shift-l` | Voriger / nächster Tab                              |
+| `Ctrl-1..8` / `Ctrl-9` | Tab 1–8 / letzter Tab (`Alt+Zahl` gehört dem WM)   |
 | `Space c a/r/f`       | Code-Action / Rename / Format                       |
 | `Space c d`           | Diagnosen                                           |
 | `Space c i/t/u`       | Implementierung / Typdefinition / Referenzen        |
@@ -518,6 +519,10 @@ Gleiche Kürzel unter Linux (Hyprland >= 0.57, Lua-Config) und Windows (GlazeWM,
 | `Alt+Shift+h/j/k/l`                   | Fenster verschieben                                        |
 | `Alt+Shift+Left/Down/Up/Right`        | Fenster verschieben (Pfeile)                               |
 | `Alt+Enter`                           | WezTerm öffnen                                             |
+| `Alt+B`                               | Browser (Linux: Standard-Browser; Windows: Startseite)     |
+| `Alt+E`                               | Dateimanager (Linux: yazi in WezTerm; Windows: Explorer)   |
+| `Alt+N`                               | Neovim in WezTerm                                          |
+| `Alt+G`                               | lazygit in WezTerm                                         |
 | `Alt+Space`                           | Launcher (Linux: fuzzel, Windows: Flow Launcher)           |
 | `Alt+Q`                               | Fenster schließen                                          |
 | `Alt+R`                               | Resize-Modus starten                                       |
@@ -536,6 +541,18 @@ Gleiche Kürzel unter Linux (Hyprland >= 0.57, Lua-Config) und Windows (GlazeWM,
 | `h/j/k/l`               | Breite -/Höhe +/Höhe -/Breite +  |
 | `Left/Down/Up/Right`    | dasselbe mit Pfeilen             |
 | `Esc`, `Enter`, `Alt+R` | Resize-Modus beenden             |
+
+### Medientasten (nur Linux)
+
+Hardware-Tasten aus `hypr/.config/hypr/media.lua`, außerhalb des Vertrags (Windows regelt sie selbst);
+funktionieren auch auf dem Sperrbildschirm.
+
+| Taste                    | Aktion                                   |
+| ------------------------ | ---------------------------------------- |
+| Lautstärke +/-           | `wpctl`, 5 %-Schritte, max. 100 %        |
+| Stumm / Mikrofon stumm   | Ausgang / Eingang stumm schalten         |
+| Helligkeit +/-           | `brightnessctl`, 5 %-Schritte            |
+| Play/Pause, Next, Prev   | `playerctl`                              |
 
 ## `dot` (Linux und Windows)
 

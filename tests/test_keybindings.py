@@ -217,7 +217,7 @@ class KeybindingTests(unittest.TestCase):
 
     def test_required_actions(self):
         actions = {r[0] for r in load_contract()}
-        required = {'close', 'terminal', 'launcher', 'resize-mode', 'fullscreen', 'floating', 'reload',
+        required = {'close', 'terminal', 'browser', 'file-manager', 'editor', 'git-ui', 'launcher', 'resize-mode', 'fullscreen', 'floating', 'reload',
                     'pause', 'lock', 'clipboard-history', 'screenshot'}
         for n in range(1, 10):
             required |= {f'focus-workspace-{n}', f'move-workspace-{n}'}
@@ -259,6 +259,31 @@ class KeybindingTests(unittest.TestCase):
             self.assertIn(tool, execs['ALT + V'])
         for tool in ('grim', 'slurp', 'wl-copy'):
             self.assertIn(tool, execs['ALT + SHIFT + S'])
+        self.assertIn('xdg-settings get default-web-browser', execs['ALT + B'])
+        # Tools come from mise, which only a login shell puts on PATH.
+        for combo, tool in (('ALT + E', 'yazi'), ('ALT + N', 'nvim'), ('ALT + G', 'lazygit')):
+            self.assertEqual(execs[combo], f'wezterm start -- zsh -lic {tool}')
+
+    def test_media_keys_outside_the_contract(self):
+        text = (REPO / 'hypr/.config/hypr/media.lua').read_text(encoding='utf-8')
+        binds = dict(re.findall(r'^hl\.bind\("(XF86\w+)", hl\.dsp\.exec_cmd\("([^"]+)"\), \{ locked = true', text, re.M))
+        for key, tool in (('XF86AudioRaiseVolume', 'wpctl'), ('XF86AudioLowerVolume', 'wpctl'),
+                          ('XF86AudioMute', 'wpctl'), ('XF86AudioMicMute', 'wpctl'),
+                          ('XF86MonBrightnessUp', 'brightnessctl'), ('XF86MonBrightnessDown', 'brightnessctl'),
+                          ('XF86AudioPlay', 'playerctl'), ('XF86AudioNext', 'playerctl'), ('XF86AudioPrev', 'playerctl')):
+            with self.subTest(key=key):
+                self.assertTrue(binds[key].startswith(tool + ' '), binds[key])
+        self.assertIn('require("media")', (REPO / 'hypr/.config/hypr/hyprland.lua').read_text(encoding='utf-8'))
+        packages = (REPO / 'manifests/packages.tsv').read_text(encoding='utf-8')
+        for logical in ('wireplumber', 'brightnessctl', 'playerctl'):
+            self.assertRegex(packages, rf'(?m)^{logical}\thypr\t')
+
+    def test_caps_escape_swap_is_limited_to_the_laptop_keyboard(self):
+        text = (REPO / 'hypr/.config/hypr/hyprland.lua').read_text(encoding='utf-8')
+        self.assertNotIn('kb_options', re.search(r'(?s)hl\.config\(\{.*?\n\}\)', text).group(0))
+        device = re.search(r'hl\.device\(\{ name = "at-translated-set-2-keyboard",(.*)\}\)', text)
+        self.assertIsNotNone(device)
+        self.assertIn('kb_options = "caps:swapescape"', device.group(1))
 
     def test_hyprland_combo_normalization(self):
         self.assertEqual(normalize_hypr_combo('ALT + SHIFT + H'), 'alt+shift+h')
@@ -278,6 +303,12 @@ class KeybindingTests(unittest.TestCase):
         combos = parse_zed(ZED_KEYMAP.read_text(encoding='utf-8'))
         collisions = sorted(set(combos) & reserved)
         self.assertEqual(collisions, [], f'{ZED_KEYMAP.relative_to(REPO)} collides with reserved combos: {collisions}')
+
+    def test_zed_tabs_by_number_use_ctrl(self):
+        text = ZED_KEYMAP.read_text(encoding='utf-8')
+        for n in range(1, 9):
+            self.assertIn(f'"ctrl-{n}": ["pane::ActivateItem", {n - 1}]', text)
+        self.assertIn('"ctrl-9": "pane::ActivateLastItem"', text)
 
     def test_cheatsheet_wm_matches_contract(self):
         documented = parse_cheatsheet_wm(CHEATSHEET.read_text(encoding='utf-8'))

@@ -110,7 +110,7 @@ _doc_agents() {
 }
 
 # Hyprland stack (binary names of manifest group hypr); missing ones are warnings only.
-_DOC_DESKTOP_TOOLS=(hyprland waybar fuzzel mako hyprlock hypridle hyprpaper cliphist grim slurp)
+_DOC_DESKTOP_TOOLS=(hyprland waybar fuzzel mako hyprlock hypridle hyprpaper cliphist grim slurp wpctl brightnessctl playerctl)
 _DOC_HYPRLAND_MIN=0.57
 
 _doc_desktop() {

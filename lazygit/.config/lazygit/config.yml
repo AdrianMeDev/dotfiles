@@ -31,5 +31,6 @@ gui:
     defaultFgColor:
       - "#c0caf5"
 git:
-  paging:
-    pager: delta --dark --paging=never
+  # lazygit >= 0.66 format; the old git.paging.pager key is migrated on every start.
+  diffRenderers:
+    - command: delta --dark --paging=never

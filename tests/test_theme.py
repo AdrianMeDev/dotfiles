@@ -282,7 +282,8 @@ class ParityTests(unittest.TestCase):
         p = self.palette
         self.assertRegex(text, r'(?m)^  border: rounded$')
         self.assertRegex(text, r'(?m)^  nerdFontsVersion: "3"$')
-        self.assertRegex(text, r'(?m)^    pager: delta --dark --paging=never$')
+        self.assertRegex(text, r'(?m)^  diffRenderers:\n    - command: delta --dark --paging=never$')
+        self.assertNotIn('paging:', text)
         theme = {m[1]: re.findall(r'"(#[0-9a-f]{6})"', m[2]) for m in
                  re.finditer(r'(?m)^    (\w+):\n((?:      - .*\n)+)', text)}
         expected = {
