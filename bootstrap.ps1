@@ -42,6 +42,17 @@ if (-not (Test-Path -Path function:Invoke-GitClone)) {
         if ($LASTEXITCODE) { throw "git clone fehlgeschlagen (Exit $LASTEXITCODE)." }
     }
 }
+if (-not (Test-Path -Path function:Update-GitClone)) {
+    function Update-GitClone([string]$Path) {
+        git -C $Path pull --ff-only
+        if ($LASTEXITCODE) { throw "git pull in '$Path' fehlgeschlagen (Exit $LASTEXITCODE). Lokale Aenderungen pruefen." }
+    }
+}
+# Under `irm | iex` the script runs inside the caller's session: `exit` would close the window.
+function Stop-Bootstrap([int]$Code) {
+    if ($PSCommandPath) { exit $Code }
+    $global:LASTEXITCODE = $Code
+}
 $repoUrl = 'https://github.com/AdrianMeDev/dotfiles.git'
 try {
     if (-not (Test-Windows11)) { throw 'Windows 11 ist erforderlich. Aus WSL bitte windows/install.sh verwenden.' }
@@ -60,10 +71,11 @@ try {
             $needGit = -not (Test-Git)
             if ($DryRun) {
                 if ($needGit) { Write-Host 'DRY-RUN: winget install Git.Git' }
-                if (-not $isClone) { Write-Host "DRY-RUN: git clone $repoUrl $TargetDir" }
+                if ($isClone) { Write-Host "DRY-RUN: git -C $TargetDir pull --ff-only" }
+                else { Write-Host "DRY-RUN: git clone $repoUrl $TargetDir" }
             } else {
                 if ($needGit) { Install-Git }
-                if (-not $isClone) { Invoke-GitClone $repoUrl $TargetDir }
+                if ($isClone) { Update-GitClone $TargetDir } else { Invoke-GitClone $repoUrl $TargetDir }
             }
             $DotScript = Join-Path $TargetDir 'windows/dot.ps1'
             if ($DryRun -and -not (Test-Path -LiteralPath $DotScript)) { return }
@@ -73,12 +85,12 @@ try {
     if ($Distro) { $arguments.Distro = $Distro }
     if ($WslUser) { $arguments.WslUser = $WslUser }
     & $DotScript install @arguments -DryRun:$DryRun -Backup:$Backup -NoAutostart:$NoAutostart -NoWsl:$NoWsl
-    if ($LASTEXITCODE) { exit $LASTEXITCODE }
+    if ($LASTEXITCODE) { Stop-Bootstrap $LASTEXITCODE; return }
     if (-not $DryRun) {
         Write-Host 'Bitte jetzt ab- und wieder anmelden (Fonts, PATH, GlazeWM-Autostart).'
         Write-Host 'Spaeter aktualisieren: pwsh -File windows/dot.ps1 update'
     }
 } catch {
     Write-Error $_ -ErrorAction Continue
-    exit 1
+    Stop-Bootstrap 1
 }
