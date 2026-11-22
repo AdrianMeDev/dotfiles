@@ -17,11 +17,11 @@ window_effects:
   focused_window:
     border: { enabled: true, color: '#7aa2f7' }
     corner_style: { enabled: true, style: rounded }
-    transparency: { enabled: true, opacity: '75%' }
+    transparency: { enabled: false, opacity: '100%' }
   other_windows:
     border: { enabled: true, color: '#414868' }
     corner_style: { enabled: true, style: rounded }
-    transparency: { enabled: true, opacity: '75%' }
+    transparency: { enabled: false, opacity: '100%' }
 window_behavior:
   initial_state: tiling
   state_defaults:
