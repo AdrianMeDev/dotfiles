@@ -542,6 +542,18 @@ Gleiche Kürzel unter Linux (Hyprland >= 0.57, Lua-Config) und Windows (GlazeWM,
 | `Left/Down/Up/Right`    | dasselbe mit Pfeilen             |
 | `Esc`, `Enter`, `Alt+R` | Resize-Modus beenden             |
 
+### Medientasten (nur Linux)
+
+Hardware-Tasten aus `hypr/.config/hypr/media.lua`, außerhalb des Vertrags (Windows regelt sie selbst);
+funktionieren auch auf dem Sperrbildschirm.
+
+| Taste                    | Aktion                                   |
+| ------------------------ | ---------------------------------------- |
+| Lautstärke +/-           | `wpctl`, 5 %-Schritte, max. 100 %        |
+| Stumm / Mikrofon stumm   | Ausgang / Eingang stumm schalten         |
+| Helligkeit +/-           | `brightnessctl`, 5 %-Schritte            |
+| Play/Pause, Next, Prev   | `playerctl`                              |
+
 ## `dot` (Linux und Windows)
 
 | Ziel                       | Linux (`dot`)                                    | Windows (`windows\dot.ps1`)       |

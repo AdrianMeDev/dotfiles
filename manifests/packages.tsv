@@ -44,6 +44,9 @@ hyprpaper	hypr	hyprpaper	hyprpaper	-
 cliphist	hypr	cliphist	cliphist	-
 grim	hypr	grim	grim	-
 slurp	hypr	slurp	slurp	-
+wireplumber	hypr	wireplumber	wireplumber	-
+brightnessctl	hypr	brightnessctl	brightnessctl	-
+playerctl	hypr	playerctl	playerctl	-
 polkit-agent	hypr	polkit-kde-agent	polkit-kde	-
 theme-adw-gtk3	hypr	adw-gtk-theme	adw-gtk3-theme	-
 theme-icons	hypr	papirus-icon-theme	papirus-icon-theme	-

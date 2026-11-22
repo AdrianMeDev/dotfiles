@@ -264,6 +264,20 @@ class KeybindingTests(unittest.TestCase):
         for combo, tool in (('ALT + E', 'yazi'), ('ALT + N', 'nvim'), ('ALT + G', 'lazygit')):
             self.assertEqual(execs[combo], f'wezterm start -- zsh -lic {tool}')
 
+    def test_media_keys_outside_the_contract(self):
+        text = (REPO / 'hypr/.config/hypr/media.lua').read_text(encoding='utf-8')
+        binds = dict(re.findall(r'^hl\.bind\("(XF86\w+)", hl\.dsp\.exec_cmd\("([^"]+)"\), \{ locked = true', text, re.M))
+        for key, tool in (('XF86AudioRaiseVolume', 'wpctl'), ('XF86AudioLowerVolume', 'wpctl'),
+                          ('XF86AudioMute', 'wpctl'), ('XF86AudioMicMute', 'wpctl'),
+                          ('XF86MonBrightnessUp', 'brightnessctl'), ('XF86MonBrightnessDown', 'brightnessctl'),
+                          ('XF86AudioPlay', 'playerctl'), ('XF86AudioNext', 'playerctl'), ('XF86AudioPrev', 'playerctl')):
+            with self.subTest(key=key):
+                self.assertTrue(binds[key].startswith(tool + ' '), binds[key])
+        self.assertIn('require("media")', (REPO / 'hypr/.config/hypr/hyprland.lua').read_text(encoding='utf-8'))
+        packages = (REPO / 'manifests/packages.tsv').read_text(encoding='utf-8')
+        for logical in ('wireplumber', 'brightnessctl', 'playerctl'):
+            self.assertRegex(packages, rf'(?m)^{logical}\thypr\t')
+
     def test_caps_escape_swap_is_limited_to_the_laptop_keyboard(self):
         text = (REPO / 'hypr/.config/hypr/hyprland.lua').read_text(encoding='utf-8')
         self.assertNotIn('kb_options', re.search(r'(?s)hl\.config\(\{.*?\n\}\)', text).group(0))

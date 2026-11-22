@@ -65,3 +65,5 @@ hl.window_rule({ name = "float-polkit", match = { class = "^(org.kde.polkit-kde-
 
 -- Key bindings live in bindings.lua (same directory).
 require("bindings")
+-- Volume, brightness and playback keys live in media.lua.
+require("media")
