@@ -160,6 +160,8 @@ wird durch GlazeWM nicht belegt; es gibt keine globale Tastaturumstellung.
 | `Alt+Shift+1–9` | Fenster auf Workspace verschieben |
 | `Alt+Pfeile` oder `Alt+H/J/K/L` | Fokus links/unten/oben/rechts |
 | zusätzlich `Shift` | Fenster in diese Richtung verschieben |
+| `Ctrl+Alt+Shift+Links/Rechts` | Workspace auf linken/rechten Monitor schieben |
+| `Alt+O` | Zum vorherigen Workspace springen |
 | `Alt+Enter` | WezTerm öffnen |
 | `Alt+Leertaste` | Flow Launcher öffnen (Apps, Dateien, Befehle) |
 | `Alt+Q` | Fokussiertes Fenster regulär schließen (ggf. mit Speichern-Abfrage) |
@@ -178,8 +180,10 @@ belegt: `Win+L` (Sperren; unter Linux `Alt+Shift+X`), `Win+V` (Zwischenablage-Ve
 und `Win+Shift+S` (Screenshot). Flow Launcher besitzt `Alt+Leertaste`.
 
 Standard-Windows-Dialoge (`#32770`) schweben. Anwendungsspezifische Dialoge können
-bei Bedarf über weitere `window_rules` ergänzt werden. Workspaces haben keine
-feste Monitorzuordnung. Näheres in der [GlazeWM-Konfiguration](https://github.com/glzr-io/glazewm#config-workspaces).
+bei Bedarf über weitere `window_rules` ergänzt werden. Workspaces 1–5 sind an
+Monitor 0, 6–9 an Monitor 1 gebunden (`bind_to_monitor`); mit nur einem Monitor
+liegen alle dort. Wechselt der Fokus per Tastatur den Monitor, springt die Maus mit
+(`cursor_jump`). Näheres in der [GlazeWM-Konfiguration](https://github.com/glzr-io/glazewm#config-workspaces).
 
 ## Flow Launcher
 

@@ -21,6 +21,11 @@ hl.bind("ALT + SHIFT + UP", hl.dsp.window.move({ direction = "up" }))
 hl.bind("ALT + SHIFT + L", hl.dsp.window.move({ direction = "right" }))
 hl.bind("ALT + SHIFT + RIGHT", hl.dsp.window.move({ direction = "right" }))
 
+-- Monitors: move the active workspace to the neighbouring monitor; jump back to the previous workspace
+hl.bind("CTRL + ALT + SHIFT + LEFT", hl.dsp.workspace.move({ monitor = "l" }))
+hl.bind("CTRL + ALT + SHIFT + RIGHT", hl.dsp.workspace.move({ monitor = "r" }))
+hl.bind("ALT + O", hl.dsp.focus({ workspace = "previous" }))
+
 -- Workspaces
 hl.bind("ALT + 1", hl.dsp.focus({ workspace = 1 }))
 hl.bind("ALT + SHIFT + 1", hl.dsp.window.move({ workspace = 1 }))

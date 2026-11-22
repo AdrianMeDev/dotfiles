@@ -508,6 +508,8 @@ Podman läuft rootless: Container nicht mit `sudo` starten.
 
 Gleiche Kürzel unter Linux (Hyprland >= 0.57, Lua-Config) und Windows (GlazeWM, nur das **linke** `Alt`; `AltGr` bleibt frei). Quelle ist `manifests/keybindings.tsv`; `tests/test_keybindings.py` prüft diese Tabellen gegen den Vertrag.
 
+Zwei Monitore: Workspaces 1–5 liegen auf dem ersten, 6–9 auf dem zweiten Monitor (GlazeWM-Index bzw. Hyprland-Monitor-ID 0/1). `Alt+h/l` wechselt am Rand auf den anderen Monitor, die Maus springt mit.
+
 ### Global
 
 | Kürzel                                | Aktion                                                     |
@@ -518,6 +520,8 @@ Gleiche Kürzel unter Linux (Hyprland >= 0.57, Lua-Config) und Windows (GlazeWM,
 | `Alt+Left/Down/Up/Right`              | Fokus bewegen (Pfeile)                                     |
 | `Alt+Shift+h/j/k/l`                   | Fenster verschieben                                        |
 | `Alt+Shift+Left/Down/Up/Right`        | Fenster verschieben (Pfeile)                               |
+| `Ctrl+Alt+Shift+Left/Right`           | Workspace auf linken/rechten Monitor schieben              |
+| `Alt+O`                               | Zum vorherigen Workspace springen                          |
 | `Alt+Enter`                           | WezTerm öffnen                                             |
 | `Alt+B`                               | Browser (Linux: Standard-Browser; Windows: Startseite)     |
 | `Alt+E`                               | Dateimanager (Linux: yazi in WezTerm; Windows: Explorer)   |
