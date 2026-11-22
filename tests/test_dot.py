@@ -542,6 +542,17 @@ class DotCliTests(unittest.TestCase):
         self.assertNotIn('älter als', result.stdout)
         self.assertIn('[WARN]    Desktop-Tools fehlen: fuzzel mako', result.stdout)
 
+    def test_doctor_checks_polkit_agent(self):
+        self.setup_doctor()
+        self.fake_hyprland()
+        agent = self.base / 'polkit-agent'
+        agent.write_text('#!/bin/sh\n')
+        agent.chmod(0o755)
+        self.env['DOT_POLKIT_AGENTS'] = f'{self.base}/missing-agent:{agent}'
+        self.assertIn(f'[OK]      Polkit-Agent: {agent}', self.run_dot('doctor').stdout)
+        self.env['DOT_POLKIT_AGENTS'] = f'{self.base}/missing-agent'
+        self.assertIn('[WARN]    Polkit-Agent fehlt', self.run_dot('doctor').stdout)
+
     def test_doctor_warns_on_old_hyprland_and_leftover_conf(self):
         self.setup_doctor()
         self.fake_hyprland(version='0.56.2')

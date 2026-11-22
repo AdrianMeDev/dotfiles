@@ -317,6 +317,13 @@ class KeybindingTests(unittest.TestCase):
         unit = (REPO / 'hypr/.config/systemd/user/hyprland-session.target').read_text(encoding='utf-8')
         self.assertRegex(unit, r'(?m)^BindsTo=graphical-session\.target$')
 
+    def test_autostart_runs_the_polkit_agent_from_both_distro_paths(self):
+        text = (REPO / 'hypr/.config/hypr/hyprland.lua').read_text(encoding='utf-8')
+        fedora = text.index('/usr/libexec/kf6/polkit-kde-authentication-agent-1')
+        arch = text.index('/usr/lib/polkit-kde-authentication-agent-1')
+        self.assertLess(fedora, arch)
+        self.assertIn('exec \\"$a\\"', text)
+
     def test_hyprland_combo_normalization(self):
         self.assertEqual(normalize_hypr_combo('ALT + SHIFT + H'), 'alt+shift+h')
         self.assertEqual(normalize_hypr_combo('SHIFT + SUPER + RETURN'), 'win+shift+enter')

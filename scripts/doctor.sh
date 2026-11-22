@@ -112,6 +112,8 @@ _doc_agents() {
 # Hyprland stack (binary names of manifest group hypr); missing ones are warnings only.
 _DOC_DESKTOP_TOOLS=(hyprland waybar fuzzel mako hyprlock hypridle hyprpaper cliphist grim slurp wpctl brightnessctl playerctl)
 _DOC_HYPRLAND_MIN=0.57
+# polkit-kde agent: Fedora path first, then Arch (DOT_POLKIT_AGENTS overrides, colon-separated).
+_DOC_POLKIT_AGENTS=${DOT_POLKIT_AGENTS:-/usr/libexec/kf6/polkit-kde-authentication-agent-1:/usr/lib/polkit-kde-authentication-agent-1}
 
 _doc_desktop() {
     local profile=$1 family=$2 bin version ver missing=() lua=$HOME/.config/hypr/hyprland.lua out
@@ -123,6 +125,17 @@ _doc_desktop() {
         _doc_warn "Desktop-Tools fehlen: ${missing[*]} (dot install --only desktop --profile desktop)."
     else
         _doc_ok 'Desktop-Tools: Hyprland-Stack vollständig.'
+    fi
+
+    local agent found_agent=
+    while IFS= read -r -d ':' agent || [[ -n $agent ]]; do
+        [[ -x $agent ]] && found_agent=$agent
+        agent=
+    done <<< "$_DOC_POLKIT_AGENTS:"
+    if [[ -n $found_agent ]]; then
+        _doc_ok "Polkit-Agent: $found_agent"
+    else
+        _doc_warn 'Polkit-Agent fehlt (polkit-kde-agent); GUI-Passwortabfragen schlagen fehl (dot install --only desktop --profile desktop).'
     fi
 
     if have waybar; then

@@ -58,6 +58,8 @@ hl.on("hyprland.start", function()
   hl.exec_cmd("waybar")
   hl.exec_cmd("mako")
   hl.exec_cmd("hypridle")
+  -- polkit-kde lives in /usr/libexec/kf6 on Fedora and in /usr/lib on Arch.
+  hl.exec_cmd("sh -c 'for a in /usr/libexec/kf6/polkit-kde-authentication-agent-1 /usr/lib/polkit-kde-authentication-agent-1; do [ -x \"$a\" ] && exec \"$a\"; done'")
   hl.exec_cmd("hyprpaper")
   hl.exec_cmd("wl-paste --watch cliphist store")
 end)
