@@ -285,6 +285,13 @@ class KeybindingTests(unittest.TestCase):
         self.assertIsNotNone(device)
         self.assertIn('kb_options = "caps:swapescape"', device.group(1))
 
+    def test_eurkey_layout_for_altgr_umlauts(self):
+        text = (REPO / 'hypr/.config/hypr/hyprland.lua').read_text(encoding='utf-8')
+        self.assertIn('kb_layout = "eu"', re.search(r'(?s)hl\.config\(\{.*?\n\}\)', text).group(0))
+        device = re.search(r'hl\.device\(\{ name = "at-translated-set-2-keyboard",(.*)\}\)', text)
+        self.assertIn('kb_layout = "eu"', device.group(1))
+        self.assertNotIn('kb_layout = "us"', text)
+
     def test_hyprland_combo_normalization(self):
         self.assertEqual(normalize_hypr_combo('ALT + SHIFT + H'), 'alt+shift+h')
         self.assertEqual(normalize_hypr_combo('SHIFT + SUPER + RETURN'), 'win+shift+enter')

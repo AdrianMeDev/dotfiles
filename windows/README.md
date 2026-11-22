@@ -90,6 +90,10 @@ lädt die Font-Archive in ein temporäres Verzeichnis und prüft zusätzlich Fon
 und Registry-Einträge, bevor sie Pakete oder Konfigurationen ändert. Die Vorschau
 kann diese heruntergeladenen Font-Inhalte noch nicht vergleichen.
 
+**Tastaturlayout (manuell):** Der Corne und die Umlaut-Ebene (`RAlt+A/S/O/U`) setzen das
+EurKEY-Layout voraus. Unter Windows wird es nicht automatisiert; Installer von
+<https://eurkey.steffen.bruentjen.eu> herunterladen und EurKEY als Eingabemethode wählen.
+
 Nach erfolgreicher Installation ab- und anmelden: Dadurch werden Fonts und der
 aktualisierte PATH aktiv und GlazeWM startet. Für einen manuellen Start in einer
 neuen PowerShell:
