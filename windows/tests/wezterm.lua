@@ -35,6 +35,9 @@ assert(config.wsl_domains[1].default_cwd == '~')
 assert(config.color_scheme == 'Tokyo Night')
 assert(config.font[1] == 'IoskeleyMonoTerm Nerd Font Mono')
 assert(config.font[2] == 'Ioskeley Mono')
+-- GlazeWM only tiles windows with a resize frame.
+assert(native.window_decorations == 'RESIZE')
+assert(config.window_decorations == 'RESIZE')
 local found = {}
 for _, key in ipairs(config.keys) do
   if key.key == 't' and key.mods == 'CTRL' then

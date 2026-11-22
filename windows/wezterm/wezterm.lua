@@ -18,4 +18,7 @@ for _, binding in ipairs(config.keys) do
     }
   end
 end
+-- GlazeWM floats windows without a resize frame (base.lua uses 'NONE');
+-- RESIZE adds an invisible one, so WezTerm tiles and still has no title bar.
+config.window_decorations = 'RESIZE'
 return config
