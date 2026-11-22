@@ -246,6 +246,9 @@ class KeybindingTests(unittest.TestCase):
     def test_hyprland_parity(self):
         found = parse_hyprland(HYPR_BINDINGS.read_text(encoding='utf-8'))
         self.assertEqual(len(found), len(set(found)), 'duplicate Hyprland binding in a mode')
+        # The `paused` submap's exit key is the second half of the global `pause` row (wm-toggle-pause).
+        self.assertIn(('paused', 'alt+shift+p'), found)
+        found.remove(('paused', 'alt+shift+p'))
         expected = {(mode, combo) for _, mode, combo, _ in load_contract()}
         self.assertEqual(sorted(expected - set(found)), [], 'contract row not bound in Hyprland')
         self.assertEqual(sorted(set(found) - expected), [], 'Hyprland binding outside the contract')
@@ -291,6 +294,19 @@ class KeybindingTests(unittest.TestCase):
         device = re.search(r'hl\.device\(\{ name = "at-translated-set-2-keyboard",(.*)\}\)', text)
         self.assertIn('kb_layout = "eu"', device.group(1))
         self.assertNotIn('kb_layout = "us"', text)
+
+    def test_pause_is_a_submap_with_a_single_exit(self):
+        text = HYPR_BINDINGS.read_text(encoding='utf-8')
+        self.assertIn('hl.bind("ALT + SHIFT + P", hl.dsp.submap("paused"))', text)
+        block = re.search(r'(?s)hl\.define_submap\("paused", function\(\)(.*?)\nend\)', text).group(1)
+        self.assertEqual(re.findall(r'hl\.bind\("([^"]+)"', block), ['ALT + SHIFT + P'])
+        self.assertIn('hl.dsp.submap("reset")', block)
+
+    def test_hyprctl_dispatch_uses_lua_syntax(self):
+        for path in (REPO / 'hypr/.config/hypr').iterdir():
+            if path.suffix in ('.lua', '.conf'):
+                for cmd in re.findall(r'hyprctl dispatch (\S+)', path.read_text(encoding='utf-8')):
+                    self.assertTrue(cmd.startswith(("'hl.", '"hl.')), f'{path.name}: legacy dispatch {cmd}')
 
     def test_hyprland_combo_normalization(self):
         self.assertEqual(normalize_hypr_combo('ALT + SHIFT + H'), 'alt+shift+h')
