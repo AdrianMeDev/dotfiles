@@ -36,17 +36,47 @@ function Invoke-Native {
 }
 
 # HRESULTs from microsoft/winget-cli AppInstallerErrors.h (signed Int32).
-function Test-WingetPackage {
+# winget correlates installed programs heuristically and can attribute one product to another
+# package of the same publisher (e.g. Zebar listed as glzr-io.glazewm). The listed name must
+# mention one of the package's name tokens (the Id without its publisher segment).
+function Test-WingetNameMatch {
+    param([string]$Package, [string]$Name)
+    $normalized = ($Name -replace '[^A-Za-z0-9]', '').ToLowerInvariant()
+    $tokens = @(($Package -split '\.', 2)[-1] -split '[.\-_]' | Where-Object { $_ } | ForEach-Object { $_.ToLowerInvariant() })
+    return [bool]@($tokens | Where-Object { $normalized.Contains($_) }).Count
+}
+# Installed, Missing or Misattributed (listed under the Id, but as a different product).
+function Get-WingetPackageState {
     param([string]$Package)
     $result = Invoke-NativeResult 'winget.exe' @('list', '--id', $Package, '--exact', '--source', 'winget', '--accept-source-agreements', '--disable-interactivity')
-    if ($result.Code -eq 0) { return $true }
-    if ($result.Code -eq -1978335212) { return $false } # NO_APPLICATIONS_FOUND
-    throw "Winget $Package Bestand (Exit $($result.Code)): $($result.Output -join "`n")"
+    if ($result.Code -eq -1978335212) { return 'Missing' } # NO_APPLICATIONS_FOUND
+    if ($result.Code -ne 0) { throw "Winget $Package Bestand (Exit $($result.Code)): $($result.Output -join "`n")" }
+    $pattern = '^(?<name>.+?)\s+' + [regex]::Escape($Package) + '(\s|$)'
+    foreach ($line in $result.Output) {
+        $match = [regex]::Match("$line", $pattern, 'IgnoreCase')
+        if ($match.Success) {
+            if (Test-WingetNameMatch $Package $match.Groups['name'].Value.Trim()) { return 'Installed' }
+            return 'Misattributed'
+        }
+    }
+    # No parsable row (e.g. truncated table): trust the exit code as before.
+    return 'Installed'
+}
+function Test-WingetPackage {
+    param([string]$Package)
+    return (Get-WingetPackageState $Package) -eq 'Installed'
 }
 function Install-WingetPackage {
     param([string]$Package)
-    if (Test-WingetPackage $Package) { Write-Host "Skip: $Package"; return }
-    $result = Invoke-NativeResult 'winget.exe' @('install', '--exact', '--id', $Package, '--source', 'winget', '--no-upgrade', '--accept-package-agreements', '--accept-source-agreements', '--disable-interactivity')
+    $state = Get-WingetPackageState $Package
+    if ($state -eq 'Installed') { Write-Host "Skip: $Package"; return }
+    $arguments = @('install', '--exact', '--id', $Package, '--source', 'winget', '--no-upgrade', '--accept-package-agreements', '--accept-source-agreements', '--disable-interactivity')
+    if ($state -eq 'Misattributed') {
+        # winget install would report the misattributed product as already installed.
+        Write-Host "Winget: $Package wird einem anderen Programm zugeordnet, Installation wird erzwungen."
+        $arguments += '--force'
+    }
+    $result = Invoke-NativeResult 'winget.exe' $arguments
     if ($result.Code -eq 0) { $result.Output | Out-Host; return }
     # UPDATE_NOT_APPLICABLE, PACKAGE_ALREADY_INSTALLED: only accept confirmed inventory.
     if ($result.Code -in @(-1978335189, -1978335135)) {
