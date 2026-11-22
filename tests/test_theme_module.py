@@ -105,8 +105,20 @@ class ThemeModuleTests(unittest.TestCase):
         pixels = zlib.decompress(png[41:41 + length])
         self.assertEqual(len(pixels), height * (1 + width * 3))
         palette = tomllib.loads((REPO / 'theme/tokens.toml').read_text())['palette']
-        self.assertEqual('#' + pixels[1:4].hex(), palette['bg_dark'])
-        self.assertEqual('#' + pixels[-3:].hex(), palette['bg_highlight'])
+
+        def pixel(x, y):
+            start = y * (1 + width * 3) + 1 + x * 3
+            return pixels[start:start + 3]
+
+        def distance(colour, key):
+            return sum((a - b) ** 2 for a, b in zip(colour, bytes.fromhex(palette[key][1:])))
+
+        # The accent glows must be visible so translucent windows show them.
+        for key, x, y in [('blue', 0.15, 0.25), ('magenta', 0.85, 0.75)]:
+            with self.subTest(glow=key):
+                colour = pixel(int(x * width), int(y * height))
+                self.assertLess(distance(colour, key), distance(bytes.fromhex(palette['bg_dark'][1:]), key))
+                self.assertGreater(distance(colour, 'bg_dark'), 40 ** 2)
         first.write_bytes(b'custom wallpaper')
         before = first.stat()
         generate(first)
