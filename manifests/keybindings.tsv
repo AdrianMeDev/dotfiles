@@ -17,6 +17,9 @@ focus-right-l	global	alt+l	focus --direction right
 focus-right-right	global	alt+right	focus --direction right
 move-right-l	global	alt+shift+l	move --direction right
 move-right-right	global	alt+shift+right	move --direction right
+move-workspace-to-monitor-left	global	ctrl+alt+shift+left	move-workspace --direction left
+move-workspace-to-monitor-right	global	ctrl+alt+shift+right	move-workspace --direction right
+focus-recent-workspace	global	alt+o	focus --recent-workspace
 focus-workspace-1	global	alt+1	focus --workspace 1
 move-workspace-1	global	alt+shift+1	move --workspace 1
 focus-workspace-2	global	alt+2	focus --workspace 2

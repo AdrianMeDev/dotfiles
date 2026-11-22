@@ -337,6 +337,18 @@ class KeybindingTests(unittest.TestCase):
         self.assertRegex((REPO / 'manifests/packages.tsv').read_text(encoding='utf-8'),
                          r'(?m)^gnome-keyring\thypr\tgnome-keyring\tgnome-keyring\t')
 
+    def test_workspaces_split_across_two_monitors(self):
+        # GlazeWM: 1-5 on monitor index 0, 6-9 on index 1.
+        glaze = GLAZEWM.read_text(encoding='utf-8')
+        bound = dict(re.findall(r"- name: '(\d)'\n\s+bind_to_monitor: (\d)", glaze))
+        self.assertEqual(bound, {str(n): '0' if n <= 5 else '1' for n in range(1, 10)})
+        self.assertRegex(glaze, r'cursor_jump:\n\s+enabled: true')
+        # Hyprland: the same split via workspace rules on monitor IDs.
+        hypr = (REPO / 'hypr/.config/hypr/hyprland.lua').read_text(encoding='utf-8')
+        self.assertIn('for ws = 1, 9 do', hypr)
+        self.assertIn('hl.workspace_rule({ workspace = tostring(ws), monitor = ws <= 5 and "0" or "1" })', hypr)
+        self.assertIn('no_warps = false', hypr)
+
     def test_hyprland_combo_normalization(self):
         self.assertEqual(normalize_hypr_combo('ALT + SHIFT + H'), 'alt+shift+h')
         self.assertEqual(normalize_hypr_combo('SHIFT + SUPER + RETURN'), 'win+shift+enter')
