@@ -110,7 +110,7 @@ _doc_agents() {
 }
 
 # Hyprland stack (binary names of manifest group hypr); missing ones are warnings only.
-_DOC_DESKTOP_TOOLS=(hyprland waybar fuzzel mako hyprlock hypridle hyprpaper cliphist grim slurp wpctl brightnessctl playerctl)
+_DOC_DESKTOP_TOOLS=(hyprland waybar fuzzel mako hyprlock hypridle hyprpaper cliphist grim slurp wpctl brightnessctl playerctl nmtui blueman-manager pavucontrol notify-send)
 _DOC_HYPRLAND_MIN=0.57
 # polkit-kde agent: Fedora path first, then Arch (DOT_POLKIT_AGENTS overrides, colon-separated).
 _DOC_POLKIT_AGENTS=${DOT_POLKIT_AGENTS:-/usr/libexec/kf6/polkit-kde-authentication-agent-1:/usr/lib/polkit-kde-authentication-agent-1}

@@ -489,9 +489,16 @@ class ParityTests(unittest.TestCase):
         zebar = re.search(r'<aside>(.*)</aside>', read('windows/zebar/index.html')).group(1)
         zebar_modules = [m for m in re.findall(r'id="(\w+)"', zebar) if m != 'status']
         # Linux-only modules have no Zebar counterpart.
-        linux_only = {'wireplumber'}
+        linux_only = {'wireplumber', 'bluetooth'}
         self.assertEqual([m for m in config['modules-right'] if m not in linux_only], zebar_modules)
         self.assertEqual(config['wireplumber']['on-click'], 'pavucontrol')
+        self.assertEqual(config['network']['on-click'], 'wezterm start --class nmtui -- nmtui')
+        self.assertEqual(config['bluetooth']['on-click'], 'blueman-manager')
+        lua = read('hypr/.config/hypr/hyprland.lua')
+        for rule in ('float-blueman', 'float-nmtui', 'float-pavucontrol'):
+            self.assertIn(f'name = "{rule}"', lua)
+        for module in ('wireplumber', 'network', 'bluetooth'):
+            self.assertIn(f'#{module}', css)
         self.assertEqual(hexes(css) - self.allowed, set())
         self.assertIn(f"font-family: '{tokens['font']['terminal_family']}'", css)
         self.assertEqual(set(re.findall(r'font-size: (\d+)px', css)), {str(tokens['font']['size']['bar'])})

@@ -68,6 +68,8 @@ end)
 
 -- Window rules
 hl.window_rule({ name = "float-pavucontrol", match = { class = "^(org.pulseaudio.pavucontrol)$" }, float = true })
+hl.window_rule({ name = "float-blueman", match = { class = "^(\\.?blueman-manager(-wrapped)?)$" }, float = true })
+hl.window_rule({ name = "float-nmtui", match = { class = "^(nmtui)$" }, float = true })
 hl.window_rule({ name = "float-polkit", match = { class = "^(org.kde.polkit-kde-authentication-agent-1)$" }, float = true })
 
 -- Key bindings live in bindings.lua (same directory).

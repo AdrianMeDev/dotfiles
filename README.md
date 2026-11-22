@@ -101,7 +101,7 @@ Fremde Verzeichnis-Symlinks müssen vorab manuell aufgelöst werden; der Install
 | Modul | Inhalt |
 | --- | --- |
 | `system` | System-Update (`pacman`/`dnf`/`apt-get`), Compiler/Build-Werkzeuge, Git/GitHub CLI, Stow, zsh, tmux, zoxide, direnv, fzf, ripgrep, fd, bat, jq, btop/htop, tree, ShellCheck, shfmt (Arch/Debian), Clipboard, Podman, Flatpak (bei `desktop`) sowie auf Arch der AUR-Helfer |
-| `desktop` | Hyprland-Stack aus der Manifest-Gruppe `hypr` (Hyprland, Waybar, fuzzel, mako, hyprlock, hypridle, hyprpaper, cliphist, grim, slurp, Portal, Polkit-Agent, gnome-keyring); nur Arch/Fedora, nur Profil `desktop`, nicht unter WSL (Fedora über COPR `sdegler/hyprland`) |
+| `desktop` | Hyprland-Stack aus der Manifest-Gruppe `hypr` (Hyprland, Waybar, fuzzel, mako, hyprlock, hypridle, hyprpaper, cliphist, grim, slurp, Portal, Polkit-Agent, gnome-keyring, pavucontrol, nmtui, Blueman); nur Arch/Fedora, nur Profil `desktop`, nicht unter WSL (Fedora über COPR `sdegler/hyprland`) |
 | `tools` | mise und alle Dev-CLI-Tools über mise in der neuesten Version (Neovim >= 0.12, Node LTS, uv, Starship, tree-sitter, lazygit, ripgrep, fd, fzf, bat, delta, eza, yazi, tealdeer, just, lazydocker; Konfiguration: `mise/.config/mise/config.toml`), Extras `java`/`rust` |
 | `apps` | .NET SDK 10 (Arch/Fedora), WezTerm, Zed, Claude Code (nativer Installer), pi (npm über mise-Node), optional Ollama (Extras `ollama`, `ollama-models`) |
 | `flatpak` | Flathub für den Benutzer; ausgewählte optionale Desktop-Apps (nur bei `--profile desktop`) |

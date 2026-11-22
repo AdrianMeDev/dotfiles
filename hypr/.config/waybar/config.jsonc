@@ -7,7 +7,7 @@
   "spacing": 10,
   "modules-left": ["hyprland/workspaces"],
   "modules-center": ["clock"],
-  "modules-right": ["wireplumber", "network", "battery"],
+  "modules-right": ["wireplumber", "network", "bluetooth", "battery"],
   "hyprland/workspaces": {
     "format": "{name}",
     "persistent-workspaces": { "*": 9 },
@@ -29,6 +29,15 @@
     "format-wifi": "{essid}",
     "format-ethernet": "{ifname}",
     "format-disconnected": "Offline",
+    "on-click": "wezterm start --class nmtui -- nmtui",
+    "tooltip": false
+  },
+  "bluetooth": {
+    "format": "BT",
+    "format-off": "BT off",
+    "format-disabled": "",
+    "format-connected": "BT {num_connections}",
+    "on-click": "blueman-manager",
     "tooltip": false
   },
   "battery": {

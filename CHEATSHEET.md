@@ -555,6 +555,14 @@ funktionieren auch auf dem Sperrbildschirm.
 | Waybar-Lautstärke        | Scrollen = ±5 %, Klick = `pavucontrol`   |
 | Play/Pause, Next, Prev   | `playerctl`                              |
 
+### Waybar-Klicks (nur Linux)
+
+| Modul     | Klick                                              |
+| --------- | -------------------------------------------------- |
+| Lautstärke | `pavucontrol` (schwebend), Scrollen ±5 %          |
+| Netzwerk  | `nmtui` in WezTerm (schwebend)                     |
+| Bluetooth | `blueman-manager` (schwebend)                      |
+
 ## `dot` (Linux und Windows)
 
 | Ziel                       | Linux (`dot`)                                    | Windows (`windows\dot.ps1`)       |

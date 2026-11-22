@@ -49,6 +49,8 @@ brightnessctl	hypr	brightnessctl	brightnessctl	-
 playerctl	hypr	playerctl	playerctl	-
 pavucontrol	hypr	pavucontrol	pavucontrol	-
 libnotify	hypr	libnotify	libnotify	-
+nmtui	hypr	networkmanager	NetworkManager-tui	-
+blueman	hypr	blueman	blueman	-
 polkit-agent	hypr	polkit-kde-agent	polkit-kde	-
 gnome-keyring	hypr	gnome-keyring	gnome-keyring	-
 theme-adw-gtk3	hypr	adw-gtk-theme	adw-gtk3-theme	-
