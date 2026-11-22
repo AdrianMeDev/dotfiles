@@ -630,6 +630,43 @@ Describe 'Windows installer' {
         }
     }
 
+    Context 'winget misattributed inventory' {
+        BeforeAll {
+            function Invoke-NativeResult {
+                param($Program, $Arguments)
+                $script:commands += ,$Arguments
+                if ($Arguments[0] -eq 'list') {
+                    $id = $Arguments[[Array]::IndexOf($Arguments, '--id') + 1]
+                    return [pscustomobject]@{ Code = 0; Output = @('Name  Id  Version', '----', "$($script:listedName)  $id  3.3.1  3.10.1  winget") }
+                }
+                return [pscustomobject]@{ Code = 0; Output = @('installed') }
+            }
+        }
+        BeforeEach { $script:commands = @() }
+        It 'forces the install when winget lists another product under the Id' {
+            $script:listedName = 'Zebar'
+            Install-WingetPackage 'glzr-io.glazewm' 6>$null
+            $script:commands.Count | Should -Be 2
+            $script:commands[1][0] | Should -Be 'install'
+            $script:commands[1] | Should -Contain '--force'
+        }
+        It 'skips when the listed name matches the package' -ForEach @(
+            @{ Id = 'glzr-io.glazewm'; Name = 'GlazeWM' }
+            @{ Id = 'Microsoft.DotNet.SDK.10'; Name = 'Microsoft .NET SDK 10.0.404 (x64)' }
+            @{ Id = 'Flow-Launcher.Flow-Launcher'; Name = 'Flow Launcher' }
+            @{ Id = 'Anthropic.ClaudeCode'; Name = 'Claude Code' }
+            @{ Id = 'wez.wezterm'; Name = 'WezTerm version 20240203-110809-5046fc22' }
+        ) {
+            $script:listedName = $Name
+            Install-WingetPackage $Id 6>$null
+            $script:commands.Count | Should -Be 1
+        }
+        It 'reports a misattributed package as not installed' {
+            $script:listedName = 'Zebar'
+            Test-WingetPackage 'glzr-io.glazewm' | Should -BeFalse
+        }
+    }
+
     Context 'font registry plan' {
         BeforeAll {
             $script:fontEntry = @([pscustomobject]@{
