@@ -30,6 +30,23 @@
     }
   },
 
+  // ── Tabs per Nummer: Zeds Standard alt-1..9 gehört dem Fenstermanager
+  //    (Workspaces), daher ctrl-1..9. Überschreibt workspace::ActivatePane.
+  {
+    "context": "Pane",
+    "bindings": {
+      "ctrl-1": ["pane::ActivateItem", 0],
+      "ctrl-2": ["pane::ActivateItem", 1],
+      "ctrl-3": ["pane::ActivateItem", 2],
+      "ctrl-4": ["pane::ActivateItem", 3],
+      "ctrl-5": ["pane::ActivateItem", 4],
+      "ctrl-6": ["pane::ActivateItem", 5],
+      "ctrl-7": ["pane::ActivateItem", 6],
+      "ctrl-8": ["pane::ActivateItem", 7],
+      "ctrl-9": "pane::ActivateLastItem"
+    }
+  },
+
   // ── Leader-Tasten: Editor (Normal/Visual), leere Pane, Projekt-/Outline-Panel
   {
     "context": "(VimControl && !menu) || EmptyPane || SharedScreen || (ProjectPanel && not_editing) || (OutlinePanel && not_editing)",

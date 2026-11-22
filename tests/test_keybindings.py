@@ -290,6 +290,12 @@ class KeybindingTests(unittest.TestCase):
         collisions = sorted(set(combos) & reserved)
         self.assertEqual(collisions, [], f'{ZED_KEYMAP.relative_to(REPO)} collides with reserved combos: {collisions}')
 
+    def test_zed_tabs_by_number_use_ctrl(self):
+        text = ZED_KEYMAP.read_text(encoding='utf-8')
+        for n in range(1, 9):
+            self.assertIn(f'"ctrl-{n}": ["pane::ActivateItem", {n - 1}]', text)
+        self.assertIn('"ctrl-9": "pane::ActivateLastItem"', text)
+
     def test_cheatsheet_wm_matches_contract(self):
         documented = parse_cheatsheet_wm(CHEATSHEET.read_text(encoding='utf-8'))
         expected = {(mode, combo) for _, mode, combo, _ in load_contract()}

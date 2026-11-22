@@ -96,6 +96,7 @@ Die folgenden Kürzel kommen direkt aus `zed-config/.config/zed/keymap.json`.
 | `Space w h/l/j`       | Linkes / rechtes / unteres Dock umschalten          |
 | `Ctrl-h/j/k/l`        | Fokus zwischen Panes und Panels                     |
 | `Shift-h` / `Shift-l` | Voriger / nächster Tab                              |
+| `Ctrl-1..8` / `Ctrl-9` | Tab 1–8 / letzter Tab (`Alt+Zahl` gehört dem WM)   |
 | `Space c a/r/f`       | Code-Action / Rename / Format                       |
 | `Space c d`           | Diagnosen                                           |
 | `Space c i/t/u`       | Implementierung / Typdefinition / Referenzen        |
