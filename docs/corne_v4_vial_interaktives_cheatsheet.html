@@ -1,0 +1,2946 @@
+<!DOCTYPE html>
+<html lang="de" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Corne v4 (Vial) – Interaktives Cheatsheet</title>
+  <style>
+    /* =========================================================================
+       DESIGN TOKENS – Dark Mode (Default) & Light Mode
+       ========================================================================= */
+    :root {
+      --font-sans: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      --font-mono: ui-monospace, "JetBrains Mono", "Fira Code", "Cascadia Code", SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+
+      --radius-sm: 6px;
+      --radius-md: 10px;
+      --radius-lg: 16px;
+      --radius-xl: 20px;
+
+      /* Dark Mode Palette */
+      --bg-page: #0b0e14;
+      --bg-surface: #121722;
+      --bg-surface-2: #171d2b;
+      --bg-surface-3: #1e2638;
+      --bg-case: #0f141e;
+      --bg-case-border: #242f44;
+      --border-subtle: rgba(148, 163, 184, 0.14);
+      --border-strong: rgba(148, 163, 184, 0.28);
+
+      --text-primary: #f1f5f9;
+      --text-secondary: #94a3b8;
+      --text-muted: #64748b;
+
+      /* Default Keycap Colors (Dark) */
+      --key-bg: linear-gradient(180deg, #1f2738 0%, #171e2c 100%);
+      --key-border: #2e3a52;
+      --key-lip: #0c1018;
+      --key-top-highlight: rgba(255, 255, 255, 0.07);
+      --key-text: #f1f5f9;
+      --key-sub: #94a3b8;
+      --key-base-hint: rgba(148, 163, 184, 0.52);
+
+      /* Transparent & Blocked Keys */
+      --key-trns-bg: rgba(22, 28, 42, 0.45);
+      --key-trns-border: rgba(148, 163, 184, 0.12);
+      --key-trns-text: rgba(148, 163, 184, 0.35);
+
+      --key-no-bg: repeating-linear-gradient(
+        -45deg,
+        rgba(15, 20, 30, 0.7),
+        rgba(15, 20, 30, 0.7) 5px,
+        rgba(30, 41, 59, 0.45) 5px,
+        rgba(30, 41, 59, 0.45) 10px
+      );
+      --key-no-border: rgba(100, 116, 139, 0.22);
+      --key-no-text: rgba(148, 163, 184, 0.45);
+
+      /* Category Accents (Dark) */
+      --cat-layer-bg: linear-gradient(180deg, rgba(99, 102, 241, 0.26) 0%, rgba(79, 70, 229, 0.16) 100%);
+      --cat-layer-border: rgba(129, 140, 248, 0.55);
+      --cat-layer-text: #c7d2fe;
+      --cat-layer-solid: #818cf8;
+
+      --cat-mod-bg: linear-gradient(180deg, rgba(245, 158, 11, 0.24) 0%, rgba(217, 119, 6, 0.14) 100%);
+      --cat-mod-border: rgba(251, 191, 36, 0.52);
+      --cat-mod-text: #fde68a;
+      --cat-mod-solid: #f59e0b;
+
+      --cat-nav-bg: linear-gradient(180deg, rgba(6, 182, 212, 0.22) 0%, rgba(8, 145, 178, 0.13) 100%);
+      --cat-nav-border: rgba(34, 211, 238, 0.48);
+      --cat-nav-text: #a5f3fc;
+      --cat-nav-solid: #06b6d4;
+
+      --cat-wm-bg: linear-gradient(180deg, rgba(16, 185, 129, 0.23) 0%, rgba(5, 150, 105, 0.13) 100%);
+      --cat-wm-border: rgba(52, 211, 153, 0.5);
+      --cat-wm-text: #a7f3d0;
+      --cat-wm-solid: #10b981;
+
+      --cat-media-bg: linear-gradient(180deg, rgba(244, 63, 94, 0.23) 0%, rgba(225, 29, 72, 0.13) 100%);
+      --cat-media-border: rgba(251, 113, 133, 0.5);
+      --cat-media-text: #fecdd3;
+      --cat-media-solid: #f43f5e;
+
+      --cat-rgb-bg: linear-gradient(180deg, rgba(217, 70, 239, 0.22) 0%, rgba(192, 38, 211, 0.13) 100%);
+      --cat-rgb-border: rgba(232, 121, 249, 0.5);
+      --cat-rgb-text: #f5d0fe;
+      --cat-rgb-solid: #d946ef;
+
+      --cat-umlaut-bg: linear-gradient(180deg, rgba(56, 189, 248, 0.25) 0%, rgba(2, 132, 199, 0.15) 100%);
+      --cat-umlaut-border: rgba(56, 189, 248, 0.58);
+      --cat-umlaut-text: #bae6fd;
+      --cat-umlaut-solid: #38bdf8;
+
+      --cat-num-bg: linear-gradient(180deg, rgba(20, 184, 166, 0.24) 0%, rgba(13, 148, 136, 0.14) 100%);
+      --cat-num-border: rgba(45, 212, 191, 0.52);
+      --cat-num-text: #99f6e4;
+      --cat-num-solid: #14b8a6;
+
+      --cat-op-bg: linear-gradient(180deg, rgba(234, 179, 8, 0.21) 0%, rgba(202, 138, 4, 0.12) 100%);
+      --cat-op-border: rgba(250, 204, 21, 0.48);
+      --cat-op-text: #fef08a;
+      --cat-op-solid: #eab308;
+
+      --cat-sym-bg: linear-gradient(180deg, rgba(99, 102, 241, 0.16) 0%, rgba(56, 189, 248, 0.11) 100%);
+      --cat-sym-border: rgba(148, 163, 184, 0.38);
+      --cat-sym-text: #e2e8f0;
+      --cat-sym-solid: #94a3b8;
+
+      /* Highlight & Trigger Colors */
+      --trigger-ring: #818cf8;
+      --trigger-glow: rgba(129, 140, 248, 0.45);
+      --hl-action-ring: #34d399;
+      --hl-action-glow: rgba(52, 211, 153, 0.55);
+      --hl-mod-ring: #fbbf24;
+      --hl-mod-glow: rgba(251, 191, 36, 0.55);
+
+      --shadow-card: 0 10px 30px rgba(0, 0, 0, 0.35);
+      --shadow-tooltip: 0 14px 36px rgba(0, 0, 0, 0.55);
+    }
+
+    [data-theme="light"] {
+      --bg-page: #f4f6fa;
+      --bg-surface: #ffffff;
+      --bg-surface-2: #f8fafc;
+      --bg-surface-3: #eef2f7;
+      --bg-case: #e9eef5;
+      --bg-case-border: #cbd5e1;
+      --border-subtle: rgba(15, 23, 42, 0.1);
+      --border-strong: rgba(15, 23, 42, 0.2);
+
+      --text-primary: #0f172a;
+      --text-secondary: #475569;
+      --text-muted: #64748b;
+
+      --key-bg: linear-gradient(180deg, #ffffff 0%, #f1f5f9 100%);
+      --key-border: #cbd5e1;
+      --key-lip: #cbd5e1;
+      --key-top-highlight: rgba(255, 255, 255, 0.9);
+      --key-text: #0f172a;
+      --key-sub: #475569;
+      --key-base-hint: rgba(71, 85, 105, 0.62);
+
+      --key-trns-bg: rgba(255, 255, 255, 0.48);
+      --key-trns-border: rgba(148, 163, 184, 0.35);
+      --key-trns-text: rgba(100, 116, 139, 0.45);
+
+      --key-no-bg: repeating-linear-gradient(
+        -45deg,
+        rgba(226, 232, 240, 0.7),
+        rgba(226, 232, 240, 0.7) 5px,
+        rgba(241, 245, 249, 0.85) 5px,
+        rgba(241, 245, 249, 0.85) 10px
+      );
+      --key-no-border: rgba(148, 163, 184, 0.45);
+      --key-no-text: rgba(100, 116, 139, 0.65);
+
+      /* Category Accents (Light) */
+      --cat-layer-bg: linear-gradient(180deg, #eef2ff 0%, #e0e7ff 100%);
+      --cat-layer-border: #818cf8;
+      --cat-layer-text: #3730a3;
+      --cat-layer-solid: #4f46e5;
+
+      --cat-mod-bg: linear-gradient(180deg, #fffbeb 0%, #fef3c7 100%);
+      --cat-mod-border: #f59e0b;
+      --cat-mod-text: #92400e;
+      --cat-mod-solid: #d97706;
+
+      --cat-nav-bg: linear-gradient(180deg, #ecfeff 0%, #cffafe 100%);
+      --cat-nav-border: #06b6d4;
+      --cat-nav-text: #155e75;
+      --cat-nav-solid: #0891b2;
+
+      --cat-wm-bg: linear-gradient(180deg, #ecfdf5 0%, #d1fae5 100%);
+      --cat-wm-border: #10b981;
+      --cat-wm-text: #065f46;
+      --cat-wm-solid: #059669;
+
+      --cat-media-bg: linear-gradient(180deg, #fff1f2 0%, #ffe4e6 100%);
+      --cat-media-border: #f43f5e;
+      --cat-media-text: #9f1239;
+      --cat-media-solid: #e11d48;
+
+      --cat-rgb-bg: linear-gradient(180deg, #fdf4ff 0%, #fae8ff 100%);
+      --cat-rgb-border: #d946ef;
+      --cat-rgb-text: #86198f;
+      --cat-rgb-solid: #c026d3;
+
+      --cat-umlaut-bg: linear-gradient(180deg, #f0f9ff 0%, #e0f2fe 100%);
+      --cat-umlaut-border: #0ea5e9;
+      --cat-umlaut-text: #075985;
+      --cat-umlaut-solid: #0284c7;
+
+      --cat-num-bg: linear-gradient(180deg, #f0fdfa 0%, #ccfbf1 100%);
+      --cat-num-border: #14b8a6;
+      --cat-num-text: #115e59;
+      --cat-num-solid: #0d9488;
+
+      --cat-op-bg: linear-gradient(180deg, #fefce8 0%, #fef9c3 100%);
+      --cat-op-border: #eab308;
+      --cat-op-text: #854d0e;
+      --cat-op-solid: #ca8a04;
+
+      --cat-sym-bg: linear-gradient(180deg, #f8fafc 0%, #e2e8f0 100%);
+      --cat-sym-border: #94a3b8;
+      --cat-sym-text: #1e293b;
+      --cat-sym-solid: #475569;
+
+      --trigger-ring: #4f46e5;
+      --trigger-glow: rgba(79, 70, 229, 0.35);
+      --hl-action-ring: #059669;
+      --hl-action-glow: rgba(5, 150, 105, 0.35);
+      --hl-mod-ring: #d97706;
+      --hl-mod-glow: rgba(217, 119, 6, 0.38);
+
+      --shadow-card: 0 8px 24px rgba(15, 23, 42, 0.06);
+      --shadow-tooltip: 0 12px 30px rgba(15, 23, 42, 0.18);
+    }
+
+    /* =========================================================================
+       RESET & BASE LAYOUT
+       ========================================================================= */
+    *, *::before, *::after {
+      box-sizing: border-box;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      font-family: var(--font-sans);
+      background: var(--bg-page);
+      color: var(--text-primary);
+      line-height: 1.45;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+
+    .app-shell {
+      max-width: 1320px;
+      margin: 0 auto;
+      padding: 20px 20px 56px;
+    }
+
+    /* =========================================================================
+       HEADER & TOOLBAR
+       ========================================================================= */
+    .topbar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      padding: 16px 20px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-card);
+      margin-bottom: 16px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .brand-icon {
+      width: 42px;
+      height: 42px;
+      border-radius: 11px;
+      background: linear-gradient(135deg, #6366f1 0%, #06b6d4 100%);
+      display: grid;
+      place-items: center;
+      color: #ffffff;
+      flex-shrink: 0;
+      box-shadow: 0 4px 14px rgba(99, 102, 241, 0.35);
+    }
+
+    .brand h1 {
+      margin: 0;
+      font-size: 1.2rem;
+      font-weight: 750;
+      letter-spacing: -0.02em;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .badge-pill {
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 999px;
+      background: var(--bg-surface-3);
+      color: var(--text-secondary);
+      border: 1px solid var(--border-subtle);
+    }
+
+    .brand-sub {
+      margin: 2px 0 0;
+      font-size: 0.82rem;
+      color: var(--text-secondary);
+    }
+
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn {
+      appearance: none;
+      border: 1px solid var(--border-subtle);
+      background: var(--bg-surface-2);
+      color: var(--text-primary);
+      font-family: var(--font-sans);
+      font-size: 0.83rem;
+      font-weight: 600;
+      padding: 8px 13px;
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      transition: background 0.15s ease, border-color 0.15s ease, transform 0.1s ease, color 0.15s ease;
+      user-select: none;
+    }
+
+    .btn:hover {
+      background: var(--bg-surface-3);
+      border-color: var(--border-strong);
+    }
+
+    .btn:active {
+      transform: translateY(1px);
+    }
+
+    .btn.active {
+      background: var(--cat-layer-solid);
+      border-color: var(--cat-layer-solid);
+      color: #ffffff;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #4f46e5, #6366f1);
+      border-color: #6366f1;
+      color: #ffffff;
+    }
+
+    .btn-primary:hover {
+      background: linear-gradient(135deg, #4338ca, #4f46e5);
+      border-color: #818cf8;
+    }
+
+    /* Toggle Switch inside Button */
+    .toggle-dot {
+      width: 28px;
+      height: 16px;
+      border-radius: 999px;
+      background: var(--border-strong);
+      position: relative;
+      transition: background 0.18s ease;
+      flex-shrink: 0;
+    }
+
+    .toggle-dot::after {
+      content: "";
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: #ffffff;
+      transition: transform 0.18s ease;
+    }
+
+    .btn[aria-pressed="true"] .toggle-dot {
+      background: #10b981;
+    }
+
+    .btn[aria-pressed="true"] .toggle-dot::after {
+      transform: translateX(12px);
+    }
+
+    .kbd-hint {
+      font-family: var(--font-mono);
+      font-size: 0.68rem;
+      padding: 1px 5px;
+      border-radius: 4px;
+      background: rgba(148, 163, 184, 0.16);
+      color: var(--text-secondary);
+      border: 1px solid var(--border-subtle);
+    }
+
+    .btn.active .kbd-hint {
+      background: rgba(255, 255, 255, 0.2);
+      color: #ffffff;
+      border-color: rgba(255, 255, 255, 0.3);
+    }
+
+    /* =========================================================================
+       LAYER TABS
+       ========================================================================= */
+    .layer-tabs {
+      display: grid;
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+
+    .layer-tab {
+      appearance: none;
+      text-align: left;
+      padding: 11px 13px;
+      border-radius: var(--radius-md);
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-primary);
+      cursor: pointer;
+      transition: all 0.16s ease;
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+
+    .layer-tab::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: var(--tab-accent, #6366f1);
+      opacity: 0.45;
+      transition: opacity 0.16s ease, height 0.16s ease;
+    }
+
+    .layer-tab:hover {
+      background: var(--bg-surface-2);
+      border-color: var(--border-strong);
+      transform: translateY(-1px);
+    }
+
+    .layer-tab.active {
+      background: var(--bg-surface-2);
+      border-color: var(--tab-accent, #6366f1);
+      box-shadow: 0 0 0 1px var(--tab-accent, #6366f1), 0 8px 20px rgba(0, 0, 0, 0.18);
+    }
+
+    .layer-tab.active::before {
+      opacity: 1;
+      height: 4px;
+    }
+
+    .layer-tab-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+    }
+
+    .layer-num {
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: var(--tab-accent, #818cf8);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .layer-title {
+      font-size: 0.88rem;
+      font-weight: 700;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .layer-trigger-mini {
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* =========================================================================
+       KEYBOARD STAGE CARD
+       ========================================================================= */
+    .stage-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-xl);
+      box-shadow: var(--shadow-card);
+      padding: 20px 22px 18px;
+      margin-bottom: 18px;
+    }
+
+    .stage-header {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 16px;
+      padding-bottom: 14px;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .stage-title-group {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .stage-layer-badge {
+      font-family: var(--font-mono);
+      font-size: 0.78rem;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 8px;
+      color: #ffffff;
+      background: var(--cat-layer-solid);
+    }
+
+    .stage-title {
+      margin: 0;
+      font-size: 1.15rem;
+      font-weight: 750;
+      letter-spacing: -0.015em;
+    }
+
+    .stage-trigger-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      background: var(--bg-surface-2);
+      border: 1px solid var(--border-subtle);
+      padding: 5px 11px;
+      border-radius: 999px;
+    }
+
+    .stage-trigger-chip code {
+      font-family: var(--font-mono);
+      font-weight: 700;
+      color: var(--cat-layer-text);
+      background: rgba(99, 102, 241, 0.16);
+      padding: 1px 6px;
+      border-radius: 5px;
+    }
+
+    /* Active Contract Binding Banner */
+    .binding-banner {
+      display: none;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 16px;
+      padding: 10px 14px;
+      border-radius: var(--radius-md);
+      background: linear-gradient(90deg, rgba(16, 185, 129, 0.14), rgba(99, 102, 241, 0.12));
+      border: 1px solid rgba(52, 211, 153, 0.42);
+    }
+
+    .binding-banner.visible {
+      display: flex;
+    }
+
+    .binding-banner-info {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.86rem;
+    }
+
+    .binding-banner-info strong {
+      color: var(--cat-wm-text);
+    }
+
+    .binding-banner-info code {
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      padding: 2px 7px;
+      border-radius: 5px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-primary);
+    }
+
+    /* =========================================================================
+       AUTHENTIC CORNE V4 SPLIT GEOMETRY
+       ========================================================================= */
+    .kb-viewport {
+      width: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 6px 0 8px;
+      overflow: hidden;
+    }
+
+    .corne-board {
+      /* --u is computed cleanly via JS ResizeObserver with safe CSS fallback */
+      --u: 64px;
+      --gap: calc(var(--u) * 0.085);
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      gap: calc(var(--u) * 0.85);
+      user-select: none;
+    }
+
+    .corne-half {
+      position: relative;
+      width: calc(var(--u) * 7.05);
+      height: calc(var(--u) * 5.25);
+      flex-shrink: 0;
+    }
+
+    .corne-pcb {
+      position: absolute;
+      inset: calc(var(--u) * -0.18);
+      width: calc(100% + var(--u) * 0.36);
+      height: calc(100% + var(--u) * 0.36);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .corne-pcb path {
+      fill: var(--bg-case);
+      stroke: var(--bg-case-border);
+      stroke-width: 2;
+      vector-effect: non-scaling-stroke;
+    }
+
+    .half-tag {
+      position: absolute;
+      bottom: calc(var(--u) * 0.15);
+      font-family: var(--font-mono);
+      font-size: calc(var(--u) * 0.16);
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      opacity: 0.55;
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .corne-half.left .half-tag { left: calc(var(--u) * 0.15); }
+    .corne-half.right .half-tag { right: calc(var(--u) * 0.15); }
+
+    /* =========================================================================
+       KEYCAP COMPONENT
+       ========================================================================= */
+    .keycap {
+      position: absolute;
+      z-index: 2;
+      left: calc(var(--kx) * var(--u));
+      top: calc(var(--ky) * var(--u));
+      width: calc(var(--kw, 1) * var(--u) - var(--gap));
+      height: calc(var(--kh, 1) * var(--u) - var(--gap));
+      transform: rotate(var(--krot, 0deg));
+      transform-origin: center center;
+
+      border-radius: calc(var(--u) * 0.14);
+      background: var(--key-bg);
+      border: 1.25px solid var(--key-border);
+      box-shadow:
+        inset 0 1px 0 var(--key-top-highlight),
+        0 calc(var(--u) * 0.055) 0 var(--key-lip),
+        0 calc(var(--u) * 0.08) calc(var(--u) * 0.14) rgba(0, 0, 0, 0.22);
+
+      color: var(--key-text);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: calc(var(--u) * 0.06);
+      cursor: pointer;
+      transition: transform 0.12s ease, box-shadow 0.14s ease, border-color 0.14s ease, filter 0.14s ease;
+    }
+
+    .keycap:hover,
+    .keycap.inspected {
+      z-index: 12;
+      transform: rotate(var(--krot, 0deg)) translateY(calc(var(--u) * -0.04)) scale(1.04);
+      border-color: var(--text-primary);
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.15),
+        0 calc(var(--u) * 0.08) calc(var(--u) * 0.24) rgba(0, 0, 0, 0.35);
+    }
+
+    /* Subtle Homing Bar on F and J */
+    .keycap.homing::after {
+      content: "";
+      position: absolute;
+      bottom: calc(var(--u) * 0.08);
+      left: 50%;
+      transform: translateX(-50%);
+      width: calc(var(--u) * 0.28);
+      height: max(2px, calc(var(--u) * 0.032));
+      border-radius: 99px;
+      background: currentColor;
+      opacity: 0.42;
+    }
+
+    /* Base Key Hint (top-left corner on Layers 1-5) */
+    .key-base {
+      position: absolute;
+      top: calc(var(--u) * 0.055);
+      left: calc(var(--u) * 0.075);
+      font-family: var(--font-mono);
+      font-size: calc(var(--u) * 0.155);
+      font-weight: 600;
+      line-height: 1;
+      color: var(--key-base-hint);
+      pointer-events: none;
+      transition: opacity 0.15s ease;
+    }
+
+    .hide-base-hints .key-base {
+      opacity: 0 !important;
+    }
+
+    /* Hold Pill (for LT tap-hold keys or active layer trigger) */
+    .key-hold {
+      font-family: var(--font-mono);
+      font-size: calc(var(--u) * 0.155);
+      font-weight: 750;
+      line-height: 1.05;
+      padding: calc(var(--u) * 0.025) calc(var(--u) * 0.07);
+      border-radius: calc(var(--u) * 0.06);
+      background: rgba(99, 102, 241, 0.28);
+      color: var(--cat-layer-text);
+      margin-bottom: calc(var(--u) * 0.045);
+      letter-spacing: 0.02em;
+      white-space: nowrap;
+    }
+
+    [data-theme="light"] .key-hold {
+      background: rgba(79, 70, 229, 0.14);
+    }
+
+    .key-main {
+      font-family: var(--font-sans);
+      font-size: calc(var(--u) * 0.27);
+      font-weight: 750;
+      line-height: 1.05;
+      text-align: center;
+      letter-spacing: -0.02em;
+      word-break: keep-all;
+    }
+
+    .key-main.is-symbol {
+      font-family: var(--font-mono);
+      font-size: calc(var(--u) * 0.38);
+      font-weight: 700;
+    }
+
+    .key-main.is-umlaut {
+      font-size: calc(var(--u) * 0.4);
+      font-weight: 800;
+    }
+
+    .key-main.is-compact {
+      font-family: var(--font-mono);
+      font-size: calc(var(--u) * 0.215);
+      font-weight: 700;
+    }
+
+    .key-main.is-tiny {
+      font-family: var(--font-mono);
+      font-size: calc(var(--u) * 0.19);
+      font-weight: 700;
+    }
+
+    .key-sub {
+      font-family: var(--font-mono);
+      font-size: calc(var(--u) * 0.145);
+      font-weight: 600;
+      color: var(--key-sub);
+      margin-top: calc(var(--u) * 0.035);
+      line-height: 1;
+      opacity: 0.9;
+      white-space: nowrap;
+    }
+
+    /* Category Styles */
+    .keycap.cat-layer { background: var(--cat-layer-bg); border-color: var(--cat-layer-border); color: var(--cat-layer-text); }
+    .keycap.cat-mod   { background: var(--cat-mod-bg);   border-color: var(--cat-mod-border);   color: var(--cat-mod-text); }
+    .keycap.cat-nav   { background: var(--cat-nav-bg);   border-color: var(--cat-nav-border);   color: var(--cat-nav-text); }
+    .keycap.cat-wm    { background: var(--cat-wm-bg);    border-color: var(--cat-wm-border);    color: var(--cat-wm-text); }
+    .keycap.cat-media { background: var(--cat-media-bg); border-color: var(--cat-media-border); color: var(--cat-media-text); }
+    .keycap.cat-rgb   { background: var(--cat-rgb-bg);   border-color: var(--cat-rgb-border);   color: var(--cat-rgb-text); }
+    .keycap.cat-umlaut{ background: var(--cat-umlaut-bg);border-color: var(--cat-umlaut-border);color: var(--cat-umlaut-text); }
+    .keycap.cat-num   { background: var(--cat-num-bg);   border-color: var(--cat-num-border);   color: var(--cat-num-text); }
+    .keycap.cat-op    { background: var(--cat-op-bg);    border-color: var(--cat-op-border);    color: var(--cat-op-text); }
+    .keycap.cat-sym   { background: var(--cat-sym-bg);   border-color: var(--cat-sym-border);   color: var(--cat-sym-text); }
+
+    .keycap.cat-trns {
+      background: var(--key-trns-bg);
+      border-color: var(--key-trns-border);
+      color: var(--key-trns-text);
+      box-shadow: none;
+    }
+
+    .keycap.cat-trns .key-main {
+      font-size: calc(var(--u) * 0.34);
+      font-weight: 500;
+    }
+
+    .keycap.cat-no {
+      background: var(--key-no-bg);
+      border-color: var(--key-no-border);
+      color: var(--key-no-text);
+      box-shadow: none;
+    }
+
+    /* Active Layer Hold-Trigger Marker */
+    .keycap.is-trigger {
+      background: var(--cat-layer-bg) !important;
+      border: 2px solid var(--trigger-ring) !important;
+      color: var(--cat-layer-text) !important;
+      box-shadow:
+        0 0 0 2px var(--trigger-glow),
+        0 calc(var(--u) * 0.05) 0 var(--key-lip) !important;
+      z-index: 6;
+    }
+
+    .trigger-badge {
+      font-family: var(--font-mono);
+      font-size: calc(var(--u) * 0.145);
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      padding: calc(var(--u) * 0.025) calc(var(--u) * 0.08);
+      border-radius: 999px;
+      background: var(--cat-layer-solid);
+      color: #ffffff;
+      margin-bottom: calc(var(--u) * 0.04);
+    }
+
+    /* Transparent LShift Pass-through on Layer 3 */
+    .keycap.is-shift-trns {
+      border-style: dashed;
+      border-width: 1.75px;
+    }
+
+    /* Contract Binding Interactive Highlighting */
+    @keyframes pulseAction {
+      0%, 100% {
+        box-shadow: 0 0 0 3px var(--hl-action-glow), 0 0 18px var(--hl-action-glow);
+      }
+      50% {
+        box-shadow: 0 0 0 6px var(--hl-action-glow), 0 0 28px var(--hl-action-glow);
+      }
+    }
+
+    @keyframes pulseMod {
+      0%, 100% {
+        box-shadow: 0 0 0 3px var(--hl-mod-glow), 0 0 18px var(--hl-mod-glow);
+      }
+      50% {
+        box-shadow: 0 0 0 6px var(--hl-mod-glow), 0 0 26px var(--hl-mod-glow);
+      }
+    }
+
+    .has-binding-highlight .keycap:not(.hl-action):not(.hl-mod) {
+      opacity: 0.34;
+      filter: saturate(0.45);
+    }
+
+    .keycap.hl-action {
+      z-index: 10;
+      border: 2.2px solid var(--hl-action-ring) !important;
+      animation: pulseAction 1.4s ease-in-out infinite;
+      transform: rotate(var(--krot, 0deg)) translateY(calc(var(--u) * -0.03)) scale(1.03);
+    }
+
+    .keycap.hl-mod {
+      z-index: 10;
+      border: 2.2px solid var(--hl-mod-ring) !important;
+      animation: pulseMod 1.4s ease-in-out infinite;
+      transform: rotate(var(--krot, 0deg)) translateY(calc(var(--u) * -0.03)) scale(1.03);
+    }
+
+    /* =========================================================================
+       LAYER NOTE & LIVE INSPECTOR BAR
+       ========================================================================= */
+    .layer-note {
+      margin-top: 14px;
+      padding: 10px 14px;
+      border-radius: var(--radius-md);
+      background: var(--bg-surface-2);
+      border: 1px solid var(--border-subtle);
+      border-left: 3px solid var(--cat-layer-solid);
+      font-size: 0.84rem;
+      color: var(--text-secondary);
+      display: none;
+    }
+
+    .layer-note.visible {
+      display: block;
+    }
+
+    .layer-note code {
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      padding: 1px 5px;
+      border-radius: 4px;
+      background: var(--bg-surface-3);
+      color: var(--text-primary);
+    }
+
+    .inspector-bar {
+      margin-top: 14px;
+      padding: 12px 16px;
+      border-radius: var(--radius-md);
+      background: var(--bg-surface-2);
+      border: 1px solid var(--border-subtle);
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      min-height: 56px;
+    }
+
+    .inspector-primary {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .inspector-key-badge {
+      font-family: var(--font-mono);
+      font-size: 0.92rem;
+      font-weight: 750;
+      padding: 4px 10px;
+      border-radius: 7px;
+      background: var(--bg-surface-3);
+      border: 1px solid var(--border-strong);
+      color: var(--text-primary);
+    }
+
+    .inspector-desc {
+      font-size: 0.88rem;
+      color: var(--text-primary);
+      font-weight: 500;
+    }
+
+    .inspector-meta {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+      font-family: var(--font-mono);
+      font-size: 0.76rem;
+    }
+
+    .meta-chip {
+      padding: 3px 8px;
+      border-radius: 6px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-secondary);
+    }
+
+    .meta-chip.shift-chip {
+      background: rgba(245, 158, 11, 0.14);
+      border-color: rgba(245, 158, 11, 0.4);
+      color: var(--cat-mod-text);
+    }
+
+    /* =========================================================================
+       COLOR LEGEND
+       ========================================================================= */
+    .legend-bar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px 16px;
+      padding: 12px 18px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      margin-bottom: 20px;
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+    }
+
+    .legend-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      font-weight: 500;
+    }
+
+    .legend-swatch {
+      width: 12px;
+      height: 12px;
+      border-radius: 4px;
+      flex-shrink: 0;
+    }
+
+    /* =========================================================================
+       FLOATING HOVER TOOLTIP (Desktop)
+       ========================================================================= */
+    .floating-tooltip {
+      position: fixed;
+      z-index: 9999;
+      pointer-events: none;
+      max-width: 310px;
+      padding: 10px 12px;
+      border-radius: var(--radius-md);
+      background: var(--bg-surface);
+      border: 1px solid var(--border-strong);
+      box-shadow: var(--shadow-tooltip);
+      opacity: 0;
+      transform: translateY(4px);
+      transition: opacity 0.12s ease, transform 0.12s ease;
+      font-size: 0.8rem;
+    }
+
+    .floating-tooltip.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .tt-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 4px;
+    }
+
+    .tt-title {
+      font-weight: 750;
+      font-size: 0.88rem;
+      color: var(--text-primary);
+    }
+
+    .tt-code {
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      padding: 2px 6px;
+      border-radius: 5px;
+      background: var(--bg-surface-3);
+      color: var(--cat-layer-text);
+    }
+
+    .tt-desc {
+      color: var(--text-secondary);
+      margin: 0 0 6px;
+    }
+
+    .tt-row {
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      margin-top: 3px;
+    }
+
+    .tt-row.tt-shift {
+      color: var(--cat-mod-text);
+      font-weight: 600;
+    }
+
+    /* =========================================================================
+       CONTRACT BINDINGS TABLE SECTION
+       ========================================================================= */
+    .section-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-xl);
+      box-shadow: var(--shadow-card);
+      padding: 20px 22px;
+      margin-bottom: 20px;
+    }
+
+    .section-head {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .section-head h2 {
+      margin: 0;
+      font-size: 1.06rem;
+      font-weight: 750;
+      letter-spacing: -0.015em;
+    }
+
+    .section-sub {
+      margin: 2px 0 0;
+      font-size: 0.82rem;
+      color: var(--text-secondary);
+    }
+
+    .search-wrap {
+      position: relative;
+      min-width: 240px;
+      flex: 0 1 320px;
+    }
+
+    .search-input {
+      width: 100%;
+      padding: 8px 34px 8px 34px;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border-subtle);
+      background: var(--bg-surface-2);
+      color: var(--text-primary);
+      font-family: var(--font-sans);
+      font-size: 0.85rem;
+      outline: none;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .search-input:focus {
+      border-color: var(--cat-layer-solid);
+      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+    }
+
+    .search-icon {
+      position: absolute;
+      left: 11px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-muted);
+      pointer-events: none;
+    }
+
+    .search-clear {
+      position: absolute;
+      right: 8px;
+      top: 50%;
+      transform: translateY(-50%);
+      border: none;
+      background: transparent;
+      color: var(--text-muted);
+      cursor: pointer;
+      padding: 2px 5px;
+      font-size: 0.85rem;
+      display: none;
+    }
+
+    .search-clear.visible {
+      display: block;
+    }
+
+    .table-scroll {
+      width: 100%;
+      overflow-x: auto;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border-subtle);
+    }
+
+    .bindings-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+    }
+
+    .bindings-table th {
+      text-align: left;
+      padding: 10px 14px;
+      font-size: 0.74rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      background: var(--bg-surface-2);
+      border-bottom: 1px solid var(--border-subtle);
+      white-space: nowrap;
+    }
+
+    .bindings-table td {
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--border-subtle);
+      vertical-align: middle;
+    }
+
+    .bindings-table tbody tr:last-child td {
+      border-bottom: none;
+    }
+
+    .bindings-table tbody tr {
+      cursor: pointer;
+      transition: background 0.12s ease;
+    }
+
+    .bindings-table tbody tr:hover {
+      background: var(--bg-surface-2);
+    }
+
+    .bindings-table tbody tr.selected {
+      background: rgba(16, 185, 129, 0.14);
+    }
+
+    .bindings-table tbody tr.selected td:first-child {
+      box-shadow: inset 3px 0 0 var(--cat-wm-solid);
+    }
+
+    .code-inline {
+      font-family: var(--font-mono);
+      font-size: 0.78rem;
+      padding: 2px 6px;
+      border-radius: 5px;
+      background: var(--bg-surface-3);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-primary);
+      white-space: nowrap;
+      display: inline-block;
+      margin: 1px 0;
+    }
+
+    .chord-code {
+      color: var(--cat-wm-text);
+      background: rgba(16, 185, 129, 0.12);
+      border-color: rgba(16, 185, 129, 0.3);
+    }
+
+    .layer-mini-pill {
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      font-weight: 700;
+      padding: 2px 7px;
+      border-radius: 999px;
+      background: var(--bg-surface-3);
+      color: var(--text-secondary);
+      white-space: nowrap;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 24px;
+      color: var(--text-muted);
+      font-size: 0.88rem;
+    }
+
+    /* =========================================================================
+       OVERVIEW / POSTER VIEW (ALL 6 LAYERS)
+       ========================================================================= */
+    .overview-section {
+      display: none;
+    }
+
+    .app-shell.mode-overview .single-view-only {
+      display: none !important;
+    }
+
+    .app-shell.mode-overview .overview-section {
+      display: block;
+    }
+
+    .overview-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+
+    .overview-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      padding: 14px 16px 12px;
+      box-shadow: var(--shadow-card);
+      display: flex;
+      flex-direction: column;
+      cursor: pointer;
+      transition: border-color 0.15s ease, transform 0.14s ease;
+    }
+
+    .overview-card:hover {
+      border-color: var(--border-strong);
+      transform: translateY(-1px);
+    }
+
+    .overview-card-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 10px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .overview-card-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 750;
+      font-size: 0.92rem;
+    }
+
+    .overview-card-trigger {
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      color: var(--text-secondary);
+      background: var(--bg-surface-2);
+      border: 1px solid var(--border-subtle);
+      padding: 2px 8px;
+      border-radius: 999px;
+      white-space: nowrap;
+    }
+
+    .overview-card-note {
+      margin-top: 8px;
+      font-size: 0.74rem;
+      color: var(--text-secondary);
+      line-height: 1.35;
+    }
+
+    .overview-card-note code {
+      font-family: var(--font-mono);
+      font-size: 0.71rem;
+      padding: 1px 4px;
+      border-radius: 3px;
+      background: var(--bg-surface-3);
+      color: var(--text-primary);
+    }
+
+    /* =========================================================================
+       RESPONSIVE BREAKPOINTS
+       ========================================================================= */
+    @media (max-width: 1080px) {
+      .layer-tabs {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+      .overview-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 680px) {
+      .app-shell {
+        padding: 12px 10px 40px;
+      }
+      .topbar {
+        padding: 14px;
+      }
+      .layer-tabs {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+      .stage-card, .section-card {
+        padding: 14px 12px;
+      }
+      .kbd-hint {
+        display: none;
+      }
+      .floating-tooltip {
+        display: none !important;
+      }
+    }
+
+    /* =========================================================================
+       PRINT STYLESHEET – A4 LANDSCAPE POSTER EXPORT
+       ========================================================================= */
+    @page {
+      size: A4 landscape;
+      margin: 7mm;
+    }
+
+    @media print {
+      * {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
+
+      /* Force crisp Light Print Theme */
+      html, html[data-theme="dark"], html[data-theme="light"] {
+        --bg-page: #ffffff;
+        --bg-surface: #ffffff;
+        --bg-surface-2: #f8fafc;
+        --bg-surface-3: #f1f5f9;
+        --bg-case: #f1f5f9;
+        --bg-case-border: #cbd5e1;
+        --border-subtle: #cbd5e1;
+        --border-strong: #94a3b8;
+        --text-primary: #0f172a;
+        --text-secondary: #334155;
+        --text-muted: #475569;
+        --key-bg: #ffffff;
+        --key-border: #94a3b8;
+        --key-lip: #cbd5e1;
+        --key-text: #0f172a;
+        --key-sub: #475569;
+        --key-base-hint: #64748b;
+        --key-trns-bg: #f8fafc;
+        --key-trns-border: #cbd5e1;
+        --key-trns-text: #94a3b8;
+        --key-no-bg: #e2e8f0;
+        --key-no-border: #94a3b8;
+        --key-no-text: #64748b;
+
+        --cat-layer-bg: #e0e7ff; --cat-layer-border: #4f46e5; --cat-layer-text: #312e81; --cat-layer-solid: #4f46e5;
+        --cat-mod-bg: #fef3c7;   --cat-mod-border: #d97706;   --cat-mod-text: #78350f;   --cat-mod-solid: #d97706;
+        --cat-nav-bg: #cffafe;   --cat-nav-border: #0891b2;   --cat-nav-text: #164e63;   --cat-nav-solid: #0891b2;
+        --cat-wm-bg: #d1fae5;    --cat-wm-border: #059669;    --cat-wm-text: #064e3b;    --cat-wm-solid: #059669;
+        --cat-media-bg: #ffe4e6; --cat-media-border: #e11d48; --cat-media-text: #881337; --cat-media-solid: #e11d48;
+        --cat-rgb-bg: #fae8ff;   --cat-rgb-border: #c026d3;   --cat-rgb-text: #701a75;   --cat-rgb-solid: #c026d3;
+        --cat-umlaut-bg: #e0f2fe;--cat-umlaut-border: #0284c7;--cat-umlaut-text: #0c4a6e;--cat-umlaut-solid: #0284c7;
+        --cat-num-bg: #ccfbf1;   --cat-num-border: #0d9488;   --cat-num-text: #134e4a;   --cat-num-solid: #0d9488;
+        --cat-op-bg: #fef9c3;    --cat-op-border: #ca8a04;    --cat-op-text: #713f12;    --cat-op-solid: #ca8a04;
+        --cat-sym-bg: #f1f5f9;   --cat-sym-border: #64748b;   --cat-sym-text: #0f172a;   --cat-sym-solid: #475569;
+        --trigger-ring: #4f46e5;
+        --trigger-glow: rgba(79, 70, 229, 0.25);
+      }
+
+      body {
+        background: #ffffff !important;
+      }
+
+      .app-shell {
+        max-width: none !important;
+        padding: 0 !important;
+      }
+
+      /* Always show full 6-layer overview in Print regardless of current UI mode */
+      .no-print,
+      .toolbar,
+      .single-view-only,
+      .floating-tooltip,
+      .search-wrap {
+        display: none !important;
+      }
+
+      .overview-section {
+        display: block !important;
+      }
+
+      .topbar {
+        padding: 6px 10px;
+        margin-bottom: 6px;
+        box-shadow: none;
+        border-radius: 8px;
+      }
+
+      .brand-icon {
+        width: 28px;
+        height: 28px;
+        box-shadow: none;
+      }
+
+      .brand h1 {
+        font-size: 0.98rem;
+      }
+
+      .brand-sub {
+        font-size: 0.7rem;
+      }
+
+      .legend-bar {
+        padding: 5px 10px;
+        margin-bottom: 7px;
+        gap: 6px 12px;
+        font-size: 0.67rem;
+        border-radius: 8px;
+      }
+
+      .legend-swatch {
+        width: 9px;
+        height: 9px;
+      }
+
+      .overview-grid {
+        display: grid !important;
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 7px !important;
+        margin-bottom: 0 !important;
+      }
+
+      .overview-card {
+        padding: 6px 8px 5px;
+        box-shadow: none;
+        border-radius: 8px;
+        break-inside: avoid;
+        page-break-inside: avoid;
+      }
+
+      .overview-card-head {
+        margin-bottom: 4px;
+        padding-bottom: 4px;
+      }
+
+      .overview-card-title {
+        font-size: 0.76rem;
+      }
+
+      .overview-card-trigger {
+        font-size: 0.62rem;
+        padding: 1px 6px;
+      }
+
+      .overview-card-note {
+        margin-top: 3px;
+        font-size: 0.61rem;
+      }
+
+      /* Fixed crisp print unit so all 6 boards fit cleanly on Page 1 A4 Landscape */
+      .overview-card .corne-board {
+        --u: 24.5px !important;
+      }
+
+      .keycap {
+        box-shadow: none !important;
+      }
+
+      /* Page 2: Vertrags-Bindings Tabelle */
+      .bindings-card {
+        page-break-before: always;
+        break-before: page;
+        box-shadow: none;
+        padding: 10px 12px;
+        border-radius: 8px;
+      }
+
+      .bindings-table {
+        font-size: 0.75rem;
+      }
+
+      .bindings-table th,
+      .bindings-table td {
+        padding: 6px 9px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-shell" id="appShell">
+    <!-- ===================================================================
+         HEADER & CONTROLS
+         =================================================================== -->
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-icon" aria-hidden="true">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="2" y="6" width="8.5" height="12" rx="2"></rect>
+            <rect x="13.5" y="6" width="8.5" height="12" rx="2"></rect>
+            <line x1="4.5" y1="10" x2="8" y2="10"></line>
+            <line x1="4.5" y1="14" x2="8" y2="14"></line>
+            <line x1="16" y1="10" x2="19.5" y2="10"></line>
+            <line x1="16" y1="14" x2="19.5" y2="14"></line>
+          </svg>
+        </div>
+        <div>
+          <h1>
+            Corne v4 (Vial) Cheatsheet
+            <span class="badge-pill">46 Tasten</span>
+            <span class="badge-pill">6 Layer</span>
+            <span class="badge-pill">corne_v4.vil</span>
+          </h1>
+          <p class="brand-sub">Split-Layout mit 2 inneren Extra-Tasten pro Hälfte · EurKEY-Umlaute · Vertrags-Bindings (Linux &amp; Windows)</p>
+        </div>
+      </div>
+
+      <div class="toolbar">
+        <button class="btn" id="btnViewToggle" type="button" title="Zwischen Einzel-Layer und 6-Layer-Poster wechseln (Taste A)">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="7" height="7" rx="1"></rect>
+            <rect x="14" y="3" width="7" height="7" rx="1"></rect>
+            <rect x="3" y="14" width="7" height="7" rx="1"></rect>
+            <rect x="14" y="14" width="7" height="7" rx="1"></rect>
+          </svg>
+          <span id="viewToggleLabel">Alle Layer (Übersicht)</span>
+          <span class="kbd-hint">A</span>
+        </button>
+
+        <button class="btn" id="btnBaseToggle" type="button" aria-pressed="true" title="Physische Layer-0-Basistasten auf Layer 1–5 anzeigen (Taste B)">
+          <span class="toggle-dot" aria-hidden="true"></span>
+          <span>Basistasten</span>
+          <span class="kbd-hint">B</span>
+        </button>
+
+        <button class="btn" id="btnThemeToggle" type="button" title="Zwischen Dark Mode und Light Mode umschalten (Taste T)">
+          <span id="themeIcon" aria-hidden="true">☀️</span>
+          <span id="themeLabel">Light</span>
+          <span class="kbd-hint">T</span>
+        </button>
+
+        <button class="btn btn-primary" id="btnPrint" type="button" title="A4-Querformat drucken oder als PDF speichern">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="6 9 6 2 18 2 18 9"></polyline>
+            <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+            <rect x="6" y="14" width="12" height="8"></rect>
+          </svg>
+          <span>Drucken / PDF</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- ===================================================================
+         COLOR LEGEND
+         =================================================================== -->
+    <div class="legend-bar" aria-label="Farblegende der Tastenkategorien">
+      <span class="legend-item"><span class="legend-swatch" style="background: var(--cat-layer-solid);"></span>Layer-Hold / Tap-Hold</span>
+      <span class="legend-item"><span class="legend-swatch" style="background: var(--cat-mod-solid);"></span>Modifier</span>
+      <span class="legend-item"><span class="legend-swatch" style="background: var(--cat-nav-solid);"></span>Navigation &amp; Edit</span>
+      <span class="legend-item"><span class="legend-swatch" style="background: var(--cat-wm-solid);"></span>WM-Shortcuts</span>
+      <span class="legend-item"><span class="legend-swatch" style="background: var(--cat-media-solid);"></span>Medien</span>
+      <span class="legend-item"><span class="legend-swatch" style="background: var(--cat-rgb-solid);"></span>RGB</span>
+      <span class="legend-item"><span class="legend-swatch" style="background: var(--cat-umlaut-solid);"></span>Umlaute (EurKEY)</span>
+      <span class="legend-item"><span class="legend-swatch" style="background: var(--cat-num-solid);"></span>Zahlen</span>
+      <span class="legend-item"><span class="legend-swatch" style="background: var(--cat-op-solid);"></span>Operatoren</span>
+      <span class="legend-item"><span class="legend-swatch" style="background: var(--key-trns-bg); border: 1px solid var(--border-strong);"></span>Transparent (·)</span>
+      <span class="legend-item"><span class="legend-swatch" style="background: var(--key-no-bg); border: 1px solid var(--border-strong);"></span>Blockiert (—)</span>
+    </div>
+
+    <!-- ===================================================================
+         SINGLE-LAYER INTERACTIVE VIEW
+         =================================================================== -->
+    <div class="single-view-only">
+      <!-- Layer Tabs (Shortcuts 0-5) -->
+      <nav class="layer-tabs" id="layerTabs" aria-label="Layer-Auswahl"></nav>
+
+      <!-- Main Keyboard Stage -->
+      <section class="stage-card" aria-live="polite">
+        <div class="stage-header">
+          <div class="stage-title-group">
+            <span class="stage-layer-badge" id="stageLayerBadge">Layer 0</span>
+            <h2 class="stage-title" id="stageTitle">Base</h2>
+          </div>
+          <div class="stage-trigger-chip" id="stageTrigger"></div>
+        </div>
+
+        <!-- Active Contract Binding Highlight Banner -->
+        <div class="binding-banner" id="bindingBanner">
+          <div class="binding-banner-info" id="bindingBannerText"></div>
+          <button class="btn" id="btnClearBinding" type="button">
+            Auswahl aufheben <span class="kbd-hint">Esc</span>
+          </button>
+        </div>
+
+        <!-- Keyboard Matrix Mount -->
+        <div class="kb-viewport" id="singleKbViewport"></div>
+
+        <!-- Layer-Specific Note (Layer 3 & Layer 4) -->
+        <div class="layer-note" id="stageLayerNote"></div>
+
+        <!-- Live Key Inspector Bar -->
+        <div class="inspector-bar" id="inspectorBar">
+          <div class="inspector-primary">
+            <span class="inspector-key-badge" id="insKey">Bereit</span>
+            <span class="inspector-desc" id="insDesc">Fahre über eine Taste oder klicke auf ein Vertrags-Binding unten, um Details und Akkorde anzuzeigen.</span>
+          </div>
+          <div class="inspector-meta" id="insMeta">
+            <span class="meta-chip">Tasten 0–5: Layer wechseln</span>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- ===================================================================
+         ALL-LAYERS OVERVIEW / PRINT POSTER VIEW
+         =================================================================== -->
+    <section class="overview-section" id="overviewSection" aria-label="Alle 6 Layer in der Übersicht">
+      <div class="overview-grid" id="overviewGrid"></div>
+    </section>
+
+    <!-- ===================================================================
+         INTERACTIVE CONTRACT BINDINGS TABLE
+         =================================================================== -->
+    <section class="section-card bindings-card" aria-label="Vertrags-Bindings auf dem Corne">
+      <div class="section-head">
+        <div>
+          <h2>Vertrags-Bindings auf dem Corne</h2>
+          <p class="section-sub">Klicke auf eine Zeile, um automatisch auf den passenden Layer zu springen und die physischen Tasten hervorzuheben.</p>
+        </div>
+        <div class="search-wrap">
+          <svg class="search-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+          <input
+            type="search"
+            id="bindingSearch"
+            class="search-input"
+            placeholder="Filtern (z. B. Workspace, Lock, Screenshot, Resize)…"
+            autocomplete="off"
+          />
+          <button type="button" id="bindingSearchClear" class="search-clear" aria-label="Suche leeren">✕</button>
+        </div>
+      </div>
+
+      <div class="table-scroll">
+        <table class="bindings-table">
+          <thead>
+            <tr>
+              <th>Aktion</th>
+              <th>Vertrag (Linux / Windows)</th>
+              <th>Corne-Akkord</th>
+              <th>Layer</th>
+            </tr>
+          </thead>
+          <tbody id="bindingsTbody"></tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+
+  <!-- Floating Desktop Tooltip -->
+  <div class="floating-tooltip" id="floatingTooltip" role="tooltip" aria-hidden="true"></div>
+
+  <script>
+    (function () {
+      "use strict";
+
+      /* =======================================================================
+         1. PHYSICAL CORNE V4 GEOMETRY (46 KEYS: 23 LEFT + 23 RIGHT)
+         Coordinates in key-units (u). Each half is 7.05u wide x 5.25u tall.
+         ======================================================================= */
+      const LEFT_COL_STAGGER = [0.35, 0.35, 0.14, 0.0, 0.14, 0.25, 0.45];
+      const RIGHT_COL_STAGGER = [0.45, 0.25, 0.14, 0.0, 0.14, 0.35, 0.35];
+
+      const PHYSICAL_KEYS = [];
+
+      // Helper to add a key definition
+      function addPhysical(id, side, row, col, x, y, w, h, rot, posLabel, homing) {
+        PHYSICAL_KEYS.push({
+          id, side, row, col, x, y,
+          w: w || 1,
+          h: h || 1,
+          rot: rot || 0,
+          posLabel,
+          homing: Boolean(homing)
+        });
+      }
+
+      // Left Half: R0 (7 keys: C0..C6)
+      for (let c = 0; c < 7; c++) {
+        addPhysical(`L_R0_C${c}`, "left", 0, c, c, LEFT_COL_STAGGER[c], 1, 1, 0, `Links R0·C${c}`, false);
+      }
+      // Left Half: R1 (7 keys: C0..C6) – F is L_R1_C4 (homing)
+      for (let c = 0; c < 7; c++) {
+        addPhysical(`L_R1_C${c}`, "left", 1, c, c, LEFT_COL_STAGGER[c] + 1, 1, 1, 0, `Links R1·C${c}`, c === 4);
+      }
+      // Left Half: R2 (6 keys: C0..C5)
+      for (let c = 0; c < 6; c++) {
+        addPhysical(`L_R2_C${c}`, "left", 2, c, c, LEFT_COL_STAGGER[c] + 2, 1, 1, 0, `Links R2·C${c}`, false);
+      }
+      // Left Half: Thumb cluster (3 ergonomic angled keys)
+      addPhysical("L_T0", "left", 3, 0, 3.20, 3.36, 1.0, 1.0, 5, "Links Daumen außen", false);
+      addPhysical("L_T1", "left", 3, 1, 4.32, 3.54, 1.0, 1.0, 14, "Links Daumen Mitte", false);
+      addPhysical("L_T2", "left", 3, 2, 5.62, 3.60, 1.0, 1.34, 24, "Links Daumen innen", false);
+
+      // Right Half: R0 (7 keys: C0 is inner extra key, C1..C6 are Y..Bspc)
+      for (let c = 0; c < 7; c++) {
+        addPhysical(`R_R0_C${c}`, "right", 0, c, c, RIGHT_COL_STAGGER[c], 1, 1, 0, `Rechts R0·C${c}`, false);
+      }
+      // Right Half: R1 (7 keys: C0 is inner extra key, C1..C6 are H..') – J is R_R1_C2 (homing)
+      for (let c = 0; c < 7; c++) {
+        addPhysical(`R_R1_C${c}`, "right", 1, c, c, RIGHT_COL_STAGGER[c] + 1, 1, 1, 0, `Rechts R1·C${c}`, c === 2);
+      }
+      // Right Half: R2 (6 keys: aligned visually under C1..C6 -> N, M, ,, ., /, RShift)
+      for (let c = 1; c < 7; c++) {
+        addPhysical(`R_R2_C${c}`, "right", 2, c, c, RIGHT_COL_STAGGER[c] + 2, 1, 1, 0, `Rechts R2·C${c}`, false);
+      }
+      // Right Half: Thumb cluster (exact mirror of Left Half around x = 7.0)
+      addPhysical("R_T0", "right", 3, 0, 0.38, 3.60, 1.0, 1.34, -24, "Rechts Daumen innen", false);
+      addPhysical("R_T1", "right", 3, 1, 1.68, 3.54, 1.0, 1.0, -14, "Rechts Daumen Mitte", false);
+      addPhysical("R_T2", "right", 3, 2, 2.80, 3.36, 1.0, 1.0, -5, "Rechts Daumen außen", false);
+
+      const PHYSICAL_BY_ID = Object.fromEntries(PHYSICAL_KEYS.map(k => [k.id, k]));
+
+      /* =======================================================================
+         2. COMPLETE 6-LAYER KEYMAP DEFINITIONS (EXACT CORNE V4 LAYOUT)
+         ======================================================================= */
+      const K = (label, opts = {}) => ({
+        label,
+        hold: opts.hold || "",
+        sub: opts.sub || "",
+        cat: opts.cat || "base",
+        code: opts.code || "",
+        desc: opts.desc || label,
+        shift: opts.shift || "",
+        style: opts.style || "", // "symbol" | "umlaut" | "compact" | "tiny"
+        shiftTrns: Boolean(opts.shiftTrns)
+      });
+
+      const TRNS = () => K("·", { cat: "trns", code: "KC_TRNS", desc: "Transparent – übernimmt die Taste von Layer 0" });
+      const NO = () => K("—", { cat: "no", code: "KC_NO", desc: "Ungenutzt / blockiert (keine Ausgabe)" });
+
+      // Layer 0 – Base
+      const LAYER_0 = {
+        // Left R0
+        L_R0_C0: K("Tab",    { cat: "nav",   code: "KC_TAB",  desc: "Tabulator" }),
+        L_R0_C1: K("Q",      { code: "KC_Q", desc: "Buchstabe Q" }),
+        L_R0_C2: K("W",      { code: "KC_W", desc: "Buchstabe W" }),
+        L_R0_C3: K("E",      { code: "KC_E", desc: "Buchstabe E" }),
+        L_R0_C4: K("R",      { code: "KC_R", desc: "Buchstabe R" }),
+        L_R0_C5: K("T",      { code: "KC_T", desc: "Buchstabe T" }),
+        L_R0_C6: K("MO(1)",  { cat: "layer", code: "MO(1)", sub: "Symbole", desc: "Halten für Layer 1 – Symbole", style: "compact" }),
+
+        // Left R1
+        L_R1_C0: K("Esc",    { cat: "nav",   code: "KC_ESC",  desc: "Escape" }),
+        L_R1_C1: K("A",      { code: "KC_A", desc: "Buchstabe A" }),
+        L_R1_C2: K("S",      { code: "KC_S", desc: "Buchstabe S" }),
+        L_R1_C3: K("D",      { code: "KC_D", desc: "Buchstabe D" }),
+        L_R1_C4: K("F",      { code: "KC_F", desc: "Buchstabe F (Grundstellung links)" }),
+        L_R1_C5: K("G",      { code: "KC_G", desc: "Buchstabe G" }),
+        L_R1_C6: K("MO(2)",  { cat: "layer", code: "MO(2)", sub: "Nav", desc: "Halten für Layer 2 – Navigation & Bearbeiten", style: "compact" }),
+
+        // Left R2
+        L_R2_C0: K("LShift", { cat: "mod",   code: "KC_LSFT", desc: "Linke Umschalttaste (bleibt auf Layer 3 transparent für Alt+Shift+…)", style: "compact" }),
+        L_R2_C1: K("Z",      { code: "KC_Z", desc: "Buchstabe Z" }),
+        L_R2_C2: K("X",      { code: "KC_X", desc: "Buchstabe X" }),
+        L_R2_C3: K("C",      { code: "KC_C", desc: "Buchstabe C" }),
+        L_R2_C4: K("V",      { code: "KC_V", desc: "Buchstabe V" }),
+        L_R2_C5: K("B",      { code: "KC_B", desc: "Buchstabe B" }),
+
+        // Left Thumb
+        L_T0:    K("MO(3)",  { cat: "layer", code: "MO(3)", sub: "WM/RGB", desc: "Halten für Layer 3 – WM, Medien & RGB", style: "compact" }),
+        L_T1:    K("LAlt",   { cat: "mod",   code: "KC_LALT", desc: "Linke Alt-Taste", style: "compact" }),
+        L_T2:    K("Space",  { cat: "layer", hold: "L2", code: "LT(2, KC_SPC)", desc: "Tippen: Leertaste · Halten: Layer 2 (Navigation & Bearbeiten)", style: "compact" }),
+
+        // Right R0
+        R_R0_C0: K("MO(5)",  { cat: "layer", code: "MO(5)", sub: "Zahlen", desc: "Halten für Layer 5 – Zahlen & Operatoren", style: "compact" }),
+        R_R0_C1: K("Y",      { code: "KC_Y", desc: "Buchstabe Y" }),
+        R_R0_C2: K("U",      { code: "KC_U", desc: "Buchstabe U" }),
+        R_R0_C3: K("I",      { code: "KC_I", desc: "Buchstabe I" }),
+        R_R0_C4: K("O",      { code: "KC_O", desc: "Buchstabe O" }),
+        R_R0_C5: K("P",      { code: "KC_P", desc: "Buchstabe P" }),
+        R_R0_C6: K("Bspc",   { cat: "nav",   code: "KC_BSPC", desc: "Rückschritt (Backspace)", style: "compact" }),
+
+        // Right R1
+        R_R1_C0: K("MO(4)",  { cat: "layer", code: "MO(4)", sub: "Umlaute", desc: "Halten für Layer 4 – Deutsche Umlaute (EurKEY)", style: "compact" }),
+        R_R1_C1: K("H",      { code: "KC_H", desc: "Buchstabe H" }),
+        R_R1_C2: K("J",      { code: "KC_J", desc: "Buchstabe J (Grundstellung rechts)" }),
+        R_R1_C3: K("K",      { code: "KC_K", desc: "Buchstabe K" }),
+        R_R1_C4: K("L",      { code: "KC_L", desc: "Buchstabe L" }),
+        R_R1_C5: K(";",      { code: "KC_SCLN", desc: "Semikolon / Doppelpunkt", style: "symbol" }),
+        R_R1_C6: K("'",      { code: "KC_QUOT", desc: "Apostroph / Anführungszeichen", style: "symbol" }),
+
+        // Right R2
+        R_R2_C1: K("N",      { code: "KC_N", desc: "Buchstabe N" }),
+        R_R2_C2: K("M",      { code: "KC_M", desc: "Buchstabe M" }),
+        R_R2_C3: K(",",      { code: "KC_COMM", desc: "Komma", style: "symbol" }),
+        R_R2_C4: K(".",      { code: "KC_DOT",  desc: "Punkt", style: "symbol" }),
+        R_R2_C5: K("/",      { code: "KC_SLSH", desc: "Schrägstrich", style: "symbol" }),
+        R_R2_C6: K("RShift", { cat: "mod",   code: "KC_RSFT", desc: "Rechte Umschalttaste", style: "compact" }),
+
+        // Right Thumb
+        R_T0:    K("Enter",  { cat: "layer", hold: "L1", code: "LT(1, KC_ENT)",  desc: "Tippen: Enter · Halten: Layer 1 (Symbole)", style: "compact" }),
+        R_T1:    K("Bspc",   { cat: "layer", hold: "L5", code: "LT(5, KC_BSPC)", desc: "Tippen: Backspace · Halten: Layer 5 (Zahlen & Operatoren)", style: "compact" }),
+        R_T2:    K("RAlt",   { cat: "layer", hold: "L4", code: "LT(4, KC_RALT)", desc: "Tippen: AltGr / RAlt · Halten: Layer 4 (Deutsche Umlaute)", style: "compact" })
+      };
+
+      // Short labels for base-key corner hints on Layers 1-5
+      const BASE_HINT = {
+        L_R0_C0: "Tab", L_R0_C1: "Q", L_R0_C2: "W", L_R0_C3: "E", L_R0_C4: "R", L_R0_C5: "T", L_R0_C6: "MO1",
+        L_R1_C0: "Esc", L_R1_C1: "A", L_R1_C2: "S", L_R1_C3: "D", L_R1_C4: "F", L_R1_C5: "G", L_R1_C6: "MO2",
+        L_R2_C0: "LSft", L_R2_C1: "Z", L_R2_C2: "X", L_R2_C3: "C", L_R2_C4: "V", L_R2_C5: "B",
+        L_T0: "MO3", L_T1: "LAlt", L_T2: "Spc",
+        R_R0_C0: "MO5", R_R0_C1: "Y", R_R0_C2: "U", R_R0_C3: "I", R_R0_C4: "O", R_R0_C5: "P", R_R0_C6: "Bsp",
+        R_R1_C0: "MO4", R_R1_C1: "H", R_R1_C2: "J", R_R1_C3: "K", R_R1_C4: "L", R_R1_C5: ";", R_R1_C6: "'",
+        R_R2_C1: "N", R_R2_C2: "M", R_R2_C3: ",", R_R2_C4: ".", R_R2_C5: "/", R_R2_C6: "RSft",
+        R_T0: "Ent", R_T1: "Bsp", R_T2: "RAlt"
+      };
+
+      // Layer 1 – Symbole
+      const LAYER_1 = {
+        L_R0_C0: TRNS(),
+        L_R0_C1: K("!", { cat: "sym", code: "KC_EXLM", desc: "Ausrufezeichen", style: "symbol" }),
+        L_R0_C2: K("@", { cat: "sym", code: "KC_AT",   desc: "At-Zeichen", style: "symbol" }),
+        L_R0_C3: K("#", { cat: "sym", code: "KC_HASH", desc: "Raute / Hash", style: "symbol" }),
+        L_R0_C4: K("$", { cat: "sym", code: "KC_DLR",  desc: "Dollarzeichen", style: "symbol" }),
+        L_R0_C5: K("%", { cat: "sym", code: "KC_PERC", desc: "Prozentzeichen", style: "symbol" }),
+        L_R0_C6: TRNS(),
+
+        L_R1_C0: K("`",  { cat: "sym", code: "KC_GRV",  desc: "Backtick / Gravis", style: "symbol" }),
+        L_R1_C1: K("[",  { cat: "op",  code: "KC_LBRC", desc: "Eckige Klammer auf", style: "symbol" }),
+        L_R1_C2: K("{",  { cat: "op",  code: "KC_LCBR", desc: "Geschweifte Klammer auf", style: "symbol" }),
+        L_R1_C3: K("(",  { cat: "op",  code: "KC_LPRN", desc: "Runde Klammer auf", style: "symbol" }),
+        L_R1_C4: K("<",  { cat: "op",  code: "KC_LABK", desc: "Kleiner-als / Spitze Klammer auf", style: "symbol" }),
+        L_R1_C5: K("\\", { cat: "sym", code: "KC_BSLS", desc: "Backslash", style: "symbol" }),
+        L_R1_C6: TRNS(),
+
+        L_R2_C0: TRNS(),
+        L_R2_C1: K("-",  { cat: "op",  code: "KC_MINS", desc: "Minus / Bindestrich", style: "symbol" }),
+        L_R2_C2: K("_",  { cat: "sym", code: "KC_UNDS", desc: "Unterstrich", style: "symbol" }),
+        L_R2_C3: K(":",  { cat: "sym", code: "KC_COLN", desc: "Doppelpunkt", style: "symbol" }),
+        L_R2_C4: K("?",  { cat: "sym", code: "KC_QUES", desc: "Fragezeichen", style: "symbol" }),
+        L_R2_C5: K('"',  { cat: "sym", code: "KC_DQUO", desc: "Doppeltes Anführungszeichen", style: "symbol" }),
+
+        L_T0: TRNS(), L_T1: TRNS(), L_T2: TRNS(),
+
+        R_R0_C0: TRNS(),
+        R_R0_C1: K("&",  { cat: "op",  code: "KC_AMPR", desc: "Kaufmännisches Und (Ampersand)", style: "symbol" }),
+        R_R0_C2: K("*",  { cat: "op",  code: "KC_ASTR", desc: "Stern / Multiplikation", style: "symbol" }),
+        R_R0_C3: K("=",  { cat: "op",  code: "KC_EQL",  desc: "Gleichheitszeichen", style: "symbol" }),
+        R_R0_C4: K("+",  { cat: "op",  code: "KC_PLUS", desc: "Pluszeichen", style: "symbol" }),
+        R_R0_C5: K("&",  { cat: "op",  code: "KC_AMPR", desc: "Kaufmännisches Und (Ampersand)", style: "symbol" }),
+        R_R0_C6: TRNS(),
+
+        R_R1_C0: TRNS(),
+        R_R1_C1: K("'",  { cat: "sym", code: "KC_QUOT", desc: "Einfaches Anführungszeichen", style: "symbol" }),
+        R_R1_C2: K("]",  { cat: "op",  code: "KC_RBRC", desc: "Eckige Klammer zu", style: "symbol" }),
+        R_R1_C3: K("}",  { cat: "op",  code: "KC_RCBR", desc: "Geschweifte Klammer zu", style: "symbol" }),
+        R_R1_C4: K(")",  { cat: "op",  code: "KC_RPRN", desc: "Runde Klammer zu", style: "symbol" }),
+        R_R1_C5: K(">",  { cat: "op",  code: "KC_RABK", desc: "Größer-als / Spitze Klammer zu", style: "symbol" }),
+        R_R1_C6: K("/",  { cat: "sym", code: "KC_SLSH", desc: "Schrägstrich (Slash)", style: "symbol" }),
+
+        R_R2_C1: K(".",  { cat: "sym", code: "KC_DOT",  desc: "Punkt", style: "symbol" }),
+        R_R2_C2: K(",",  { cat: "sym", code: "KC_COMM", desc: "Komma", style: "symbol" }),
+        R_R2_C3: K(";",  { cat: "sym", code: "KC_SCLN", desc: "Semikolon", style: "symbol" }),
+        R_R2_C4: K("?",  { cat: "sym", code: "KC_QUES", desc: "Fragezeichen", style: "symbol" }),
+        R_R2_C5: K('"',  { cat: "sym", code: "KC_DQUO", desc: "Doppeltes Anführungszeichen", style: "symbol" }),
+        R_R2_C6: TRNS(),
+
+        R_T0: TRNS(), R_T1: TRNS(), R_T2: TRNS()
+      };
+
+      // Layer 2 – Navigation & Bearbeiten
+      const LAYER_2 = {
+        L_R0_C0: TRNS(), L_R0_C1: TRNS(), L_R0_C2: TRNS(), L_R0_C3: TRNS(), L_R0_C4: TRNS(), L_R0_C5: TRNS(), L_R0_C6: TRNS(),
+
+        L_R1_C0: TRNS(),
+        L_R1_C1: K("LGui",   { cat: "mod", code: "KC_LGUI", desc: "Super / Windows-Taste (Home-Row Modifier)", style: "compact" }),
+        L_R1_C2: K("LAlt",   { cat: "mod", code: "KC_LALT", desc: "Linke Alt-Taste (Home-Row Modifier)", style: "compact" }),
+        L_R1_C3: K("LCtrl",  { cat: "mod", code: "KC_LCTL", desc: "Linke Strg-Taste (Home-Row Modifier)", style: "compact" }),
+        L_R1_C4: K("LShift", { cat: "mod", code: "KC_LSFT", desc: "Linke Shift-Taste (Home-Row Modifier)", style: "compact" }),
+        L_R1_C5: TRNS(), L_R1_C6: TRNS(),
+
+        L_R2_C0: TRNS(),
+        L_R2_C1: K("C-z", { cat: "nav", code: "LCTL(KC_Z)", sub: "Undo",  desc: "Rückgängig (Strg+Z)", style: "compact" }),
+        L_R2_C2: K("C-x", { cat: "nav", code: "LCTL(KC_X)", sub: "Cut",   desc: "Ausschneiden (Strg+X)", style: "compact" }),
+        L_R2_C3: K("C-c", { cat: "nav", code: "LCTL(KC_C)", sub: "Copy",  desc: "Kopieren (Strg+C)", style: "compact" }),
+        L_R2_C4: K("C-v", { cat: "nav", code: "LCTL(KC_V)", sub: "Paste", desc: "Einfügen (Strg+V)", style: "compact" }),
+        L_R2_C5: TRNS(),
+
+        L_T0: TRNS(), L_T1: TRNS(), L_T2: TRNS(),
+
+        R_R0_C0: TRNS(),
+        R_R0_C1: K("Ins",  { cat: "nav", code: "KC_INS",  desc: "Einfügen (Insert)", style: "compact" }),
+        R_R0_C2: K("Home", { cat: "nav", code: "KC_HOME", desc: "Zeilenanfang (Pos1 / Home)", style: "compact" }),
+        R_R0_C3: K("PgUp", { cat: "nav", code: "KC_PGUP", desc: "Seite nach oben (Page Up)", style: "compact" }),
+        R_R0_C4: K("PgDn", { cat: "nav", code: "KC_PGDN", desc: "Seite nach unten (Page Down)", style: "compact" }),
+        R_R0_C5: K("End",  { cat: "nav", code: "KC_END",  desc: "Zeilenende (End)", style: "compact" }),
+        R_R0_C6: K("Del",  { cat: "nav", code: "KC_DEL",  desc: "Entfernen (Delete)", style: "compact" }),
+
+        R_R1_C0: TRNS(),
+        R_R1_C1: K("←",    { cat: "nav", code: "KC_LEFT", sub: "Left",  desc: "Pfeiltaste links (Vim H)", style: "symbol" }),
+        R_R1_C2: K("↓",    { cat: "nav", code: "KC_DOWN", sub: "Down",  desc: "Pfeiltaste unten (Vim J)", style: "symbol" }),
+        R_R1_C3: K("↑",    { cat: "nav", code: "KC_UP",   sub: "Up",    desc: "Pfeiltaste oben (Vim K)", style: "symbol" }),
+        R_R1_C4: K("→",    { cat: "nav", code: "KC_RGHT", sub: "Right", desc: "Pfeiltaste rechts (Vim L)", style: "symbol" }),
+        R_R1_C5: K("End",  { cat: "nav", code: "KC_END",  desc: "Zeilenende (End)", style: "compact" }),
+        R_R1_C6: K("Esc",  { cat: "nav", code: "KC_ESC",  desc: "Escape", style: "compact" }),
+
+        R_R2_C1: K("Home", { cat: "nav", code: "KC_HOME", desc: "Zeilenanfang (Home)", style: "compact" }),
+        R_R2_C2: K("Del",  { cat: "nav", code: "KC_DEL",  desc: "Entfernen (Delete)", style: "compact" }),
+        R_R2_C3: K("PgDn", { cat: "nav", code: "KC_PGDN", desc: "Seite nach unten (Page Down)", style: "compact" }),
+        R_R2_C4: K("PgUp", { cat: "nav", code: "KC_PGUP", desc: "Seite nach oben (Page Up)", style: "compact" }),
+        R_R2_C5: K("Ins",  { cat: "nav", code: "KC_INS",  desc: "Einfügen (Insert)", style: "compact" }),
+        R_R2_C6: TRNS(),
+
+        R_T0: TRNS(), R_T1: TRNS(), R_T2: TRNS()
+      };
+
+      // Layer 3 – WM, Medien & RGB
+      const LAYER_3 = {
+        L_R0_C0: K("RGBTog", { cat: "rgb", code: "RGB_TOG",     desc: "RGB-Beleuchtung ein-/ausschalten", style: "tiny" }),
+        L_R0_C1: K("A-Q",    { cat: "wm",  code: "LALT(KC_Q)",   sub: "Close",  desc: "Alt+Q – Aktives Fenster schließen", style: "compact" }),
+        L_R0_C2: K("A-Ent",  { cat: "wm",  code: "LALT(KC_ENT)", sub: "Term",   desc: "Alt+Enter – Terminal öffnen", style: "compact" }),
+        L_R0_C3: K("A-Spc",  { cat: "wm",  code: "LALT(KC_SPC)", sub: "Launch", desc: "Alt+Space – App-Launcher öffnen", shift: "LShift + MO(3) + E → Alt+Shift+Space (Schwebendes Fenster)", style: "compact" }),
+        L_R0_C4: K("A-R",    { cat: "wm",  code: "LALT(KC_R)",   sub: "Resize", desc: "Alt+R – Resize-Modus umschalten", shift: "LShift + MO(3) + R → Alt+Shift+R (WM neu laden / Reload)", style: "compact" }),
+        L_R0_C5: K("A-F",    { cat: "wm",  code: "LALT(KC_F)",   sub: "Full",   desc: "Alt+F – Vollbild umschalten", style: "compact" }),
+        L_R0_C6: K("RGBMod", { cat: "rgb", code: "RGB_MOD",     desc: "Nächster RGB-Effektmodus", style: "tiny" }),
+
+        L_R1_C0: K("RGBHui", { cat: "rgb", code: "RGB_HUI",     desc: "RGB-Farbton + (Hue Increase)", style: "tiny" }),
+        L_R1_C1: K("A-P",    { cat: "wm",  code: "LALT(KC_P)",   sub: "Pause*", desc: "Alt+P (mit LShift: Pause)", shift: "LShift + MO(3) + A → Alt+Shift+P (WM Pause)", style: "compact" }),
+        L_R1_C2: K("A-H",    { cat: "wm",  code: "LALT(KC_H)",   sub: "Fokus←", desc: "Alt+H – Fokus nach links", shift: "LShift + MO(3) + S → Alt+Shift+H (Fenster nach links verschieben)", style: "compact" }),
+        L_R1_C3: K("A-J",    { cat: "wm",  code: "LALT(KC_J)",   sub: "Fokus↓", desc: "Alt+J – Fokus nach unten", shift: "LShift + MO(3) + D → Alt+Shift+J (Fenster nach unten verschieben)", style: "compact" }),
+        L_R1_C4: K("A-K",    { cat: "wm",  code: "LALT(KC_K)",   sub: "Fokus↑", desc: "Alt+K – Fokus nach oben", shift: "LShift + MO(3) + F → Alt+Shift+K (Fenster nach oben verschieben)", style: "compact" }),
+        L_R1_C5: K("A-L",    { cat: "wm",  code: "LALT(KC_L)",   sub: "Fokus→", desc: "Alt+L – Fokus nach rechts", shift: "LShift + MO(3) + G → Alt+Shift+L (Fenster nach rechts verschieben)", style: "compact" }),
+        L_R1_C6: K("RGBHud", { cat: "rgb", code: "RGB_HUD",     desc: "RGB-Farbton − (Hue Decrease)", style: "tiny" }),
+
+        L_R2_C0: K("LShift", { cat: "mod", code: "KC_TRNS (KC_LSFT)", sub: "TRNS", desc: "Transparentes LShift von Layer 0 – zusammen mit MO(3) + Taste für Alt+Shift+…", style: "compact", shiftTrns: true }),
+        L_R2_C1: K("A-S",    { cat: "wm",  code: "LALT(KC_S)",   sub: "Shot*",  desc: "Alt+S (mit LShift: Screenshot Linux)", shift: "LShift + MO(3) + Z → Alt+Shift+S (Screenshot unter Linux)", style: "compact" }),
+        L_R2_C2: K("A-V",    { cat: "wm",  code: "LALT(KC_V)",   sub: "Clip🐧", desc: "Alt+V – Zwischenablage-Verlauf (Linux)", style: "compact" }),
+        L_R2_C3: K("A-X",    { cat: "wm",  code: "LALT(KC_X)",   sub: "Lock*",  desc: "Alt+X (mit LShift: Lock Linux)", shift: "LShift + MO(3) + C → Alt+Shift+X (Bildschirm sperren unter Linux)", style: "compact" }),
+        L_R2_C4: K("RGBSai", { cat: "rgb", code: "RGB_SAI",     desc: "RGB-Sättigung + (Saturation Increase)", style: "tiny" }),
+        L_R2_C5: K("RGBSad", { cat: "rgb", code: "RGB_SAD",     desc: "RGB-Sättigung − (Saturation Decrease)", style: "tiny" }),
+
+        L_T0:    TRNS(), // Trigger MO(3)
+        L_T1:    K("RGBVai", { cat: "rgb", code: "RGB_VAI",     desc: "RGB-Helligkeit + (Value Increase)", style: "tiny" }),
+        L_T2:    K("RGBVad", { cat: "rgb", code: "RGB_VAD",     desc: "RGB-Helligkeit − (Value Decrease)", style: "tiny" }),
+
+        R_R0_C0: K("MNext",  { cat: "media", code: "KC_MNXT",   desc: "Medien: Nächster Titel", style: "tiny" }),
+        R_R0_C1: K("A-1",    { cat: "wm",    code: "LALT(KC_1)", sub: "WS 1", desc: "Alt+1 – Workspace 1", shift: "LShift + MO(3) + Y → Alt+Shift+1 (Fenster auf Workspace 1)", style: "compact" }),
+        R_R0_C2: K("A-2",    { cat: "wm",    code: "LALT(KC_2)", sub: "WS 2", desc: "Alt+2 – Workspace 2", shift: "LShift + MO(3) + U → Alt+Shift+2 (Fenster auf Workspace 2)", style: "compact" }),
+        R_R0_C3: K("A-3",    { cat: "wm",    code: "LALT(KC_3)", sub: "WS 3", desc: "Alt+3 – Workspace 3", shift: "LShift + MO(3) + I → Alt+Shift+3 (Fenster auf Workspace 3)", style: "compact" }),
+        R_R0_C4: K("A-4",    { cat: "wm",    code: "LALT(KC_4)", sub: "WS 4", desc: "Alt+4 – Workspace 4", shift: "LShift + MO(3) + O → Alt+Shift+4 (Fenster auf Workspace 4)", style: "compact" }),
+        R_R0_C5: K("A-5",    { cat: "wm",    code: "LALT(KC_5)", sub: "WS 5", desc: "Alt+5 – Workspace 5", shift: "LShift + MO(3) + P → Alt+Shift+5 (Fenster auf Workspace 5)", style: "compact" }),
+        R_R0_C6: K("Mute",   { cat: "media", code: "KC_MUTE",   desc: "Audio stummschalten (Mute)", style: "compact" }),
+
+        R_R1_C0: K("MPrev",  { cat: "media", code: "KC_MPRV",   desc: "Medien: Vorheriger Titel", style: "tiny" }),
+        R_R1_C1: K("A-6",    { cat: "wm",    code: "LALT(KC_6)", sub: "WS 6", desc: "Alt+6 – Workspace 6", shift: "LShift + MO(3) + H → Alt+Shift+6 (Fenster auf Workspace 6)", style: "compact" }),
+        R_R1_C2: K("A-7",    { cat: "wm",    code: "LALT(KC_7)", sub: "WS 7", desc: "Alt+7 – Workspace 7", shift: "LShift + MO(3) + J → Alt+Shift+7 (Fenster auf Workspace 7)", style: "compact" }),
+        R_R1_C3: K("A-8",    { cat: "wm",    code: "LALT(KC_8)", sub: "WS 8", desc: "Alt+8 – Workspace 8", shift: "LShift + MO(3) + K → Alt+Shift+8 (Fenster auf Workspace 8)", style: "compact" }),
+        R_R1_C4: K("A-9",    { cat: "wm",    code: "LALT(KC_9)", sub: "WS 9", desc: "Alt+9 – Workspace 9", shift: "LShift + MO(3) + L → Alt+Shift+9 (Fenster auf Workspace 9)", style: "compact" }),
+        R_R1_C5: K("Win-L",  { cat: "wm",    code: "LGUI(KC_L)", sub: "Lock⊞", desc: "Win+L – Bildschirm sperren (Windows)", style: "compact" }),
+        R_R1_C6: K("MPly",   { cat: "media", code: "KC_MPLY",   desc: "Medien: Wiedergabe / Pause", style: "compact" }),
+
+        R_R2_C1: K("A-Left", { cat: "wm",    code: "LALT(KC_LEFT)", sub: "Fokus←", desc: "Alt+← – Fokus links", shift: "LShift + MO(3) + N → Alt+Shift+← (Fenster nach links)", style: "tiny" }),
+        R_R2_C2: K("A-Down", { cat: "wm",    code: "LALT(KC_DOWN)", sub: "Fokus↓", desc: "Alt+↓ – Fokus unten", shift: "LShift + MO(3) + M → Alt+Shift+↓ (Fenster nach unten)", style: "tiny" }),
+        R_R2_C3: K("A-Up",   { cat: "wm",    code: "LALT(KC_UP)",   sub: "Fokus↑", desc: "Alt+↑ – Fokus oben", shift: "LShift + MO(3) + , → Alt+Shift+↑ (Fenster nach oben)", style: "tiny" }),
+        R_R2_C4: K("A-Rgt",  { cat: "wm",    code: "LALT(KC_RGHT)", sub: "Fokus→", desc: "Alt+→ – Fokus rechts", shift: "LShift + MO(3) + . → Alt+Shift+→ (Fenster nach rechts)", style: "tiny" }),
+        R_R2_C5: K("MStp",   { cat: "media", code: "KC_MSTP",   desc: "Medien: Stopp", style: "compact" }),
+        R_R2_C6: K("W-S-S",  { cat: "wm",    code: "LGUI(LSFT(KC_S))", sub: "Shot⊞", desc: "Win+Shift+S – Screenshot (Windows)", style: "tiny" }),
+
+        R_T0:    K("Win-V",  { cat: "wm",    code: "LGUI(KC_V)", sub: "Clip⊞", desc: "Win+V – Zwischenablage-Verlauf (Windows)", style: "compact" }),
+        R_T1:    K("VolUp",  { cat: "media", code: "KC_VOLU",   desc: "Lautstärke erhöhen", style: "compact" }),
+        R_T2:    K("VolDn",  { cat: "media", code: "KC_VOLD",   desc: "Lautstärke verringern", style: "compact" })
+      };
+
+      // Layer 4 – Deutsche Umlaute (EurKEY)
+      const LAYER_4 = {};
+      PHYSICAL_KEYS.forEach(pk => { LAYER_4[pk.id] = TRNS(); });
+      LAYER_4.L_R1_C1 = K("ä", { cat: "umlaut", sub: "RAlt-A", code: "RALT(KC_A)", desc: "Deutscher Umlaut ä / Ä (über EurKEY: RAlt+A)", style: "umlaut" });
+      LAYER_4.L_R1_C2 = K("ß", { cat: "umlaut", sub: "RAlt-S", code: "RALT(KC_S)", desc: "Eszett ß (über EurKEY: RAlt+S)", style: "umlaut" });
+      LAYER_4.R_R0_C2 = K("ü", { cat: "umlaut", sub: "RAlt-U", code: "RALT(KC_U)", desc: "Deutscher Umlaut ü / Ü (über EurKEY: RAlt+U)", style: "umlaut" });
+      LAYER_4.R_R0_C4 = K("ö", { cat: "umlaut", sub: "RAlt-O", code: "RALT(KC_O)", desc: "Deutscher Umlaut ö / Ö (über EurKEY: RAlt+O)", style: "umlaut" });
+
+      // Layer 5 – Zahlen & Operatoren
+      const LAYER_5 = {
+        L_R0_C0: TRNS(),
+        L_R0_C1: K("1", { cat: "num", code: "KC_1", desc: "Ziffer 1", style: "symbol" }),
+        L_R0_C2: K("2", { cat: "num", code: "KC_2", desc: "Ziffer 2", style: "symbol" }),
+        L_R0_C3: K("3", { cat: "num", code: "KC_3", desc: "Ziffer 3", style: "symbol" }),
+        L_R0_C4: K("4", { cat: "num", code: "KC_4", desc: "Ziffer 4", style: "symbol" }),
+        L_R0_C5: K("5", { cat: "num", code: "KC_5", desc: "Ziffer 5", style: "symbol" }),
+        L_R0_C6: TRNS(),
+
+        L_R1_C0: TRNS(),
+        L_R1_C1: K("6", { cat: "num", code: "KC_6", desc: "Ziffer 6", style: "symbol" }),
+        L_R1_C2: K("7", { cat: "num", code: "KC_7", desc: "Ziffer 7", style: "symbol" }),
+        L_R1_C3: K("8", { cat: "num", code: "KC_8", desc: "Ziffer 8", style: "symbol" }),
+        L_R1_C4: K("9", { cat: "num", code: "KC_9", desc: "Ziffer 9", style: "symbol" }),
+        L_R1_C5: K("0", { cat: "num", code: "KC_0", desc: "Ziffer 0", style: "symbol" }),
+        L_R1_C6: TRNS(),
+
+        L_R2_C0: TRNS(),
+        L_R2_C1: K("LGui",   { cat: "mod", code: "KC_LGUI", desc: "Super / Windows-Taste", style: "compact" }),
+        L_R2_C2: K("LAlt",   { cat: "mod", code: "KC_LALT", desc: "Linke Alt-Taste", style: "compact" }),
+        L_R2_C3: K("LCtrl",  { cat: "mod", code: "KC_LCTL", desc: "Linke Strg-Taste", style: "compact" }),
+        L_R2_C4: K("LShift", { cat: "mod", code: "KC_LSFT", desc: "Linke Shift-Taste", style: "compact" }),
+        L_R2_C5: NO(),
+
+        L_T0: TRNS(), L_T1: TRNS(), L_T2: TRNS(),
+
+        R_R0_C0: TRNS(), // Trigger MO(5)
+        R_R0_C1: NO(), R_R0_C2: NO(), R_R0_C3: NO(), R_R0_C4: NO(), R_R0_C5: NO(),
+        R_R0_C6: TRNS(),
+
+        R_R1_C0: TRNS(),
+        R_R1_C1: K("+", { cat: "op", code: "KC_PLUS", desc: "Plus-Operator", style: "symbol" }),
+        R_R1_C2: K("-", { cat: "op", code: "KC_MINS", desc: "Minus-Operator", style: "symbol" }),
+        R_R1_C3: K("*", { cat: "op", code: "KC_ASTR", desc: "Multiplikations-Operator", style: "symbol" }),
+        R_R1_C4: K("/", { cat: "op", code: "KC_SLSH", desc: "Divisions-Operator", style: "symbol" }),
+        R_R1_C5: K("=", { cat: "op", code: "KC_EQL",  desc: "Gleichheitszeichen", style: "symbol" }),
+        R_R1_C6: TRNS(),
+
+        R_R2_C1: K("(",  { cat: "op", code: "KC_LPRN", desc: "Runde Klammer auf", style: "symbol" }),
+        R_R2_C2: K(")",  { cat: "op", code: "KC_RPRN", desc: "Runde Klammer zu", style: "symbol" }),
+        R_R2_C3: K("[",  { cat: "op", code: "KC_LBRC", desc: "Eckige Klammer auf", style: "symbol" }),
+        R_R2_C4: K("]",  { cat: "op", code: "KC_RBRC", desc: "Eckige Klammer zu", style: "symbol" }),
+        R_R2_C5: K("\\", { cat: "op", code: "KC_BSLS", desc: "Backslash", style: "symbol" }),
+        R_R2_C6: TRNS(),
+
+        R_T0: TRNS(), R_T1: TRNS(), R_T2: TRNS()
+      };
+
+      const LAYERS = [
+        {
+          id: 0,
+          name: "Base",
+          shortTrigger: "Standard-Layer",
+          triggerHtml: "Standard-Ebene · Tap-Hold auf Daumen &amp; <code>MO(1–5)</code>",
+          accent: "#6366f1",
+          triggers: [],
+          note: "",
+          keys: LAYER_0
+        },
+        {
+          id: 1,
+          name: "Symbole",
+          shortTrigger: "MO(1) / LT(1, Ent)",
+          triggerHtml: "Halten: <code>MO(1)</code> oder <code>LT(1, Enter)</code>",
+          accent: "#818cf8",
+          triggers: [
+            { id: "L_R0_C6", label: "MO(1)" },
+            { id: "R_T0",    label: "LT(1,Ent)" }
+          ],
+          note: "",
+          keys: LAYER_1
+        },
+        {
+          id: 2,
+          name: "Navigation & Bearbeiten",
+          shortTrigger: "MO(2) / LT(2, Spc)",
+          triggerHtml: "Halten: <code>MO(2)</code> oder <code>LT(2, Space)</code>",
+          accent: "#06b6d4",
+          triggers: [
+            { id: "L_R1_C6", label: "MO(2)" },
+            { id: "L_T2",    label: "LT(2,Spc)" }
+          ],
+          note: "Links liegen Home-Row-Modifier (<code>LGui/LAlt/LCtrl/LShift</code>) und <code>C-z/x/c/v</code>, rechts Vim-Pfeile (<code>H/J/K/L</code> → <code>←/↓/↑/→</code>) sowie <code>Home/End/PgUp/PgDn/Ins/Del</code>.",
+          keys: LAYER_2
+        },
+        {
+          id: 3,
+          name: "WM, Medien & RGB",
+          shortTrigger: "MO(3) linker Daumen",
+          triggerHtml: "Halten: <code>MO(3)</code> (linker Daumen) · <code>LShift</code> bleibt <code>KC_TRNS</code>",
+          accent: "#10b981",
+          triggers: [
+            { id: "L_T0", label: "MO(3)" }
+          ],
+          note: "<strong>Hinweis Layer 3:</strong> <code>A-…</code> = <code>Alt+…</code>, <code>W-S-S</code> = <code>Win+Shift+S</code>. <code>LShift</code> (Links R2·C0) bleibt transparent (<code>KC_TRNS</code>), sodass <code>LShift + MO(3) + Taste</code> direkt die jeweilige <code>Alt+Shift+…</code>-Kombination sendet.",
+          keys: LAYER_3
+        },
+        {
+          id: 4,
+          name: "Deutsche Umlaute",
+          shortTrigger: "MO(4) / LT(4, RAlt)",
+          triggerHtml: "Halten: <code>MO(4)</code> oder <code>LT(4, RAlt)</code> (EurKEY <code>eu</code>)",
+          accent: "#38bdf8",
+          triggers: [
+            { id: "R_R1_C0", label: "MO(4)" },
+            { id: "R_T2",    label: "LT(4,RAlt)" }
+          ],
+          note: "<strong>EurKEY-Hinweis:</strong> Mit aktiviertem EurKEY-Layout (Linux: xkb <code>eu</code> / Windows: EurKEY installieren) erzeugen <code>RAlt+A/S/O/U</code> direkt <code>ä</code>, <code>ß</code>, <code>ö</code> und <code>ü</code>.",
+          keys: LAYER_4
+        },
+        {
+          id: 5,
+          name: "Zahlen & Operatoren",
+          shortTrigger: "MO(5) / LT(5, Bspc)",
+          triggerHtml: "Halten: <code>MO(5)</code> oder <code>LT(5, Bspc)</code>",
+          accent: "#14b8a6",
+          triggers: [
+            { id: "R_R0_C0", label: "MO(5)" },
+            { id: "R_T1",    label: "LT(5,Bspc)" }
+          ],
+          note: "Links liegen die Ziffern <code>1–5</code> (R0), <code>6–0</code> (R1) und Modifier (R2); rechts liegen Operatoren (<code>+ - * / =</code>) und Klammern (<code>( ) [ ] \\</code>). Mit <code>—</code> markierte Positionen sind bewusst blockiert.",
+          keys: LAYER_5
+        }
+      ];
+
+      /* =======================================================================
+         3. ALL 12 CONTRACT BINDINGS WITH EXACT PHYSICAL MATRIX HIGHLIGHTS
+         ======================================================================= */
+      const CONTRACT_BINDINGS = [
+        {
+          id: "focus",
+          action: "Fokus links / unten / oben / rechts",
+          contract: "alt+h/j/k/l oder alt+pfeile",
+          chord: "MO(3) + S/D/F/G (A-H/J/K/L) bzw. MO(3) + N/M/,/.",
+          layer: 3,
+          modKeys: ["L_T0"],
+          actionKeys: ["L_R1_C2", "L_R1_C3", "L_R1_C4", "L_R1_C5", "R_R2_C1", "R_R2_C2", "R_R2_C3", "R_R2_C4"],
+          keywords: "fokus focus links unten oben rechts pfeile arrows vim hjkl navigation"
+        },
+        {
+          id: "move",
+          action: "Fenster verschieben",
+          contract: "alt+shift+h/j/k/l oder alt+shift+pfeile",
+          chord: "LShift + MO(3) + S/D/F/G bzw. N/M/,/.",
+          layer: 3,
+          modKeys: ["L_T0", "L_R2_C0"],
+          actionKeys: ["L_R1_C2", "L_R1_C3", "L_R1_C4", "L_R1_C5", "R_R2_C1", "R_R2_C2", "R_R2_C3", "R_R2_C4"],
+          keywords: "fenster verschieben move window shift hjkl pfeile"
+        },
+        {
+          id: "ws-switch",
+          action: "Workspace 1–9 wechseln",
+          contract: "alt+1..9",
+          chord: "MO(3) + Y/U/I/O/P (1–5) bzw. H/J/K/L (6–9)",
+          layer: 3,
+          modKeys: ["L_T0"],
+          actionKeys: ["R_R0_C1", "R_R0_C2", "R_R0_C3", "R_R0_C4", "R_R0_C5", "R_R1_C1", "R_R1_C2", "R_R1_C3", "R_R1_C4"],
+          keywords: "workspace 1 2 3 4 5 6 7 8 9 wechseln desktop"
+        },
+        {
+          id: "ws-move",
+          action: "Fenster auf Workspace 1–9",
+          contract: "alt+shift+1..9",
+          chord: "LShift + MO(3) + Y/U/I/O/P bzw. H/J/K/L",
+          layer: 3,
+          modKeys: ["L_T0", "L_R2_C0"],
+          actionKeys: ["R_R0_C1", "R_R0_C2", "R_R0_C3", "R_R0_C4", "R_R0_C5", "R_R1_C1", "R_R1_C2", "R_R1_C3", "R_R1_C4"],
+          keywords: "fenster workspace 1 2 3 4 5 6 7 8 9 verschieben senden shift"
+        },
+        {
+          id: "close-term-launch",
+          action: "Fenster schließen / Terminal / Launcher",
+          contract: "alt+q / alt+enter / alt+space",
+          chord: "MO(3) + Q / W / E",
+          layer: 3,
+          modKeys: ["L_T0"],
+          actionKeys: ["L_R0_C1", "L_R0_C2", "L_R0_C3"],
+          keywords: "schließen close kill terminal launcher app menü q w e"
+        },
+        {
+          id: "resize-full",
+          action: "Resize-Modus / Vollbild",
+          contract: "alt+r / alt+f",
+          chord: "MO(3) + R / T",
+          layer: 3,
+          modKeys: ["L_T0"],
+          actionKeys: ["L_R0_C4", "L_R0_C5"],
+          keywords: "resize größe vollbild fullscreen r t"
+        },
+        {
+          id: "resize-ctrl",
+          action: "Resize-Modus steuern / beenden",
+          contract: "h/j/k/l, pfeile, esc, enter, alt+r",
+          chord: "Layer 0 H/J/K/L, Esc, Enter, MO(2)-Pfeile, MO(3) + R",
+          layer: 0,
+          modKeys: ["L_R1_C6", "L_T2", "L_T0"],
+          actionKeys: ["R_R1_C1", "R_R1_C2", "R_R1_C3", "R_R1_C4", "L_R1_C0", "R_T0", "L_R0_C4"],
+          keywords: "resize steuern beenden hjkl esc enter pfeile layer 0"
+        },
+        {
+          id: "floating",
+          action: "Schwebendes Fenster",
+          contract: "alt+shift+space",
+          chord: "LShift + MO(3) + E (oder LAlt + LShift + Space)",
+          layer: 3,
+          modKeys: ["L_T0", "L_R2_C0"],
+          actionKeys: ["L_R0_C3"],
+          keywords: "schwebend floating toggle window space"
+        },
+        {
+          id: "reload-pause",
+          action: "Reload / Pause",
+          contract: "alt+shift+r / alt+shift+p",
+          chord: "LShift + MO(3) + R / A",
+          layer: 3,
+          modKeys: ["L_T0", "L_R2_C0"],
+          actionKeys: ["L_R0_C4", "L_R1_C1"],
+          keywords: "reload neu laden config pause wm"
+        },
+        {
+          id: "lock",
+          action: "Lock (Bildschirm sperren)",
+          contract: "alt+shift+x (Linux) / win+l (Windows)",
+          chord: "LShift + MO(3) + C (A-X, Linux) / MO(3) + ; (Win-L, Windows)",
+          layer: 3,
+          modKeys: ["L_T0", "L_R2_C0"],
+          actionKeys: ["L_R2_C3", "R_R1_C5"],
+          keywords: "lock sperren bildschirm linux windows win+l"
+        },
+        {
+          id: "clipboard",
+          action: "Zwischenablage-Verlauf",
+          contract: "alt+v (Linux) / win+v (Windows)",
+          chord: "MO(3) + X (A-V, Linux) / MO(3) + LT(1,Enter) (Win-V, Windows)",
+          layer: 3,
+          modKeys: ["L_T0"],
+          actionKeys: ["L_R2_C2", "R_T0"],
+          keywords: "zwischenablage clipboard history verlauf paste linux windows"
+        },
+        {
+          id: "screenshot",
+          action: "Screenshot",
+          contract: "alt+shift+s (Linux) / win+shift+s (Windows)",
+          chord: "LShift + MO(3) + Z (A-S, Linux) / MO(3) + RShift (W-S-S, Windows)",
+          layer: 3,
+          modKeys: ["L_T0", "L_R2_C0"],
+          actionKeys: ["L_R2_C1", "R_R2_C6"],
+          keywords: "screenshot bildschirmfoto snipping linux windows"
+        }
+      ];
+
+      /* =======================================================================
+         4. APPLICATION STATE
+         ======================================================================= */
+      const state = {
+        activeLayer: 0,
+        overviewMode: false,
+        showBaseHints: true,
+        theme: "dark",
+        selectedBindingId: null,
+        searchQuery: ""
+      };
+
+      try {
+        const savedTheme = localStorage.getItem("corne_v4_theme");
+        if (savedTheme === "light" || savedTheme === "dark") {
+          state.theme = savedTheme;
+        }
+        const savedBase = localStorage.getItem("corne_v4_basehints");
+        if (savedBase === "false") {
+          state.showBaseHints = false;
+        }
+      } catch (_) {
+        // Ignore storage errors in sandboxed iframes
+      }
+
+      /* =======================================================================
+         5. DOM REFERENCES
+         ======================================================================= */
+      const appShell = document.getElementById("appShell");
+      const layerTabsEl = document.getElementById("layerTabs");
+      const stageLayerBadge = document.getElementById("stageLayerBadge");
+      const stageTitle = document.getElementById("stageTitle");
+      const stageTrigger = document.getElementById("stageTrigger");
+      const stageLayerNote = document.getElementById("stageLayerNote");
+      const singleKbViewport = document.getElementById("singleKbViewport");
+      const overviewGrid = document.getElementById("overviewGrid");
+      const bindingsTbody = document.getElementById("bindingsTbody");
+      const bindingSearch = document.getElementById("bindingSearch");
+      const bindingSearchClear = document.getElementById("bindingSearchClear");
+      const bindingBanner = document.getElementById("bindingBanner");
+      const bindingBannerText = document.getElementById("bindingBannerText");
+      const btnClearBinding = document.getElementById("btnClearBinding");
+      const btnViewToggle = document.getElementById("btnViewToggle");
+      const viewToggleLabel = document.getElementById("viewToggleLabel");
+      const btnBaseToggle = document.getElementById("btnBaseToggle");
+      const btnThemeToggle = document.getElementById("btnThemeToggle");
+      const themeIcon = document.getElementById("themeIcon");
+      const themeLabel = document.getElementById("themeLabel");
+      const btnPrint = document.getElementById("btnPrint");
+      const insKey = document.getElementById("insKey");
+      const insDesc = document.getElementById("insDesc");
+      const insMeta = document.getElementById("insMeta");
+      const floatingTooltip = document.getElementById("floatingTooltip");
+
+      /* =======================================================================
+         6. SVG PCB SILHOUETTE FOR AUTHENTIC CORNE V4 OUTLINE
+         ======================================================================= */
+      function createPcbSvg(side) {
+        const ns = "http://www.w3.org/2000/svg";
+        const svg = document.createElementNS(ns, "svg");
+        svg.setAttribute("class", "corne-pcb");
+        svg.setAttribute("viewBox", "0 0 740 560");
+        svg.setAttribute("preserveAspectRatio", "none");
+
+        const path = document.createElementNS(ns, "path");
+        // Smooth sculpted split-keyboard case silhouette matching column stagger & thumb fan
+        if (side === "left") {
+          path.setAttribute(
+            "d",
+            "M 18 46 Q 18 28 36 28 L 195 28 L 295 8 L 415 8 L 520 26 L 620 44 L 714 54 Q 730 56 730 74 L 730 278 Q 730 296 712 308 L 710 385 L 692 528 Q 686 548 662 544 L 538 518 L 325 466 Q 308 460 308 442 L 308 368 L 36 368 Q 18 368 18 350 Z"
+          );
+        } else {
+          // Exact horizontal mirror around x = 370 (740 - x)
+          path.setAttribute(
+            "d",
+            "M 722 46 Q 722 28 704 28 L 545 28 L 445 8 L 325 8 L 220 26 L 120 44 L 26 54 Q 10 56 10 74 L 10 278 Q 10 296 28 308 L 30 385 L 48 528 Q 54 548 78 544 L 202 518 L 415 466 Q 432 460 432 442 L 432 368 L 704 368 Q 722 368 722 350 Z"
+          );
+        }
+        svg.appendChild(path);
+        return svg;
+      }
+
+      /* =======================================================================
+         7. RENDER A COMPLETE CORNE V4 BOARD FOR A GIVEN LAYER
+         ======================================================================= */
+      function buildCorneBoard(layerId, options = {}) {
+        const layer = LAYERS[layerId];
+        const interactive = Boolean(options.interactive);
+        const highlight = options.highlight || null;
+
+        const triggerMap = new Map(layer.triggers.map(t => [t.id, t.label]));
+        const modSet = new Set(highlight ? highlight.modKeys : []);
+        const actionSet = new Set(highlight ? highlight.actionKeys : []);
+
+        const board = document.createElement("div");
+        board.className = "corne-board";
+        if (highlight) {
+          board.classList.add("has-binding-highlight");
+        }
+        if (!state.showBaseHints) {
+          board.classList.add("hide-base-hints");
+        }
+
+        const leftHalf = document.createElement("div");
+        leftHalf.className = "corne-half left";
+        leftHalf.appendChild(createPcbSvg("left"));
+        const leftTag = document.createElement("span");
+        leftTag.className = "half-tag";
+        leftTag.textContent = "LINKS";
+        leftHalf.appendChild(leftTag);
+
+        const rightHalf = document.createElement("div");
+        rightHalf.className = "corne-half right";
+        rightHalf.appendChild(createPcbSvg("right"));
+        const rightTag = document.createElement("span");
+        rightTag.className = "half-tag";
+        rightTag.textContent = "RECHTS";
+        rightHalf.appendChild(rightTag);
+
+        PHYSICAL_KEYS.forEach(pk => {
+          const def = layer.keys[pk.id] || TRNS();
+          const isTrigger = triggerMap.has(pk.id);
+          const triggerLabel = triggerMap.get(pk.id);
+
+          const el = document.createElement("div");
+          el.className = `keycap cat-${def.cat}`;
+          if (pk.homing) el.classList.add("homing");
+          if (isTrigger) el.classList.add("is-trigger");
+          if (def.shiftTrns) el.classList.add("is-shift-trns");
+          if (modSet.has(pk.id)) el.classList.add("hl-mod");
+          if (actionSet.has(pk.id)) el.classList.add("hl-action");
+
+          el.style.setProperty("--kx", pk.x);
+          el.style.setProperty("--ky", pk.y);
+          el.style.setProperty("--kw", pk.w);
+          el.style.setProperty("--kh", pk.h);
+          el.style.setProperty("--krot", `${pk.rot}deg`);
+
+          // Corner physical base-key hint on Layers 1-5
+          if (layerId > 0) {
+            const baseHint = document.createElement("span");
+            baseHint.className = "key-base";
+            baseHint.textContent = BASE_HINT[pk.id] || "";
+            el.appendChild(baseHint);
+          }
+
+          if (isTrigger) {
+            const badge = document.createElement("span");
+            badge.className = "trigger-badge";
+            badge.textContent = "HOLD";
+            el.appendChild(badge);
+
+            const main = document.createElement("span");
+            main.className = "key-main is-tiny";
+            main.textContent = triggerLabel;
+            el.appendChild(main);
+          } else {
+            // Tap-Hold top pill (Layer 0 LT keys)
+            if (def.hold) {
+              const holdEl = document.createElement("span");
+              holdEl.className = "key-hold";
+              holdEl.textContent = `Hold ${def.hold}`;
+              el.appendChild(holdEl);
+            }
+
+            const main = document.createElement("span");
+            main.className = "key-main" + (def.style ? ` is-${def.style}` : "");
+            main.textContent = def.label;
+            el.appendChild(main);
+
+            if (def.sub) {
+              const sub = document.createElement("span");
+              sub.className = "key-sub";
+              sub.textContent = def.sub;
+              el.appendChild(sub);
+            }
+          }
+
+          if (interactive) {
+            el.setAttribute("tabindex", "0");
+            el.setAttribute("role", "button");
+            el.setAttribute("aria-label", `${def.label} (${pk.posLabel})`);
+
+            const payload = {
+              layer,
+              pk,
+              def,
+              isTrigger,
+              triggerLabel,
+              baseKeyName: LAYER_0[pk.id] ? LAYER_0[pk.id].label : ""
+            };
+
+            el.addEventListener("mouseenter", e => {
+              updateInspector(payload);
+              showTooltip(payload, e);
+            });
+            el.addEventListener("mousemove", e => moveTooltip(e));
+            el.addEventListener("mouseleave", () => hideTooltip());
+            el.addEventListener("focus", () => updateInspector(payload));
+            el.addEventListener("click", e => {
+              e.stopPropagation();
+              document.querySelectorAll(".keycap.inspected").forEach(k => k.classList.remove("inspected"));
+              el.classList.add("inspected");
+              updateInspector(payload);
+            });
+          }
+
+          if (pk.side === "left") {
+            leftHalf.appendChild(el);
+          } else {
+            rightHalf.appendChild(el);
+          }
+        });
+
+        board.appendChild(leftHalf);
+        board.appendChild(rightHalf);
+        return board;
+      }
+
+      /* =======================================================================
+         8. INSPECTOR BAR & FLOATING TOOLTIP
+         ======================================================================= */
+      function updateInspector({ layer, pk, def, isTrigger, triggerLabel, baseKeyName }) {
+        insKey.textContent = isTrigger ? `HOLD ${triggerLabel}` : (def.hold ? `LT(${def.hold}, ${def.label})` : def.label);
+        insDesc.textContent = isTrigger
+          ? `Aktivierungstaste für Layer ${layer.id} (${layer.name}) – gedrückt halten`
+          : def.desc;
+
+        const chips = [];
+        if (def.code) {
+          chips.push(`<span class="meta-chip">Vial: ${escapeHtml(isTrigger ? triggerLabel : def.code)}</span>`);
+        }
+        chips.push(`<span class="meta-chip">Basis: ${escapeHtml(baseKeyName)} (${escapeHtml(pk.posLabel)})</span>`);
+        if (def.shift) {
+          chips.push(`<span class="meta-chip shift-chip">⇧ ${escapeHtml(def.shift)}</span>`);
+        }
+        insMeta.innerHTML = chips.join("");
+      }
+
+      function showTooltip(payload, event) {
+        if (window.matchMedia("(max-width: 680px)").matches) return;
+        const { layer, pk, def, isTrigger, triggerLabel, baseKeyName } = payload;
+
+        const title = isTrigger
+          ? `HOLD · ${triggerLabel}`
+          : (def.hold ? `${def.label} / Hold ${def.hold}` : def.label);
+        const code = isTrigger ? triggerLabel : (def.code || "—");
+        const desc = isTrigger
+          ? `Aktiviert Layer ${layer.id} (${layer.name}) solange gedrückt.`
+          : def.desc;
+
+        floatingTooltip.innerHTML = `
+          <div class="tt-head">
+            <span class="tt-title">${escapeHtml(title)}</span>
+            <span class="tt-code">${escapeHtml(code)}</span>
+          </div>
+          <p class="tt-desc">${escapeHtml(desc)}</p>
+          <div class="tt-row">Basistaste: ${escapeHtml(baseKeyName)} · ${escapeHtml(pk.posLabel)}</div>
+          ${def.shift ? `<div class="tt-row tt-shift">⇧ ${escapeHtml(def.shift)}</div>` : ""}
+        `;
+        floatingTooltip.classList.add("visible");
+        floatingTooltip.setAttribute("aria-hidden", "false");
+        moveTooltip(event);
+      }
+
+      function moveTooltip(event) {
+        if (!floatingTooltip.classList.contains("visible")) return;
+        const pad = 16;
+        const rect = floatingTooltip.getBoundingClientRect();
+        let x = event.clientX + pad;
+        let y = event.clientY + pad;
+
+        if (x + rect.width > window.innerWidth - 10) {
+          x = event.clientX - rect.width - pad;
+        }
+        if (y + rect.height > window.innerHeight - 10) {
+          y = event.clientY - rect.height - pad;
+        }
+        floatingTooltip.style.left = `${Math.max(8, x)}px`;
+        floatingTooltip.style.top = `${Math.max(8, y)}px`;
+      }
+
+      function hideTooltip() {
+        floatingTooltip.classList.remove("visible");
+        floatingTooltip.setAttribute("aria-hidden", "true");
+      }
+
+      /* =======================================================================
+         9. RESPONSIVE KEY-UNIT SIZING (ZERO CLIPPING / ZERO SCROLL)
+         Board natural width = 7.05 + 0.85 + 7.05 + 0.45 (PCB margin) = 15.4u
+         ======================================================================= */
+      function resizeAllBoards() {
+        // Single view board
+        const singleBoard = singleKbViewport.querySelector(".corne-board");
+        if (singleBoard) {
+          const avail = singleKbViewport.clientWidth - 8;
+          if (avail > 0) {
+            const u = Math.max(20, Math.min(68, avail / 15.45));
+            singleBoard.style.setProperty("--u", `${u.toFixed(2)}px`);
+          }
+        }
+
+        // Overview poster boards
+        overviewGrid.querySelectorAll(".overview-card").forEach(card => {
+          const vp = card.querySelector(".kb-viewport");
+          const board = vp && vp.querySelector(".corne-board");
+          if (vp && board) {
+            const avail = vp.clientWidth - 4;
+            if (avail > 0) {
+              const u = Math.max(18, Math.min(39, avail / 15.55));
+              board.style.setProperty("--u", `${u.toFixed(2)}px`);
+            }
+          }
+        });
+      }
+
+      /* =======================================================================
+         10. RENDER LAYER TABS, SINGLE STAGE, OVERVIEW & CONTRACT TABLE
+         ======================================================================= */
+      function renderTabs() {
+        layerTabsEl.innerHTML = "";
+        LAYERS.forEach(layer => {
+          const btn = document.createElement("button");
+          btn.type = "button";
+          btn.className = "layer-tab" + (state.activeLayer === layer.id ? " active" : "");
+          btn.style.setProperty("--tab-accent", layer.accent);
+          btn.setAttribute("aria-pressed", String(state.activeLayer === layer.id));
+
+          btn.innerHTML = `
+            <div class="layer-tab-top">
+              <span class="layer-num">Layer ${layer.id}</span>
+              <span class="kbd-hint">${layer.id}</span>
+            </div>
+            <div class="layer-title">${escapeHtml(layer.name)}</div>
+            <div class="layer-trigger-mini">${escapeHtml(layer.shortTrigger)}</div>
+          `;
+
+          btn.addEventListener("click", () => {
+            state.selectedBindingId = null;
+            selectLayer(layer.id);
+          });
+          layerTabsEl.appendChild(btn);
+        });
+      }
+
+      function renderSingleStage() {
+        const layer = LAYERS[state.activeLayer];
+        const activeBinding = CONTRACT_BINDINGS.find(b => b.id === state.selectedBindingId) || null;
+
+        stageLayerBadge.textContent = `Layer ${layer.id}`;
+        stageLayerBadge.style.background = layer.accent;
+        stageTitle.textContent = layer.name;
+        stageTrigger.innerHTML = layer.triggerHtml;
+
+        if (layer.note) {
+          stageLayerNote.innerHTML = layer.note;
+          stageLayerNote.style.borderLeftColor = layer.accent;
+          stageLayerNote.classList.add("visible");
+        } else {
+          stageLayerNote.classList.remove("visible");
+        }
+
+        if (activeBinding && activeBinding.layer === layer.id) {
+          bindingBannerText.innerHTML = `
+            <strong>Aktiv hervorgehoben:</strong> ${escapeHtml(activeBinding.action)}
+            <code>${escapeHtml(activeBinding.chord)}</code>
+            <span style="color: var(--text-muted); font-size: 0.78rem;">(Gelb = Halten/Mod · Grün = Zieltasten)</span>
+          `;
+          bindingBanner.classList.add("visible");
+        } else {
+          bindingBanner.classList.remove("visible");
+        }
+
+        singleKbViewport.innerHTML = "";
+        const board = buildCorneBoard(layer.id, {
+          interactive: true,
+          highlight: (activeBinding && activeBinding.layer === layer.id) ? activeBinding : null
+        });
+        singleKbViewport.appendChild(board);
+
+        requestAnimationFrame(resizeAllBoards);
+      }
+
+      function renderOverviewGrid() {
+        overviewGrid.innerHTML = "";
+        LAYERS.forEach(layer => {
+          const card = document.createElement("article");
+          card.className = "overview-card";
+          card.title = `Klicken, um Layer ${layer.id} (${layer.name}) in der Einzelansicht zu öffnen`;
+
+          const head = document.createElement("div");
+          head.className = "overview-card-head";
+          head.innerHTML = `
+            <div class="overview-card-title">
+              <span class="stage-layer-badge" style="background:${layer.accent}; padding: 2px 7px; font-size: 0.72rem;">L${layer.id}</span>
+              <span>${escapeHtml(layer.name)}</span>
+            </div>
+            <span class="overview-card-trigger">${escapeHtml(layer.shortTrigger)}</span>
+          `;
+          card.appendChild(head);
+
+          const vp = document.createElement("div");
+          vp.className = "kb-viewport";
+          vp.appendChild(buildCorneBoard(layer.id, { interactive: false }));
+          card.appendChild(vp);
+
+          if (layer.note) {
+            const note = document.createElement("div");
+            note.className = "overview-card-note";
+            note.innerHTML = layer.note;
+            card.appendChild(note);
+          }
+
+          card.addEventListener("click", () => {
+            state.overviewMode = false;
+            state.selectedBindingId = null;
+            applyViewMode();
+            selectLayer(layer.id);
+            window.scrollTo({ top: 0, behavior: "smooth" });
+          });
+
+          overviewGrid.appendChild(card);
+        });
+
+        requestAnimationFrame(resizeAllBoards);
+      }
+
+      function renderBindingsTable() {
+        const q = state.searchQuery.trim().toLowerCase();
+        bindingSearchClear.classList.toggle("visible", q.length > 0);
+
+        const filtered = CONTRACT_BINDINGS.filter(b => {
+          if (!q) return true;
+          const haystack = `${b.action} ${b.contract} ${b.chord} ${b.keywords}`.toLowerCase();
+          return haystack.includes(q);
+        });
+
+        bindingsTbody.innerHTML = "";
+        if (filtered.length === 0) {
+          const tr = document.createElement("tr");
+          tr.innerHTML = `<td colspan="4" class="empty-state">Kein Vertrags-Binding für „${escapeHtml(state.searchQuery)}“ gefunden.</td>`;
+          bindingsTbody.appendChild(tr);
+          return;
+        }
+
+        filtered.forEach(b => {
+          const tr = document.createElement("tr");
+          if (state.selectedBindingId === b.id) {
+            tr.classList.add("selected");
+          }
+
+          tr.innerHTML = `
+            <td><strong>${escapeHtml(b.action)}</strong></td>
+            <td><span class="code-inline">${escapeHtml(b.contract)}</span></td>
+            <td><span class="code-inline chord-code">${escapeHtml(b.chord)}</span></td>
+            <td><span class="layer-mini-pill">Layer ${b.layer}</span></td>
+          `;
+
+          tr.addEventListener("click", () => {
+            if (state.selectedBindingId === b.id) {
+              state.selectedBindingId = null;
+              renderSingleStage();
+              renderBindingsTable();
+              return;
+            }
+            state.selectedBindingId = b.id;
+            if (state.overviewMode) {
+              state.overviewMode = false;
+              applyViewMode();
+            }
+            selectLayer(b.layer);
+            renderBindingsTable();
+
+            // Update Inspector with binding summary
+            insKey.textContent = `Layer ${b.layer} Akkord`;
+            insDesc.textContent = `${b.action} → ${b.chord}`;
+            insMeta.innerHTML = `<span class="meta-chip">Vertrag: ${escapeHtml(b.contract)}</span>`;
+
+            // Scroll gently up to keyboard stage if offscreen
+            const stageRect = singleKbViewport.getBoundingClientRect();
+            if (stageRect.top < 0 || stageRect.bottom > window.innerHeight) {
+              document.querySelector(".stage-card").scrollIntoView({ behavior: "smooth", block: "nearest" });
+            }
+          });
+
+          bindingsTbody.appendChild(tr);
+        });
+      }
+
+      /* =======================================================================
+         11. STATE ACTIONS & EVENT LISTENERS
+         ======================================================================= */
+      function selectLayer(layerId) {
+        state.activeLayer = layerId;
+        renderTabs();
+        renderSingleStage();
+        renderBindingsTable();
+      }
+
+      function applyViewMode() {
+        appShell.classList.toggle("mode-overview", state.overviewMode);
+        btnViewToggle.classList.toggle("active", state.overviewMode);
+        viewToggleLabel.textContent = state.overviewMode ? "Einzel-Layer-Ansicht" : "Alle Layer (Übersicht)";
+        if (state.overviewMode) {
+          hideTooltip();
+          requestAnimationFrame(resizeAllBoards);
+        } else {
+          requestAnimationFrame(resizeAllBoards);
+        }
+      }
+
+      function applyBaseHints() {
+        btnBaseToggle.setAttribute("aria-pressed", String(state.showBaseHints));
+        document.querySelectorAll(".corne-board").forEach(b => {
+          b.classList.toggle("hide-base-hints", !state.showBaseHints);
+        });
+        try {
+          localStorage.setItem("corne_v4_basehints", String(state.showBaseHints));
+        } catch (_) {}
+      }
+
+      function applyTheme() {
+        document.documentElement.setAttribute("data-theme", state.theme);
+        if (state.theme === "dark") {
+          themeIcon.textContent = "☀️";
+          themeLabel.textContent = "Light";
+        } else {
+          themeIcon.textContent = "🌙";
+          themeLabel.textContent = "Dark";
+        }
+        try {
+          localStorage.setItem("corne_v4_theme", state.theme);
+        } catch (_) {}
+      }
+
+      function escapeHtml(str) {
+        return String(str)
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;")
+          .replace(/'/g, "&#39;");
+      }
+
+      // Button events
+      btnViewToggle.addEventListener("click", () => {
+        state.overviewMode = !state.overviewMode;
+        applyViewMode();
+      });
+
+      btnBaseToggle.addEventListener("click", () => {
+        state.showBaseHints = !state.showBaseHints;
+        applyBaseHints();
+      });
+
+      btnThemeToggle.addEventListener("click", () => {
+        state.theme = state.theme === "dark" ? "light" : "dark";
+        applyTheme();
+      });
+
+      btnPrint.addEventListener("click", () => {
+        window.print();
+      });
+
+      btnClearBinding.addEventListener("click", () => {
+        state.selectedBindingId = null;
+        renderSingleStage();
+        renderBindingsTable();
+      });
+
+      // Search filter
+      bindingSearch.addEventListener("input", e => {
+        state.searchQuery = e.target.value;
+        renderBindingsTable();
+      });
+
+      bindingSearchClear.addEventListener("click", () => {
+        state.searchQuery = "";
+        bindingSearch.value = "";
+        renderBindingsTable();
+        bindingSearch.focus();
+      });
+
+      // Keyboard shortcuts (0-5, A, B, T, Escape)
+      document.addEventListener("keydown", e => {
+        const tag = document.activeElement && document.activeElement.tagName;
+        const isTyping = tag === "INPUT" || tag === "TEXTAREA";
+
+        if (e.key === "Escape") {
+          if (isTyping && state.searchQuery) {
+            state.searchQuery = "";
+            bindingSearch.value = "";
+            renderBindingsTable();
+          } else if (state.selectedBindingId) {
+            state.selectedBindingId = null;
+            renderSingleStage();
+            renderBindingsTable();
+          }
+          return;
+        }
+
+        if (isTyping || e.ctrlKey || e.metaKey || e.altKey) return;
+
+        if (e.key >= "0" && e.key <= "5") {
+          e.preventDefault();
+          const num = Number(e.key);
+          if (state.overviewMode) {
+            state.overviewMode = false;
+            applyViewMode();
+          }
+          state.selectedBindingId = null;
+          selectLayer(num);
+        } else if (e.key === "a" || e.key === "A") {
+          e.preventDefault();
+          state.overviewMode = !state.overviewMode;
+          applyViewMode();
+        } else if (e.key === "b" || e.key === "B") {
+          e.preventDefault();
+          state.showBaseHints = !state.showBaseHints;
+          applyBaseHints();
+        } else if (e.key === "t" || e.key === "T") {
+          e.preventDefault();
+          state.theme = state.theme === "dark" ? "light" : "dark";
+          applyTheme();
+        }
+      });
+
+      // Responsive ResizeObserver
+      if (typeof ResizeObserver !== "undefined") {
+        const ro = new ResizeObserver(() => resizeAllBoards());
+        ro.observe(appShell);
+      } else {
+        window.addEventListener("resize", resizeAllBoards);
+      }
+
+      /* =======================================================================
+         12. INITIALIZE
+         ======================================================================= */
+      try {
+        applyTheme();
+        renderTabs();
+        renderOverviewGrid();
+        renderSingleStage();
+        renderBindingsTable();
+        applyBaseHints();
+        applyViewMode();
+      } catch (err) {
+        console.error("Fehler beim Initialisieren des Corne v4 Cheatsheets:", err);
+      }
+    })();
+  </script>
+</body>
+</html>
