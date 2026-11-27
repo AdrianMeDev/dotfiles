@@ -202,7 +202,7 @@ alles wird in der neuesten Version installiert und mit `dot update` aktualisiert
 - **Depends on:** M12
 - **Size:** S, ~3 commits
 
-### M17 [ ] `/retro` + Kontextbudget sichtbar
+### M17 [~] `/retro` + Kontextbudget sichtbar
 - **Goal:** Nach Meilenstein oder Sitzung kommen konkrete Verbesserungen für Skills, Checks und Steuerdateien – sortiert nach Schwere.
 - **Includes:** Skill `retro` (Kategorien Navigation, automatische Checks, Standards, CLAUDE.md-Größe, Tool-Ökonomie, No-Ops, Informationszugang; Quellen `notes.md`, Plan-Log, Reviews, gefilterte Logs; Ausgabe `.agent/retro/`, ändert nichts selbst), Referenz writing-for-agents, Statusline mit Kontextverbrauch, Budget-Hinweis in `next`/`plan-commits`
 - **Done when:** `/retro` nach einem Meilenstein liefert priorisierte Vorschläge mit Zielpfad in `agent-config/`; Statusline zeigt Kontext in %

@@ -108,6 +108,19 @@ class AgentsTests(unittest.TestCase):
         self.assertIn('user-invocable: false', (self.claude / 'skills/tdd/SKILL.md').read_text())
         self.assertNotIn('user-invocable', (self.pi / 'skills/tdd/SKILL.md').read_text())
 
+    def test_writing_for_agents_skill_rendered_for_both_tools(self):
+        self.run_agents()
+        text = (SRC / 'skills/writing-for-agents/SKILL.md').read_text()
+        self.assertLessEqual(len(text.splitlines()), 80)
+        for phrase in ('Context load', 'Cognitive load', 'Point, do not inline', 'Checkable completion', 'CLAUDE.md', 'AGENTS.md'):
+            self.assertIn(phrase, text)
+        self.assertIn('MIT', (SRC / 'skills/writing-for-agents/NOTICE.md').read_text())
+        for root in (self.claude, self.pi):
+            self.assertTrue((root / 'skills/writing-for-agents/SKILL.md').is_file())
+            self.assertTrue((root / 'skills/writing-for-agents/NOTICE.md').is_file())
+        self.assertIn('user-invocable: false', (self.claude / 'skills/writing-for-agents/SKILL.md').read_text())
+        self.assertNotIn('user-invocable', (self.pi / 'skills/writing-for-agents/SKILL.md').read_text())
+
     def test_fix_skill_rendered_for_both_tools(self):
         self.run_agents()
         text = (SRC / 'skills/fix/SKILL.md').read_text()
