@@ -120,6 +120,14 @@ class AgentsTests(unittest.TestCase):
         self.assertNotIn('context:', (self.pi / 'skills/fix/SKILL.md').read_text())
         self.assertTrue((self.pi / 'prompts/fix.md').is_file())
 
+    def test_next_and_fix_follow_tdd_guideline(self):
+        self.run_agents()
+        for name in ('next', 'fix'):
+            text = (SRC / 'skills' / name / 'SKILL.md').read_text()
+            self.assertLessEqual(len(text.splitlines()), 80)
+            for root in (self.claude, self.pi):
+                self.assertIn('`tdd` skill', (root / 'skills' / name / 'SKILL.md').read_text())
+
     def test_inspect_skill_rendered_for_both_tools(self):
         self.run_agents()
         source = SRC / 'skills/inspect'
