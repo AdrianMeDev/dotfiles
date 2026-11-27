@@ -5,7 +5,7 @@
 | Einsatz | private Projekte | Arbeit |
 | Modell | lokal über Ollama (nichts verlässt den Rechner) | Claude (`sonnet`, bei Bedarf `/model opus`) |
 | Sicherheit | **fragt nicht vor Befehlen** – Regeln stehen nur als Anweisung in `AGENTS.md` | Berechtigungsregeln: erlauben / nachfragen / verbieten |
-| Befehle (gleich in beiden) | `/grill` `/refine` `/plan-roadmap` `/plan-commits` `/next` `/fix` `/diagnose` `/inspect` `/explain` `/explain-project` | `/grill` `/refine` `/plan-roadmap` `/plan-commits` `/next` `/fix` `/diagnose` `/inspect` `/explain` `/explain-project` |
+| Befehle (gleich in beiden) | `/grill` `/refine` `/plan-roadmap` `/plan-commits` `/next` `/fix` `/diagnose` `/inspect` `/retro` `/explain` `/explain-project` | `/grill` `/refine` `/plan-roadmap` `/plan-commits` `/next` `/fix` `/diagnose` `/inspect` `/retro` `/explain` `/explain-project` |
 | In Zed | `<space> a p` | `<space> a c` |
 
 ```
@@ -15,9 +15,10 @@ agent-config/
 │   ├── models.json         Ollama-Modelle (Kontext, Tokens)
 │   ├── AGENTS.md           globale Anweisungen (privat)
 │   ├── themes/             tokyo-night.json (Tokyo Night)
-│   └── prompts/            /grill /refine /plan-roadmap /plan-commits /next /fix /diagnose /inspect /explain /explain-project /commit
+│   └── prompts/            /grill /refine /plan-roadmap /plan-commits /next /fix /diagnose /inspect /retro /explain /explain-project /commit
 ├── claude/                 → ~/.claude/
-│   ├── settings.json       Modell, Theme (dark-ansi), Vim, Erklär-Stil, Berechtigungen
+│   ├── settings.json       Modell, Theme (dark-ansi), Vim, Erklär-Stil, Berechtigungen, Statusline
+│   ├── statusline.sh       Statusline: Modell, Kontext %, Tokens/150k (Bash ohne jq, nur Claude Code)
 │   └── CLAUDE.md           globale Anweisungen (Arbeit)
 ├── skills/                 → in beide Tools (Englisch, antworten in deiner Sprache)
 │   ├── agent-workspace/    Referenz: `.agent/`-Layout, Git-Regel, Kontextbudget (kein Befehl)
@@ -30,6 +31,8 @@ agent-config/
 │   ├── diagnose/           schwerer Fehler: rote Feedback-Schleife → Hypothesen → Fix + Regressionstest, Befund in notes.md
 │   ├── tdd/                Referenz: rot-grün-refactor, gute/schlechte Tests (kein Befehl; MIT-Hinweis in NOTICE.md)
 │   ├── inspect/            Review auf zwei Achsen (Standards, Spec) → .agent/reviews/ (+ STANDARDS.md, REPORT-FORMAT.md)
+│   ├── retro/              Retrospektive: priorisierte Verbesserungen mit Zielpfad → .agent/retro/ (+ REPORT-FORMAT.md)
+│   ├── writing-for-agents/ Referenz: Regeln für Skills und CLAUDE.md/AGENTS.md (kein Befehl; MIT-Hinweis in NOTICE.md)
 │   ├── explain/            Implementiertes verständlich erklären
 │   └── explain-project/    ganzes Projekt erklären (Onboarding)
 ├── templates/PROJEKT-ANWEISUNGEN.md   Vorlage für CLAUDE.md / AGENTS.md im Projekt
@@ -102,6 +105,7 @@ Drei Ebenen, jede mit eigener Datei:
 | Kleine Korrektur | `/fix <prompt-pfad\|text>` | Code + dein Commit | Test zuerst, minimaler Fix, ein Commit, Stopp |
 | Schwerer Fehler | `/diagnose <prompt-pfad\|text>` | Code + dein Commit, Befund in `.agent/notes.md` | rote Feedback-Schleife, Hypothesen, Fix + Regressionstest, Stopp |
 | Prüfen | `/inspect [base] [prompt-pfad]` | `.agent/reviews/<datum>-<slug>.md` | getrennt: Standards und Spec, keine Codeänderung |
+| Verbessern | `/retro [meilenstein\|sitzung]` | `.agent/retro/<datum>-<slug>.md` | priorisierte Vorschläge mit Zielpfad, ändert nichts selbst |
 
 ```
 /plan-roadmap Vereins-App: Mitglieder, Termine, Beiträge   → Fragen beantworten → Roadmap M0…M5
@@ -179,6 +183,19 @@ Drei Ebenen, jede mit eigener Datei:
 - `/next` schlägt `/inspect` nach dem letzten Schritt vor. Der Name `inspect` vermeidet den Konflikt mit dem
   eingebauten `/review` von Claude Code.
 
+### `/retro`
+
+```
+/retro            → aktueller Plan/Meilenstein auswerten → Bericht in .agent/retro/
+```
+
+- Quellen in dieser Reihenfolge: `.agent/notes.md`, Plan-Log, `.agent/reviews/`, danach nur gefilterte Session-Logs
+  (Fehler, abgelehnte Tool-Calls, große Ausgaben – nie ganz gelesen).
+- Sieben Kategorien: Navigation, automatische Checks, Standards, CLAUDE.md-Größe, Tool-Ökonomie, No-Ops, Informationszugang.
+  Der Bericht ist nach Schwere sortiert, jeder Vorschlag nennt Zielpfad (`agent-config/...` oder Projektdatei) und Beleg.
+- Ändert nichts außer dem Bericht und führt keine Git-Schreibaktion aus. Textvorschläge folgen dem Referenz-Skill `writing-for-agents`.
+- Claude Code: läuft im frischen Subagenten (`context: fork`, Sonnet, Effort `medium`), nur von dir aufrufbar.
+
 ### Details zu `/plan-commits` und `/next`
 
 ```
@@ -208,7 +225,7 @@ Drei Ebenen, jede mit eigener Datei:
 
 Alles, was Agents erzeugen, liegt lokal unter `.agent/` im Projekt (nie im Repo):
 `plan.md`, `ROADMAP.md`, `notes.md` (Befunde aus `/next`, `/fix` und `/diagnose`), `GLOSSARY.md` und `adr/` (aus `/grill`),
-`prompts/` (aus `/refine`), `reviews/` (aus `/inspect`) und reserviert `retro/`. Die Konventionen stehen einmal im Skill `agent-workspace`.
+`prompts/` (aus `/refine`), `reviews/` (aus `/inspect`) und `retro/` (aus `/retro`). Die Konventionen stehen einmal im Skill `agent-workspace`.
 
 - **Git gehört dir:** Agents committen, pushen, mergen oder legen PRs/Tickets nie selbst an – sie
   zeigen nur die Befehle. Claude Code erzwingt das mit `deny`-Regeln (`claude/settings.json`);
@@ -265,7 +282,9 @@ nur ein kleiner Teil. Deshalb setzt diese Konfiguration am Kontext an:
 | `/next` läuft in einem **frischen Subagenten** (`context: fork`, Sonnet, Effort `medium`) | Wie ein automatisches `/clear` pro Schritt: Dateien, Testausgaben und Fehlversuche bleiben im Subagenten, deine Session behält nur den kurzen Bericht |
 | `/fix` läuft wie `/next` im **frischen Subagenten** (`context: fork`, Sonnet, Effort `medium`) | Reproduktion und Testläufe belasten deine Session nicht |
 | `/diagnose` läuft im **frischen Subagenten** (`context: fork`, Sonnet, Effort `high`) | Logs und Fehlversuche der Fehlersuche belasten deine Session nicht |
+| `/retro` läuft im **frischen Subagenten** (`context: fork`, Sonnet, Effort `medium`) | Große Session-Logs werden nur gefiltert im Subagenten gelesen |
 | `/explain-project` läuft im **read-only Explore-Subagenten** | Die ganze Projekt-Erkundung belastet deine Session nicht |
+| **Statusline** (`claude/statusline.sh`): Modell · Kontext % · Tokens/150k, gelb ab 60 % des Budgets, rot ab 150k | Das Budget von ~150k ist sichtbar; `plan-commits` schneidet Schritte danach, `next` rät nahe/über dem Budget zu `/clear`. In pi zeigt der Footer den Kontext (noch nicht verifiziert, siehe `.agent/notes.md`) |
 | Plan in `.agent/plan.md` | Nach der Freigabe des Plans ist `/clear` jederzeit gefahrlos |
 | Kein `Explanatory`-Stil, Knapp-Regel in `CLAUDE.md` | Weniger Text pro Antwort, ohne die Lesbarkeit zu verlieren |
 | `Compact instructions` in `CLAUDE.md` | Wenn komprimiert wird, bleibt das Richtige erhalten |

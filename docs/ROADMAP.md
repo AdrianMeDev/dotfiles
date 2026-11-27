@@ -71,6 +71,7 @@ alles wird in der neuesten Version installiert und mit `dot update` aktualisiert
 | 15 | Kontextbudget ≤ ~150k über Struktur: `next`/`diagnose` im Fork, Review-Achsen als frische Subagents, Erkenntnisse in Dateien, `/clear` zwischen Schritten | Leistung bleibt hoch, jeder Schritt startet ohne Altlast | Auto-Compact, lange Sitzungen |
 | 16 | `/inspect` (statt `/review`) läuft in der Hauptsession ohne `context: fork` und startet die zwei Achsen per Agent-Tool als frische Subagents (parallel, Typ `general-purpose`, Modell sonnet; Haupt-Skill sonnet/medium, er orchestriert nur und schreibt den Bericht); pi: Achsen nacheinander mit frischem Lesen. Name `inspect`, weil `/review` in Claude Code eingebaut ist | Subagents starten keine weiteren Subagents (Claude-Code-Doku zu Subagents), ein Fork von `next` kann also nicht prüfen; Hauptsession-Skills können mehrere Agent-Aufrufe in einer Nachricht parallel starten; kein Namenskonflikt mit `/review` und Skill `code-review` | `/review` als Name, Prüfung im Fork |
 | 17 | Der Fehlersuche-Skill heißt `diagnose` statt `debug`; die TDD-Leitlinie ist der Referenz-Skill `tdd` (`user-invocable: false`), auf den `next`, `fix` und `diagnose` verweisen | `/debug` ist in Claude Code eingebaut (wie `/review`); eine Quelle für die Test-Regeln statt Kopien in drei Skills | Name `debug`, TDD-Regeln in jedem Skill wiederholt |
+| 18 | Die Statusline (`agent-config/claude/statusline.sh`) ist reines Bash ohne `jq` und nur für Claude Code; pi nutzt seinen Footer | `jq` ist weder in `packages.tsv` noch `winget.tsv` (keine neue Abhängigkeit); pi zeigt den Kontext bereits selbst | `jq`-Abhängigkeit, eigene pi-Statusline |
 
 ## Risks & unknowns
 | Risk | Impact | Mitigation |
@@ -202,7 +203,7 @@ alles wird in der neuesten Version installiert und mit `dot update` aktualisiert
 - **Depends on:** M12
 - **Size:** S, ~3 commits
 
-### M17 [~] `/retro` + Kontextbudget sichtbar
+### M17 [x] `/retro` + Kontextbudget sichtbar
 - **Goal:** Nach Meilenstein oder Sitzung kommen konkrete Verbesserungen für Skills, Checks und Steuerdateien – sortiert nach Schwere.
 - **Includes:** Skill `retro` (Kategorien Navigation, automatische Checks, Standards, CLAUDE.md-Größe, Tool-Ökonomie, No-Ops, Informationszugang; Quellen `notes.md`, Plan-Log, Reviews, gefilterte Logs; Ausgabe `.agent/retro/`, ändert nichts selbst), Referenz writing-for-agents, Statusline mit Kontextverbrauch, Budget-Hinweis in `next`/`plan-commits`
 - **Done when:** `/retro` nach einem Meilenstein liefert priorisierte Vorschläge mit Zielpfad in `agent-config/`; Statusline zeigt Kontext in %
@@ -247,3 +248,4 @@ alles wird in der neuesten Version installiert und mit `dot update` aktualisiert
 - 2026-11-27: M14 `/refine` + `/fix` abgeschlossen (Skills `refine` und `fix`, Prompt-Pfad als Eingabe für `plan-roadmap`/`plan-commits`, pi-Prompts, Doku)
 - 2026-11-27: M15 `/inspect` auf zwei Achsen abgeschlossen (Skill `inspect` mit getrennten Achsen Standards/Spec, zwei frische Subagents in Claude Code, pi nacheinander, Bericht unter `.agent/reviews/`, `next` schlägt `/inspect` vor, `/review` in `/inspect` umbenannt; manuelle Abnahme `/inspect main` offen)
 - 2026-11-27: M16 `/diagnose` + TDD-Leitlinie abgeschlossen (Skills `diagnose` im Fork und `tdd` als Referenz, `next`/`fix` arbeiten rot-grün-refactor, pi-Prompt, Doku; `/debug` in `/diagnose` umbenannt, Entscheidung #17; manuelle Abnahme `/diagnose` an eingebautem Fehler offen)
+- 2026-11-27: M17 `/retro` + Kontextbudget sichtbar abgeschlossen (Skills `retro` im Fork und `writing-for-agents` als Referenz, Statusline mit Kontext %, Budget-Hinweise in `next`/`plan-commits`, Entscheidung #18; manuelle Abnahme offen: `/retro` nach M17 liefert Vorschläge mit Zielpfad, Statusline zeigt Kontext in %, pi-Footer-Kontext ungeprüft)
