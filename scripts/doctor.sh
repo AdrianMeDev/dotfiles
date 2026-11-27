@@ -85,7 +85,7 @@ _doc_fnm() {
 }
 
 _doc_agents() {
-    local out line bad=() mod=() rc=0
+    local out line bad=() mod=() foreign=() rc=0
     out=$(python3 "$REPO_DIR/scripts/agents.py" --status 2>&1) || rc=$?
     if ((rc)); then
         _doc_err 'Agent-Config: Prüfung fehlgeschlagen:'
@@ -96,6 +96,7 @@ _doc_agents() {
         case $line in
             '[missing]'*) bad+=("$line") ;;
             '[modified]'*|'[legacy]'*) mod+=("$line") ;;
+            '[foreign]'*) foreign+=("$line") ;;
         esac
     done <<< "$out"
     if ((${#bad[@]})); then
@@ -105,6 +106,10 @@ _doc_agents() {
     if ((${#mod[@]})); then
         _doc_warn 'Agent-Config: lokal abweichende Dateien:'
         printf '            %s\n' "${mod[@]}"
+    fi
+    if ((${#foreign[@]})); then
+        _doc_warn 'Agent-Config: Skills nicht aus dem Repo (nur Hinweis):'
+        printf '            %s\n' "${foreign[@]}"
     fi
     if ((!${#bad[@]} && !${#mod[@]})); then _doc_ok 'Agent-Config: stimmt mit dem Repo überein.'; fi
 }

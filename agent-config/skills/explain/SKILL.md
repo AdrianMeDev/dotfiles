@@ -12,7 +12,7 @@ Goal: afterwards the user can explain the code in their own words, change it saf
 
 Use the first source that applies:
 1. Whatever the user passes as argument (file, folder, function, commit, branch, plan step number, feature name).
-2. What was implemented most recently in this session, or the last `[~]`/`[x]` step in `.agent-plan.md`.
+2. What was implemented most recently in this session, or the last `[~]`/`[x]` step in `.agent/plan.md` (legacy: `.agent-plan.md`).
 3. Local changes: `git status` and `git diff HEAD`.
 4. Otherwise the last commit: `git show --stat HEAD`, then `git show HEAD`.
 

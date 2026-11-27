@@ -346,7 +346,7 @@ class KeybindingTests(unittest.TestCase):
         # Hyprland: the same split via workspace rules on monitor IDs.
         hypr = (REPO / 'hypr/.config/hypr/hyprland.lua').read_text(encoding='utf-8')
         self.assertIn('for ws = 1, 9 do', hypr)
-        self.assertIn('hl.workspace_rule({ workspace = tostring(ws), monitor = ws <= 5 and "0" or "1" })', hypr)
+        self.assertIn('hl.workspace_rule({ workspace = tostring(ws), monitor = ws <= 5 and "0" or "1", persistent = true })', hypr)
         self.assertIn('no_warps = false', hypr)
 
     def test_hyprland_combo_normalization(self):

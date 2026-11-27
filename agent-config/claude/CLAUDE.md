@@ -13,22 +13,23 @@ Projektspezifische Regeln (CLAUDE.md im Repo, `.editorconfig`, Linter, bestehend
 - Kleine, fokussierte Diffs. Kein Refactoring nebenbei, keine Formatierungsänderungen an unbeteiligten Dateien.
 - Neue Abhängigkeiten nur nach Rückfrage (Lizenz, Wartungszustand, Größe).
 - „Fertig“ heißt: baut, Tests grün, Lint sauber, neue Logik hat Tests. Berichte, welche Checks du ausgeführt hast und mit welchem Ergebnis.
-- Kein `git commit`, `git push` oder PR ohne ausdrückliche Aufforderung. Commits im Conventional-Commits-Format.
+- Git-, PR- und Ticket-Aktionen (`commit`, `push`, `merge`, `rebase`, `gh`/`glab` anlegen oder mergen) führe ausschließlich ich aus – keine Ausnahme, auch nicht auf Nachfrage. Zeige stattdessen den Befehl (Commits im Conventional-Commits-Format). Claude Code blockiert sie zusätzlich per `deny`.
 - Fehlerursachen erst verstehen, dann beheben – keine Symptom-Workarounds (z. B. Tests abschalten, `any`, `# type: ignore`, `!`-Operator), ohne es zu begründen.
 
 ## Workflow: Roadmap → Plan → Schritt → Commit → `/next`
-- Große Vorhaben (ganze App, großes Feature): erst `/plan-roadmap` – Meilensteine in `docs/ROADMAP.md`.
-- Aufgaben mit mehr als einem Commit bzw. der nächste Meilenstein: `/plan-commits` – Plan aus kleinen Schritten, **ein Schritt = ein Commit**, gespeichert in `.agent-plan.md`. Nichts umsetzen, bevor ich den Plan freigebe.
+- Große Vorhaben (ganze App, großes Feature): erst `/plan-roadmap` – Meilensteine in `.agent/ROADMAP.md`.
+- Aufgaben mit mehr als einem Commit bzw. der nächste Meilenstein: `/plan-commits` – Plan aus kleinen Schritten, **ein Schritt = ein Commit**, gespeichert in `.agent/plan.md`. Nichts umsetzen, bevor ich den Plan freigebe.
 - `/next` setzt **genau einen** Schritt um, prüft ihn und **stoppt** dann mit Commit-Vorschlag. Ich prüfe und committe selbst; erst mein nächstes `/next` startet den nächsten Schritt.
 - Ist ein Schritt fertig, aber nicht committet, beginnst du keinen neuen.
 
 ## Kontext sparsam nutzen
 - Gezielt lesen: erst suchen (`rg`, Symbolnavigation), dann nur die relevanten Dateien bzw. Abschnitte lesen – nicht ganze Ordner.
 - Lange Ausgaben (Tests, Builds, Logs) gefiltert ansehen, z. B. nur Fehler und die letzten Zeilen.
-- Nach einem freigegebenen Plan reicht `.agent-plan.md` als Gedächtnis – ich darf jederzeit `/clear` machen.
+- Gedächtnis liegt lokal in `.agent/` (nicht im Git): `.agent/plan.md` (Plan, Status) und `.agent/notes.md` (Erkenntnisse, offene Punkte). Danach reicht das als Kontext.
+- Budget: je Agent höchstens ca. 150k Token. Zwischen Schritten `/clear` – ich darf jederzeit.
 
 ## Compact instructions
-Beim Komprimieren behalten: Stand von `.agent-plan.md` (aktueller Schritt, Status), offene Entscheidungen, aktuelle Fehlermeldungen und geänderte Dateien.
+Beim Komprimieren behalten: Stand von `.agent/plan.md` (aktueller Schritt, Status), neue Einträge in `.agent/notes.md`, offene Entscheidungen, aktuelle Fehlermeldungen und geänderte Dateien.
 Weglassen: Erkundungs-Ausgaben, gelesene Dateiinhalte, erledigte Zwischenschritte.
 
 ## Sicherheit & Compliance

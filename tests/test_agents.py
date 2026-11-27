@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Tests for the agent-config renderer and sync."""
+import json
 import os
 from pathlib import Path
 import subprocess
@@ -54,6 +55,42 @@ class AgentsTests(unittest.TestCase):
         extra = (SRC / 'skills/next/claude-frontmatter.txt').read_text()
         self.assertEqual((self.claude / 'skills/next/SKILL.md').read_text(), source[0] + '\n' + extra + source[1])
         self.assertEqual((self.pi / 'skills/next/SKILL.md').read_text(), '\n'.join(source))
+
+    def test_agent_workspace_skill_rendered_for_both_tools(self):
+        self.run_agents()
+        source = (SRC / 'skills/agent-workspace/SKILL.md').read_text()
+        self.assertIn('.agent/', source)
+        self.assertEqual((self.pi / 'skills/agent-workspace/SKILL.md').read_text(), source)
+        claude = (self.claude / 'skills/agent-workspace/SKILL.md').read_text()
+        self.assertIn('user-invocable: false', claude)
+        self.assertNotIn('user-invocable', (self.pi / 'skills/agent-workspace/SKILL.md').read_text())
+        self.assertEqual(list(self.pi.rglob('claude-frontmatter.txt')), [])
+
+    def test_plan_path_is_agent_dir_except_documented_fallback(self):
+        self.run_agents()
+        markers = ('legacy', 'fallback', 'else', 'old ')
+        files = [f for root in (self.claude, self.pi) for sub in ('skills', 'prompts')
+                 for f in (root / sub).rglob('*.md')]
+        self.assertTrue(files)
+        for f in files:
+            for n, line in enumerate(f.read_text().splitlines(), 1):
+                if 'agent-plan' in line:
+                    self.assertTrue(any(m in line for m in markers), f'{f}:{n}: {line}')
+        for tool in (self.claude, self.pi):
+            self.assertIn('.agent/plan.md', (tool / 'skills/plan-commits/SKILL.md').read_text())
+            self.assertIn('.agent/plan.md', (tool / 'skills/next/SKILL.md').read_text())
+
+    def test_git_write_and_tracker_commands_are_denied(self):
+        perms = json.loads((SRC / 'claude/settings.json').read_text())['permissions']
+        guarded = ['Bash(git %s%s)' % (verb, tail)
+                   for verb in ('commit', 'push', 'merge', 'rebase') for tail in ('', ' *')]
+        guarded += ['Bash(git -C * %s%s)' % (verb, tail)
+                    for verb in ('commit', 'push', 'merge', 'rebase') for tail in ('', ' *')]
+        guarded += ['Bash(gh pr create *)', 'Bash(gh pr merge *)', 'Bash(gh issue create *)', 'Bash(glab *)']
+        for rule in guarded:
+            self.assertIn(rule, perms['deny'])
+            self.assertNotIn(rule, perms['allow'])
+            self.assertNotIn(rule, perms['ask'])
 
     def test_env_overrides_targets(self):
         env = dict(self.env, CLAUDE_CONFIG_DIR=str(self.home / 'c'), PI_CODING_AGENT_DIR=str(self.home / 'p'))
@@ -153,6 +190,30 @@ class AgentsTests(unittest.TestCase):
         self.assertTrue(list(self.backups.glob('*/pi/prompts/plan.md')))
         self.assertEqual(self.run_agents('--backup').returncode, 0)
         self.assertEqual(self.backup_count(), 1)
+
+    def test_next_all_is_retired_with_backup(self):
+        for root in (self.claude, self.pi):
+            (root / 'skills/next-all').mkdir(parents=True)
+            (root / 'skills/next-all/SKILL.md').write_text('old\n')
+        self.assertEqual(self.run_agents().returncode, 1)
+        result = self.run_agents('--backup')
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertFalse((self.claude / 'skills/next-all').exists())
+        self.assertFalse((self.pi / 'skills/next-all').exists())
+        self.assertTrue(list(self.backups.glob('*/claude/skills/next-all/SKILL.md')))
+        self.assertTrue(list(self.backups.glob('*/pi/skills/next-all/SKILL.md')))
+
+    def test_status_reports_foreign_skills_but_not_synced(self):
+        self.run_agents()
+        for name in ('inbox', 'synced'):
+            (self.claude / 'skills' / name).mkdir()
+        before = self.tree()
+        result = self.run_agents('--status')
+        self.assertIn('[foreign] claude: skills/inbox', result.stdout)
+        self.assertNotIn('synced', result.stdout)
+        self.assertNotIn('[foreign] claude: skills/next', result.stdout)
+        self.assertEqual(self.tree(), before)
+        self.assertEqual(self.run_agents().returncode, 0)
 
     def test_status_reports_ok_missing_modified(self):
         self.run_agents()

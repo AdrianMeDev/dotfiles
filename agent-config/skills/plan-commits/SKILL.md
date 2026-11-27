@@ -1,16 +1,18 @@
 ---
 name: plan-commits
-description: Plans a task - or the next open milestone of docs/ROADMAP.md - as a sequence of small, commit-sized steps, saves the plan to .agent-plan.md in the repository root and stops for approval without implementing anything. Use when the user asks to plan a task, break work into commits, start the next milestone, or runs /plan-commits. The steps are then executed one at a time with the `next` skill.
+description: Plans a task - or the next open milestone of the roadmap - as a sequence of small, commit-sized steps, saves the plan to .agent/plan.md and stops for approval without implementing anything. Use when the user asks to plan a task, break work into commits, start the next milestone, or runs /plan-commits. The steps are then executed one at a time with the `next` skill.
 ---
 
 # Plan work as commit-sized steps
 
-**This skill only plans. Do not change any source code. You only write `.agent-plan.md` (and, for an untracked roadmap, the milestone status).**
+**This skill only plans. Do not change any source code. You only write `.agent/plan.md` (and, for an untracked roadmap, the milestone status).**
 Respond in the user's language.
 
 ## 1. Find the task
 
-Look for a roadmap: `docs/ROADMAP.md`, otherwise `ROADMAP.md` in the repository root.
+Conventions (layout, exclude helper, legacy paths, git rule) are in the `agent-workspace` skill – follow it.
+
+Look for a roadmap: `.agent/ROADMAP.md`, then `docs/ROADMAP.md`, then `ROADMAP.md` in the repository root.
 
 - **User passes a task** (free text) → plan that task. If a roadmap exists and the task clearly belongs to one of its milestones, say so and link it.
 - **User passes a milestone id** (e.g. `M2`) → plan that milestone.
@@ -30,7 +32,8 @@ When planning a milestone, read only the roadmap parts you need: its milestone s
 - Run `git status` and `git branch --show-current`.
 - Uncommitted changes? Point them out: they should be committed or stashed before step 1.
 - On the main branch? Suggest a feature branch name (do not create it yourself).
-- An existing `.agent-plan.md` with open steps? Show its status and ask whether to replace it.
+- An existing `.agent/plan.md` with open steps? Show its status and ask whether to replace it.
+- An old `.agent-plan.md` in the repository root (legacy)? Offer to move it to `.agent/plan.md` (`mkdir -p .agent && mv .agent-plan.md .agent/plan.md`); do not move it without asking.
 
 ## 4. Design the steps – one step = one commit
 
@@ -50,14 +53,14 @@ Typically 3–8 steps. More than ~8 steps → the work is too big for one plan: 
 - **Not tracked:** set the milestone to `[~]` in the roadmap now; `next` sets `[x]` when the last step is committed.
 - The last step's **Done when** includes the milestone's **Done when** and the roadmap's Definition of done.
 
-## 5. Write `.agent-plan.md`
+## 5. Write `.agent/plan.md`
 
-Create the file in the repository root using exactly this structure. Then make sure `.agent-plan.md` is listed in `.git/info/exclude` (append it if missing) so it never gets committed – do not touch `.gitignore`.
+First make sure `.agent/` is excluded from git (exclude helper in `agent-workspace`; never touch `.gitignore`), then create `.agent/plan.md` using exactly this structure.
 
 ```markdown
 # Plan: <short title>
 Created: <YYYY-MM-DD> · Branch: <branch> · Base: <short hash of HEAD>
-Milestone: <M2 – name (docs/ROADMAP.md, tracked|local)> or "none"
+Milestone: <M2 – name (<roadmap path>, tracked|local)> or "none"
 
 ## Goal
 <2–3 sentences: what will work at the end, and for whom>
@@ -85,6 +88,6 @@ Status markers: `[ ]` open · `[~]` implemented, waiting for commit · `[x]` com
 
 Show the plan compactly: milestone (if any) and goal, then one line per step (number, commit message, verify command), then assumptions and risks.
 
-End with: **"Change the plan if needed, or run `/next` to implement step 1."** and, on a separate line: "Tip: once the plan is approved, `/clear` (Claude Code) or `/new` (pi) is safe – everything needed is in `.agent-plan.md`."
+End with: **"Change the plan if needed, or run `/next` to implement step 1."** and, on a separate line: "Tip: once the plan is approved, `/clear` (Claude Code) or `/new` (pi) is safe – everything needed is in `.agent/plan.md`."
 
-**Stop here. Do not start implementing.** If the user asks for changes, update `.agent-plan.md` and show the updated step list again.
+**Stop here. Do not start implementing.** If the user asks for changes, update `.agent/plan.md` and show the updated step list again.

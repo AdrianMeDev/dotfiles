@@ -397,6 +397,14 @@ class DotCliTests(unittest.TestCase):
         self.assertEqual(modified.read_text(), '# local\n')
         self.assertEqual(self.snapshot(), before)
 
+    def test_doctor_reports_foreign_skill_as_hint(self):
+        self.setup_doctor()
+        (self.home / '.claude/skills/inbox').mkdir(parents=True)
+        result = self.run_dot('doctor')
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn('[WARN]    Agent-Config: Skills nicht aus dem Repo', result.stdout)
+        self.assertIn('[foreign] claude: skills/inbox', result.stdout)
+
     def snapshot(self):
         return sorted((str(p.relative_to(self.home)), p.stat().st_mtime_ns, p.is_symlink())
                       for p in self.home.rglob('*'))

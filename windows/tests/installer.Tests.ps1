@@ -303,7 +303,7 @@ Describe 'Windows installer' {
             $zedText.Contains('"program": "pwsh.exe"') | Should -BeTrue -Because 'Zed Windows shell missing'
             $zedText.Contains('"show_edit_predictions": true') | Should -BeTrue -Because 'Zed edit predictions disabled'
             ($zedText.Contains('"provider": "ollama"') -and $zedText.Contains('"model": "qwen2.5-coder:7b-base"')) | Should -BeTrue -Because 'Zed Ollama edit prediction missing'
-            ($zedText.Contains('"panel.background": "#00000000"') -and $zedText.Contains('"surface.background": "#00000000"')) | Should -BeTrue -Because 'Zed panels are not transparent'
+            ($zedText.Contains('"panel.background": "#1a1b26bf"') -and $zedText.Contains('"surface.background": "#1a1b26bf"')) | Should -BeTrue -Because 'Zed panels do not use the translucent window background'
         }
         It 'stages wsl_connections as valid JSONC for the distro only' {
             $zedPath = Join-Path $env:APPDATA 'Zed/settings.json'

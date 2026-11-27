@@ -1,17 +1,17 @@
 ---
 name: next
-description: Implements exactly the next open step of the commit plan in .agent-plan.md, verifies it, then stops so the user can review and commit before continuing. Use when the user runs /next or says "next step", "continue with the plan", "weiter" or "nächster Schritt". Optional arguments - a step number to jump to, or "skip" to skip the current step.
+description: Implements exactly the next open step of the commit plan in .agent/plan.md, verifies it, then stops so the user can review and commit before continuing. Use when the user runs /next or says "next step", "continue with the plan", "weiter" or "nächster Schritt". Optional arguments - a step number to jump to, or "skip" to skip the current step.
 ---
 
 # Execute the next plan step
 
 Respond in the user's language. **One step per invocation – never more.**
 
-You may start without the conversation history (in Claude Code this skill runs in a fresh subagent to save tokens). Everything you need is in `.agent-plan.md`, git and the code – rely on those, not on memory.
+You may start without the conversation history (in Claude Code this skill runs in a fresh subagent to save tokens). Everything you need is in `.agent/plan.md`, git and the code – rely on those, not on memory.
 
 ## 1. Load the plan
 
-Read `.agent-plan.md` in the repository root.
+Read `.agent/plan.md` (fallback for old projects: `.agent-plan.md` in the repository root). Conventions are in the `agent-workspace` skill.
 No file, or no open steps? Say so, suggest `/plan-commits <task>`, and stop.
 
 ## 2. Gate: is the previous step committed?
@@ -19,7 +19,7 @@ No file, or no open steps? Say so, suggest `/plan-commits <task>`, and stop.
 If a step is marked `[~]` (implemented, waiting for commit):
 
 1. Run `git status --porcelain` and `git log --oneline -5`.
-2. **Uncommitted changes present** (ignore `.agent-plan.md`): **STOP – do not start new work.** Show:
+2. **Uncommitted changes present** (ignore `.agent/` and a legacy `.agent-plan.md`): **STOP – do not start new work.** Show:
    - the changed files,
    - a review hint: `git diff` or the Zed git panel (`<space> g g`),
    - the commit commands with the message from the plan:
@@ -42,7 +42,7 @@ Arguments:
 1. Take the first `[ ]` step (or the requested one) and announce it: **"Step n/N: <commit message>"**.
 2. Re-read the files involved – the user may have changed code since planning.
 3. Implement **only** what this step describes, following the project's conventions. Include the planned tests.
-4. If the plan turns out to be wrong or the step is too big: **stop**, explain why, and propose an updated plan (split the step, reorder, add a step). Change `.agent-plan.md` only after the user agrees. Never silently expand the scope.
+4. If the plan turns out to be wrong or the step is too big: **stop**, explain why, and propose an updated plan (split the step, reorder, add a step). Change the plan only after the user agrees. Never silently expand the scope. Findings that must survive `/clear` (open points, decisions, surprises) go to `.agent/notes.md` in the format from `agent-workspace`.
 
 ## 4. Verify
 
@@ -51,7 +51,7 @@ Fix failures that belong to this step. If it still fails after two attempts: sto
 
 ## 5. Stop for the commit
 
-1. Mark the step `[~] (on <short hash of current HEAD>)` in `.agent-plan.md`, so the next run can tell whether a commit happened.
+1. Mark the step `[~] (on <short hash of current HEAD>)` in the plan file, so the next run can tell whether a commit happened.
 2. Report, compactly (at most ~25 lines – this report is all the main session keeps):
    - **Step n/N done:** `<commit message>`
    - **Changed:** each file with one line on what changed
@@ -73,7 +73,7 @@ When `/next` finds the last step committed:
 - mark it `[x]`, show all commits of the plan: `git log --oneline <base>..HEAD`;
 - if the plan has a **Milestone** that is `local` (not tracked): set it to `[x]` in the roadmap and add a Changelog line (for `tracked` roadmaps the last commit already did this – check it);
 - offer a short pull-request description (title, summary, testing notes);
-- ask whether to delete `.agent-plan.md`;
+- ask whether to delete the plan file;
 - if the roadmap has more open milestones: name the next one and suggest **`/clear`, then `/plan-commits`**.
 
 If, while implementing, you notice that the roadmap itself is wrong (an assumption, a decision, the order of milestones), do not change it – mention it in the report and in the Log so the user can update it with `/plan-roadmap`.

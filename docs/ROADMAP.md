@@ -165,7 +165,7 @@ alles wird in der neuesten Version installiert und mit `dot update` aktualisiert
 - **Depends on:** M1, M2, M3, M4, M5, M6, M7, M8, M9, M10
 - **Size:** S, ~3 commits
 
-### M12 [ ] Lokale `.agent/`-Ablage + Git-Sperre
+### M12 [x] Lokale `.agent/`-Ablage + Git-Sperre
 - **Goal:** Alle KI-Dateien liegen lokal unter `.agent/`, und Agents können nichts committen, pushen oder Tickets anlegen.
 - **Includes:** Referenz-Skill `agent-workspace` (Layout, Exclude-Helfer, Format `notes.md`, Git-Regel, Kontextbudget), `plan-roadmap`/`plan-commits`/`next` auf `.agent/` umstellen (Fallback alter Pfad), `deny`-Regeln in `claude/settings.json`, Regel in `pi/AGENTS.md` und `CLAUDE.md`, `next-all` in `LEGACY` von `scripts/agents.py`, `dot doctor` meldet fremde Skills, Tests/Container-Check anpassen
 - **Done when:** in einem Testprojekt schreibt `/plan-commits` nach `.agent/plan.md` und `.agent/` steht in `info/exclude`; `git commit` durch Claude wird abgelehnt; `bash scripts/check.sh` grün
@@ -239,3 +239,4 @@ alles wird in der neuesten Version installiert und mit `dot update` aktualisiert
 - 2026-11-21: M11 Doku + Cheatsheet abgeschlossen (README/`windows/README.md`/Config-READMEs aktualisiert, CHEATSHEET mit Hyprland = GlazeWM, `dot`, Zed + Agents, mise/CLI-Tools und Corne-Layern; `tests/test_keybindings.py` prüft alle WM-Bindings im CHEATSHEET gegen `manifests/keybindings.tsv`; frische-VM-Abnahme laut README-Checkliste manuell offen)
 - 2026-11-21: Review-Nachbesserungen (gsettings-Fallback im theme-Modul, `-NoWsl` ohne WSL-Abfrage, konsolenbreiten-unabhängiger Pester-Test, manuelle Abnahme-Checkliste `docs/ACCEPTANCE.md`)
 - 2026-11-27: Agent-Workflow v2 geplant (M12–M18, Entscheidungen #11–#15) nach Recherche von mattpocock/skills
+- 2026-11-27: M12 Lokale `.agent/`-Ablage + Git-Sperre abgeschlossen (Skill `agent-workspace`, Pläne unter `.agent/`, `deny`-Regeln für git/gh/glab, `next-all` entfernt, `dot doctor` meldet fremde Skills)

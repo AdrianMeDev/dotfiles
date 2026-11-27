@@ -20,7 +20,8 @@ agent-config/
 │   ├── settings.json       Modell, Theme (dark-ansi), Vim, Erklär-Stil, Berechtigungen
 │   └── CLAUDE.md           globale Anweisungen (Arbeit)
 ├── skills/                 → in beide Tools (Englisch, antworten in deiner Sprache)
-│   ├── plan-roadmap/       großes Feature / ganze App → Meilensteine (docs/ROADMAP.md)
+│   ├── agent-workspace/    Referenz: `.agent/`-Layout, Git-Regel, Kontextbudget (kein Befehl)
+│   ├── plan-roadmap/       großes Feature / ganze App → Meilensteine (.agent/ROADMAP.md)
 │   ├── plan-commits/       Aufgabe oder nächsten Meilenstein in Commit-große Schritte planen
 │   ├── next/               genau einen Schritt umsetzen, dann für Commit stoppen
 │   ├── explain/            Implementiertes verständlich erklären
@@ -75,8 +76,8 @@ okay, wenn alles in Git ist; für fremde Repos pi in einem Container laufen lass
   Wer beim Arbeiten mitlernen will: `/output-style explanatory` – kostet aber bei jeder Antwort mehr Tokens.
 - **Berechtigungen** (`claude/settings.json`):
   - *läuft ohne Nachfrage:* git lesen, Build, Tests, Lint, Format für npm/Angular, Django/pytest/ruff, .NET
-  - *fragt nach:* commit, push, reset, rebase, checkout, Pakete installieren, Migrations anwenden, docker, kubectl
-  - *verboten:* sudo, Force-Push, `.env`/Secrets/Schlüssel und `~/.ssh`, `~/.aws`, `~/.azure`, `~/.kube` lesen
+  - *fragt nach:* reset, checkout, Pakete installieren, Migrations anwenden, docker, kubectl
+  - *verboten:* `git commit|push|merge|rebase` (auch `git -C <dir> …`), `gh pr create|merge`, `gh issue create`, `glab *`, sudo, Force-Push, `.env`/Secrets/Schlüssel und `~/.ssh`, `~/.aws`, `~/.azure`, `~/.kube` lesen
 - **Firmenvorgaben gehen vor:** Verteilt deine Firma eigene Einstellungen (Managed Settings),
   überschreiben die diese Datei. `/status` zeigt, was aktiv ist.
 - **Pro Projekt:** `templates/PROJEKT-ANWEISUNGEN.md` als `CLAUDE.md` ins Repo legen (oder `/init`
@@ -88,8 +89,8 @@ Drei Ebenen, jede mit eigener Datei:
 
 | Ebene | Befehl | Datei | Inhalt |
 |---|---|---|---|
-| Großes Ganzes | `/plan-roadmap <was>` | `docs/ROADMAP.md` | Vision, Umfang, Architektur, Entscheidungen, Risiken, **Meilensteine** |
-| Nächster Meilenstein | `/plan-commits` | `.agent-plan.md` | 3–8 Schritte, **ein Schritt = ein Commit** |
+| Großes Ganzes | `/plan-roadmap <was>` | `.agent/ROADMAP.md` | Vision, Umfang, Architektur, Entscheidungen, Risiken, **Meilensteine** |
+| Nächster Meilenstein | `/plan-commits` | `.agent/plan.md` | 3–8 Schritte, **ein Schritt = ein Commit** |
 | Umsetzen | `/next` | Code + dein Commit | genau ein Schritt, dann Stopp |
 
 ```
@@ -117,7 +118,7 @@ Drei Ebenen, jede mit eigener Datei:
 - In Claude Code läuft `/plan-roadmap` mit **Opus** und hohem Denkaufwand, weil Fehler in dieser Phase
   am teuersten sind. Das gilt nur für die Antwort auf den Aufruf; danach geht es mit Sonnet weiter.
 - Die Roadmap bleibt bewusst kurz (unter ~150 Zeilen), weil sie bei jedem Meilenstein wieder gelesen
-  wird. Details gehören in `.agent-plan.md`.
+  wird. Details gehören in `.agent/plan.md`.
 
 ### Details zu `/plan-commits` und `/next`
 
@@ -133,17 +134,32 @@ Drei Ebenen, jede mit eigener Datei:
 
 - **Ein Schritt = ein Commit.** Jeder Schritt ist klein, hat einen Zweck, lässt das Projekt
   baubar mit grünen Tests und bringt seine eigene Commit-Message (Conventional Commits) mit.
-- **Der Plan liegt in `.agent-plan.md`** im Projekt-Root – lesbar und von Hand änderbar.
-  Er wird über `.git/info/exclude` lokal ignoriert, landet also nie im Repo. Dadurch überlebt
+- **Der Plan liegt in `.agent/plan.md`** im Projekt – lesbar und von Hand änderbar.
+  `.agent/` steht in `info/exclude` (`git rev-parse --git-path info/exclude`), landet also nie im Repo. Dadurch überlebt
   er auch eine neue Session oder einen Wechsel zwischen pi und Claude Code.
   Status: `[ ]` offen · `[~]` umgesetzt, wartet auf Commit · `[x]` committet · `[-]` übersprungen.
 - **Commit-Sperre:** Liegt ein Schritt fertig, aber noch nicht committet vor, startet `/next`
-  nichts Neues, sondern zeigt dir die Commit-Befehle. Der Agent committet nie selbst, außer du
-  sagst es ausdrücklich.
+  nichts Neues, sondern zeigt dir die Commit-Befehle. Der Agent committet nie selbst.
 - **Varianten:** `/next 4` springt zu Schritt 4 · `/next skip` überspringt den aktuellen ·
   „weiter ohne Commit“ hebt die Sperre einmalig auf. Passt der Plan unterwegs nicht mehr, stoppt
   der Agent und schlägt eine Plan-Änderung vor.
 - Claude Code fragt beim ersten Mal pro Repo, ob es in `.git/info/exclude` schreiben darf – das ist gewollt.
+
+### `.agent/`-Ablage und Git-Regel
+
+Alles, was Agents erzeugen, liegt lokal unter `.agent/` im Projekt (nie im Repo):
+`plan.md`, `ROADMAP.md`, `notes.md` (Befunde aus `/next`) und reserviert `GLOSSARY.md`, `adr/`,
+`prompts/`, `reviews/`, `retro/`. Die Konventionen stehen einmal im Skill `agent-workspace`.
+
+- **Git gehört dir:** Agents committen, pushen, mergen oder legen PRs/Tickets nie selbst an – sie
+  zeigen nur die Befehle. Claude Code erzwingt das mit `deny`-Regeln (`claude/settings.json`);
+  pi hat keine Sperre, dort gilt die Regel nur als Anweisung in `AGENTS.md`. Umgehungen über Aliase
+  oder Skripte, die git aufrufen, sind nicht abgedeckt.
+- **Alte Pfade:** `.agent-plan.md` und `docs/ROADMAP.md` werden weiter gelesen; geschrieben wird nur
+  unter `.agent/`. Migration eines laufenden Plans: `mv .agent-plan.md .agent/plan.md`.
+- **`next-all` ist entfernt** (es committete selbst). `dot install --only agents --backup` sichert
+  den alten Skill und entfernt ihn; `dot doctor` meldet Skills, die nicht aus dem Repo stammen
+  (`synced/` ausgenommen), nur als Hinweis. Native Windows: `next-all` manuell löschen.
 
 ## 5. Verstehen: `/explain` und `/explain-project`
 
@@ -189,7 +205,7 @@ nur ein kleiner Teil. Deshalb setzt diese Konfiguration am Kontext an:
 |---|---|
 | `/next` läuft in einem **frischen Subagenten** (`context: fork`, Sonnet, Effort `medium`) | Wie ein automatisches `/clear` pro Schritt: Dateien, Testausgaben und Fehlversuche bleiben im Subagenten, deine Session behält nur den kurzen Bericht |
 | `/explain-project` läuft im **read-only Explore-Subagenten** | Die ganze Projekt-Erkundung belastet deine Session nicht |
-| Plan in `.agent-plan.md` | Nach der Freigabe des Plans ist `/clear` jederzeit gefahrlos |
+| Plan in `.agent/plan.md` | Nach der Freigabe des Plans ist `/clear` jederzeit gefahrlos |
 | Kein `Explanatory`-Stil, Knapp-Regel in `CLAUDE.md` | Weniger Text pro Antwort, ohne die Lesbarkeit zu verlieren |
 | `Compact instructions` in `CLAUDE.md` | Wenn komprimiert wird, bleibt das Richtige erhalten |
 | Standardmodell `sonnet` | Opus nur gezielt mit `/model opus` |
@@ -219,4 +235,4 @@ Kontext pro Anfrage und beißt sich mit `/explain`. Die Knapp-Regel in `CLAUDE.m
 davon ohne diese Nachteile.
 
 **pi:** Lokal kostet ein Token nichts, aber ein kleiner Kontext macht das Modell schneller und
-genauer. Starte zwischen den Schritten mit `/new` neu – `/next` liest alles Nötige aus `.agent-plan.md`.
+genauer. Starte zwischen den Schritten mit `/new` neu – `/next` liest alles Nötige aus `.agent/plan.md`.
