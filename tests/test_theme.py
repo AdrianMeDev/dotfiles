@@ -354,7 +354,7 @@ class ParityTests(unittest.TestCase):
         surfaces = [k for k, v in overrides.items() if k.endswith('.background') and k != 'background']
         self.assertTrue(surfaces)
         for key in surfaces:
-            self.assertEqual(overrides[key], '#00000000', key)
+            self.assertEqual(overrides[key], p['bg'] + window['alpha_hex'], key)
 
     def test_wezterm(self):
         tokens = load_tokens()
