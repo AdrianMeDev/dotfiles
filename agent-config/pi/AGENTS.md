@@ -9,17 +9,18 @@
 - Arbeite in kleinen, überprüfbaren Schritten. Vor Änderungen an mehr als zwei Dateien: Plan mit `/plan-commits` und auf mein OK warten.
 - Lies die betroffenen Dateien, bevor du sie änderst. Erfinde keine APIs, Pakete oder Befehle – wenn du unsicher bist, schau im Code oder in der Doku nach oder sag es.
 - Nimm die Befehle des Projekts (README, `package.json`, `pyproject.toml`, `*.csproj`, `.zed/tasks.json`) und prüfe nach Änderungen mit dem passenden Test-, Lint- oder Build-Befehl.
-- Kontext ist knapp (lokales Modell): gezielt suchen statt ganze Ordner lesen, lange Ausgaben filtern. `.agent-plan.md` ist das Gedächtnis – ich starte zwischen Schritten mit `/new` neu.
+- Kontext ist knapp (lokales Modell): gezielt suchen statt ganze Ordner lesen, lange Ausgaben filtern. Gedächtnis liegt lokal in `.agent/` (`plan.md`, `notes.md`, nicht im Git); Budget höchstens ca. 150k Token – ich starte zwischen Schritten mit `/new` neu.
 - Wenn ein Befehl zweimal fehlschlägt: stoppen, Fehler zusammenfassen, Vorschlag machen – nicht blind weiterprobieren.
 
 ## Workflow: Roadmap → Plan → Schritt → Commit → `/next`
-- Große Vorhaben (ganze App, großes Feature): erst `/plan-roadmap` – Meilensteine in `docs/ROADMAP.md`.
-- Aufgaben mit mehr als einem Commit bzw. der nächste Meilenstein: `/plan-commits` – Plan aus kleinen Schritten, **ein Schritt = ein Commit**, gespeichert in `.agent-plan.md`. Nichts umsetzen, bevor ich den Plan freigebe.
+- Große Vorhaben (ganze App, großes Feature): erst `/plan-roadmap` – Meilensteine in `.agent/ROADMAP.md`.
+- Aufgaben mit mehr als einem Commit bzw. der nächste Meilenstein: `/plan-commits` – Plan aus kleinen Schritten, **ein Schritt = ein Commit**, gespeichert in `.agent/plan.md`. Nichts umsetzen, bevor ich den Plan freigebe.
 - `/next` setzt **genau einen** Schritt um, prüft ihn und **stoppt** dann mit Commit-Vorschlag. Ich prüfe und committe selbst; erst mein nächstes `/next` startet den nächsten Schritt.
 - Ist ein Schritt fertig, aber nicht committet, beginnst du keinen neuen.
 
 ## Grenzen (pi fragt nicht vor Befehlen – halte dich daran)
-- Kein `git commit`, `git push`, `git reset --hard`, `rm -rf`, Paketinstallation oder Löschen außerhalb des Projektordners ohne meine ausdrückliche Zustimmung.
+- Git-, PR- und Ticket-Aktionen (`git commit|push|merge|rebase`, `gh`/`glab` anlegen oder mergen) führe ausschließlich ich aus – keine Ausnahme; zeige den Befehl. pi hat kein `deny`, also halte dich daran.
+- Kein `git reset --hard`, `rm -rf`, Paketinstallation oder Löschen außerhalb des Projektordners ohne meine ausdrückliche Zustimmung.
 - Keine Secrets lesen oder ausgeben (`.env*`, `*.pem`, `*.key`, `~/.ssh`).
 - Keine Netzwerkzugriffe außer Paket-Registries, wenn ich sie freigegeben habe.
 
