@@ -63,7 +63,7 @@ Fix failures that belong to this step. If it still fails after two attempts: sto
      git add -A
      git commit -m "<message – adjusted if the implementation differs from the plan>"
      ```
-   - **Next:** "After committing, run `/next` for step n+1: `<next commit message>`."
+   - **Next:** "After committing, run `/next` for step n+1: `<next commit message>`." Statusline or footer near or over ~150k tokens → add: run `/clear` first.
 3. **Do not run `git commit` or `git push` yourself** unless the user explicitly asks for it in this turn.
 4. **Stop. Do not start the next step.**
 

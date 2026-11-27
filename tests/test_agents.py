@@ -247,6 +247,14 @@ class AgentsTests(unittest.TestCase):
                 self.run_agents()
                 self.assertIn('.agent/GLOSSARY.md', (root / 'skills' / name / 'SKILL.md').read_text())
 
+    def test_skills_mention_context_budget(self):
+        self.run_agents()
+        self.assertLessEqual(len((SRC / 'skills/next/SKILL.md').read_text().splitlines()), 80)
+        for root in (self.claude, self.pi):
+            for name in ('plan-commits', 'next', 'agent-workspace'):
+                self.assertIn('150k', (root / 'skills' / name / 'SKILL.md').read_text(), name)
+            self.assertIn('statusline', (root / 'skills/agent-workspace/SKILL.md').read_text())
+
     def test_next_suggests_inspect_after_last_step(self):
         self.run_agents()
         self.assertLessEqual(len((SRC / 'skills/next/SKILL.md').read_text().splitlines()), 80)

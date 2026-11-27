@@ -40,7 +40,7 @@ When planning a milestone, read only the roadmap parts you need: its milestone s
 ## 4. Design the steps – one step = one commit
 
 Every step must:
-- have **one purpose** and be small: ideally under ~200 changed lines and a handful of files;
+- have **one purpose** and be small: ideally under ~200 changed lines and a handful of files; a step that needs much reading (agent budget ~150k tokens) is split;
 - leave the project **buildable with green tests** – no broken intermediate states (if needed, add code that is not wired up yet, or put it behind a flag);
 - build on the previous steps in a sensible order, for example: data model/migration → domain logic + tests → API/endpoint → frontend service → UI → docs;
 - include the tests for the behaviour it adds (or write them first);

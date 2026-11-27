@@ -63,4 +63,4 @@ Agents never run git write actions or tracker commands: no `git commit`, `push`,
 
 ## Context budget
 
-Stay below ~150k tokens per agent. Persist state in `.agent/plan.md` and `.agent/notes.md` instead of the conversation, read files in parts, filter long command output, and suggest `/clear` between steps.
+Stay below ~150k tokens per agent. Persist state in `.agent/plan.md` and `.agent/notes.md` instead of the conversation, read files in parts, filter long command output, and suggest `/clear` between steps. Check usage in the Claude Code statusline (context %, tokens/150k) or the pi footer.
