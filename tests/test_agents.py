@@ -96,6 +96,18 @@ class AgentsTests(unittest.TestCase):
         self.assertNotIn('model:', (self.pi / 'skills/refine/SKILL.md').read_text())
         self.assertTrue((self.pi / 'prompts/refine.md').is_file())
 
+    def test_tdd_skill_rendered_for_both_tools(self):
+        self.run_agents()
+        text = (SRC / 'skills/tdd/SKILL.md').read_text()
+        self.assertLessEqual(len(text.splitlines()), 80)
+        for phrase in ('red', 'green', 'refactor', 'public interface', 'manual check'):
+            self.assertIn(phrase, text)
+        for root in (self.claude, self.pi):
+            self.assertTrue((root / 'skills/tdd/SKILL.md').is_file())
+            self.assertTrue((root / 'skills/tdd/NOTICE.md').is_file())
+        self.assertIn('user-invocable: false', (self.claude / 'skills/tdd/SKILL.md').read_text())
+        self.assertNotIn('user-invocable', (self.pi / 'skills/tdd/SKILL.md').read_text())
+
     def test_fix_skill_rendered_for_both_tools(self):
         self.run_agents()
         text = (SRC / 'skills/fix/SKILL.md').read_text()

@@ -194,7 +194,7 @@ alles wird in der neuesten Version installiert und mit `dot update` aktualisiert
 - **Depends on:** M12
 - **Size:** M, ~4 commits
 
-### M16 [ ] `/debug` + TDD-Leitlinie
+### M16 [~] `/debug` + TDD-Leitlinie
 - **Goal:** Schwere Fehler werden diszipliniert eingegrenzt; `next` und `fix` arbeiten rot-grün-refactor.
 - **Includes:** Skill `debug` nach diagnosing-bugs (rote Feedback-Schleife → minimieren → Hypothesen → instrumentieren → fix → Regressionstest), läuft im Fork, Befunde in `.agent/notes.md`; TDD-Leitlinie (gute/schlechte Tests) als Referenz für `next`/`fix`
 - **Done when:** `/debug` an einem eingebauten Fehler: reproduzierender Test zuerst, Ursache in `notes.md`, Fix + Regressionstest
