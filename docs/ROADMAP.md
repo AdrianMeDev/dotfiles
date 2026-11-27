@@ -172,7 +172,7 @@ alles wird in der neuesten Version installiert und mit `dot update` aktualisiert
 - **Depends on:** M4
 - **Size:** M, ~6 commits
 
-### M13 [~] `/grill` mit Glossar und ADRs
+### M13 [x] `/grill` mit Glossar und ADRs
 - **Goal:** Ein Interview in Runden schärft Pläne und baut nebenbei Glossar und ADRs auf.
 - **Includes:** Skill `grill` (grilling + domain-modeling: Frontier-Runden mit Empfehlung, Fakten selbst nachschlagen, `.agent/GLOSSARY.md` + `.agent/adr/` inline, ADR nur bei schwer umkehrbar + überraschend + echter Abwägung), `plan-roadmap` nutzt Grill-Runden statt fester Fragenliste, `plan-commits`/`next` lesen das Glossar
 - **Done when:** `/grill` an einer Beispielidee: nummerierte Runden mit Empfehlung, Glossareintrag im Format mit `_Avoid_`; `/plan-roadmap` fragt in Runden
@@ -241,3 +241,4 @@ alles wird in der neuesten Version installiert und mit `dot update` aktualisiert
 - 2026-11-27: Agent-Workflow v2 geplant (M12–M18, Entscheidungen #11–#15) nach Recherche von mattpocock/skills
 - 2026-11-27: M12 Lokale `.agent/`-Ablage + Git-Sperre abgeschlossen (Skill `agent-workspace`, Pläne unter `.agent/`, `deny`-Regeln für git/gh/glab, `next-all` entfernt, `dot doctor` meldet fremde Skills)
 - 2026-11-27: `next-all` nicht mehr ausgeliefert, lokale Kopie bleibt bei `dot install` erhalten
+- 2026-11-27: M13 `/grill` mit Glossar und ADRs abgeschlossen (Skill `grill`, `plan-roadmap` fragt in Runden, `plan-commits`/`next` lesen das Glossar)
