@@ -96,6 +96,18 @@ class AgentsTests(unittest.TestCase):
         self.assertNotIn('model:', (self.pi / 'skills/refine/SKILL.md').read_text())
         self.assertTrue((self.pi / 'prompts/refine.md').is_file())
 
+    def test_fix_skill_rendered_for_both_tools(self):
+        self.run_agents()
+        text = (SRC / 'skills/fix/SKILL.md').read_text()
+        self.assertLessEqual(len(text.splitlines()), 80)
+        for phrase in ('.agent/prompts/', 'failing test', '/plan-commits', 'git commit'):
+            self.assertIn(phrase, text)
+        for root in (self.claude, self.pi):
+            self.assertTrue((root / 'skills/fix/SKILL.md').is_file())
+        self.assertIn('context: fork', (self.claude / 'skills/fix/SKILL.md').read_text())
+        self.assertNotIn('context:', (self.pi / 'skills/fix/SKILL.md').read_text())
+        self.assertTrue((self.pi / 'prompts/fix.md').is_file())
+
     def test_plan_roadmap_asks_in_grill_rounds(self):
         text = (SRC / 'skills/plan-roadmap/SKILL.md').read_text()
         self.assertIn('`grill`', text)
