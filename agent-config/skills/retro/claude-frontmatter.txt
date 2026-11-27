@@ -1,0 +1,6 @@
+context: fork
+agent: general-purpose
+background: false
+model: sonnet
+effort: medium
+disable-model-invocation: true

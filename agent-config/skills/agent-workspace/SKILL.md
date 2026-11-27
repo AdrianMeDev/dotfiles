@@ -20,7 +20,7 @@ All agent-generated files live under `.agent/` in the project root and stay loca
   adr/           architecture decision records, NNNN-<slug>.md (grill)
   prompts/       refined prompts, <slug>.md (refine)
   reviews/       review reports, <YYYY-MM-DD>-<slug>.md (inspect)
-  retro/         reserved - retrospectives
+  retro/         retrospective reports, <YYYY-MM-DD>-<slug>.md (retro)
 ```
 
 Create files and folders lazily, only when a skill needs them.

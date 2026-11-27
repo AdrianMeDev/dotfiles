@@ -121,6 +121,28 @@ class AgentsTests(unittest.TestCase):
         self.assertIn('user-invocable: false', (self.claude / 'skills/writing-for-agents/SKILL.md').read_text())
         self.assertNotIn('user-invocable', (self.pi / 'skills/writing-for-agents/SKILL.md').read_text())
 
+    def test_retro_skill_rendered_for_both_tools(self):
+        self.run_agents()
+        source = SRC / 'skills/retro'
+        text = (source / 'SKILL.md').read_text()
+        self.assertLessEqual(len(text.splitlines()), 80)
+        for phrase in ('.agent/retro/', '.agent/notes.md', 'writing-for-agents', 'Navigation', 'Automatic checks',
+                       'Standards', 'CLAUDE.md size', 'Tool economy', 'No-ops', 'Information access', 'never read whole'):
+            self.assertIn(phrase, text)
+        self.assertIn('MIT', (source / 'NOTICE.md').read_text())
+        for name in ('SKILL.md', 'REPORT-FORMAT.md', 'NOTICE.md'):
+            for root in (self.claude, self.pi):
+                self.assertTrue((root / 'skills/retro' / name).is_file(), name)
+        claude = (self.claude / 'skills/retro/SKILL.md').read_text()
+        for line in ('context: fork', 'agent: general-purpose', 'model: sonnet', 'disable-model-invocation: true'):
+            self.assertIn(line, claude)
+        pi = (self.pi / 'skills/retro/SKILL.md').read_text()
+        for key in ('context:', 'model:', 'disable-model-invocation'):
+            self.assertNotIn(key, pi)
+        self.assertIn('`retro` skill', (self.pi / 'prompts/retro.md').read_text())
+        self.assertIn('retrospective reports', (SRC / 'skills/agent-workspace/SKILL.md').read_text())
+        self.assertNotIn('reserved', (SRC / 'skills/agent-workspace/SKILL.md').read_text())
+
     def test_fix_skill_rendered_for_both_tools(self):
         self.run_agents()
         text = (SRC / 'skills/fix/SKILL.md').read_text()
