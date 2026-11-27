@@ -169,6 +169,19 @@ class AgentsTests(unittest.TestCase):
             self.assertNotIn(key, pi)
         self.assertIn('`flow` skill', (self.pi / 'prompts/flow.md').read_text())
 
+    def test_readme_lists_every_skill_notice_and_prompt(self):
+        readme = (SRC / 'README.md').read_text()
+        for skill in sorted((SRC / 'skills').iterdir()):
+            self.assertIn(skill.name + '/', readme, skill.name)
+        licence = readme.split('## 8. Herkunft & Lizenz', 1)[1]
+        for notice in sorted((SRC / 'skills').glob('*/NOTICE.md')):
+            self.assertIn('`' + notice.parent.name + '`', licence, notice.parent.name)
+        tree = readme.split('prompts/', 1)[1].split('\n', 1)[0]
+        for prompt in sorted((SRC / 'pi/prompts').glob('*.md')):
+            if prompt.stem != 'commit':
+                self.assertIn('/' + prompt.stem, tree, prompt.stem)
+        self.assertIn('`/flow`', (REPO / 'README.md').read_text())
+
     def test_statusline_renders_context_usage(self):
         self.run_agents()
         script = self.claude / 'statusline.sh'

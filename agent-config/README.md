@@ -5,7 +5,7 @@
 | Einsatz | private Projekte | Arbeit |
 | Modell | lokal über Ollama (nichts verlässt den Rechner) | Claude (`sonnet`, bei Bedarf `/model opus`) |
 | Sicherheit | **fragt nicht vor Befehlen** – Regeln stehen nur als Anweisung in `AGENTS.md` | Berechtigungsregeln: erlauben / nachfragen / verbieten |
-| Befehle (gleich in beiden) | `/grill` `/refine` `/plan-roadmap` `/plan-commits` `/next` `/fix` `/diagnose` `/inspect` `/retro` `/explain` `/explain-project` | `/grill` `/refine` `/plan-roadmap` `/plan-commits` `/next` `/fix` `/diagnose` `/inspect` `/retro` `/explain` `/explain-project` |
+| Befehle (gleich in beiden) | `/flow` `/grill` `/refine` `/plan-roadmap` `/plan-commits` `/next` `/fix` `/diagnose` `/inspect` `/retro` `/explain` `/explain-project` | `/flow` `/grill` `/refine` `/plan-roadmap` `/plan-commits` `/next` `/fix` `/diagnose` `/inspect` `/retro` `/explain` `/explain-project` |
 | In Zed | `<space> a p` | `<space> a c` |
 
 ```
@@ -15,13 +15,14 @@ agent-config/
 │   ├── models.json         Ollama-Modelle (Kontext, Tokens)
 │   ├── AGENTS.md           globale Anweisungen (privat)
 │   ├── themes/             tokyo-night.json (Tokyo Night)
-│   └── prompts/            /grill /refine /plan-roadmap /plan-commits /next /fix /diagnose /inspect /retro /explain /explain-project /commit
+│   └── prompts/            /flow /grill /refine /plan-roadmap /plan-commits /next /fix /diagnose /inspect /retro /explain /explain-project /commit
 ├── claude/                 → ~/.claude/
 │   ├── settings.json       Modell, Theme (dark-ansi), Vim, Erklär-Stil, Berechtigungen, Statusline
 │   ├── statusline.sh       Statusline: Modell, Kontext %, Tokens/150k (Bash ohne jq, nur Claude Code)
 │   └── CLAUDE.md           globale Anweisungen (Arbeit)
 ├── skills/                 → in beide Tools (Englisch, antworten in deiner Sprache)
 │   ├── agent-workspace/    Referenz: `.agent/`-Layout, Git-Regel, Kontextbudget (kein Befehl)
+│   ├── flow/               Router: empfiehlt zum Anliegen den passenden Befehl bzw. die Befehlskette (ändert nichts)
 │   ├── grill/              Interview in Runden → Glossar und ADRs (MIT-Hinweis in NOTICE.md)
 │   ├── refine/             rohen Prompt in Runden schärfen → .agent/prompts/<slug>.md (+ PROMPT-FORMAT.md)
 │   ├── plan-roadmap/       großes Feature / ganze App → Meilensteine (.agent/ROADMAP.md)
@@ -93,6 +94,19 @@ okay, wenn alles in Git ist; für fremde Repos pi in einem Container laufen lass
   ausführen und abgleichen). Persönliche Ausnahmen nur in `.claude/settings.local.json`.
 
 ## 4. Workflow: Roadmap → Plan → Schritt → Commit
+
+### Auf einen Blick
+
+```
+Idee unklar?          /grill  →  großes Vorhaben?  /plan-roadmap  →  /plan-commits  →  /next → committen → …  →  /inspect  →  /retro
+Aufgabe mit Commits?  /plan-commits  →  /next
+Kleiner Fehler?       /refine fix  →  /fix        Schwerer Fehler?  /diagnose
+Verstehen?            /explain · /explain-project
+```
+
+**Unsicher, welcher Befehl passt?** `/flow <anliegen>` empfiehlt Befehl bzw. Kette mit einer Begründung
+(z. B. „kleiner Bug im Login“ → `/refine fix` → `/fix`). Er führt nichts aus und schreibt keine Datei.
+Die Git-Regel steht unter „`.agent/`-Ablage und Git-Regel“, die Kontextstrategie in Abschnitt 7.
 
 Drei Ebenen, jede mit eigener Datei:
 
@@ -224,6 +238,18 @@ Drei Ebenen, jede mit eigener Datei:
 ### `.agent/`-Ablage und Git-Regel
 
 Alles, was Agents erzeugen, liegt lokal unter `.agent/` im Projekt (nie im Repo):
+
+```
+.agent/
+├── plan.md         Commit-Plan (/plan-commits, /next)
+├── ROADMAP.md      Meilensteine (/plan-roadmap; alternativ getrackt in docs/ROADMAP.md)
+├── notes.md        Befunde, offene Punkte (/next, /fix, /diagnose)
+├── GLOSSARY.md     Begriffe (/grill)        adr/       Entscheidungen (/grill)
+├── prompts/        geschärfte Prompts (/refine)
+├── reviews/        Review-Berichte (/inspect)
+└── retro/          Retro-Berichte (/retro)
+```
+
 `plan.md`, `ROADMAP.md`, `notes.md` (Befunde aus `/next`, `/fix` und `/diagnose`), `GLOSSARY.md` und `adr/` (aus `/grill`),
 `prompts/` (aus `/refine`), `reviews/` (aus `/inspect`) und `retro/` (aus `/retro`). Die Konventionen stehen einmal im Skill `agent-workspace`.
 
@@ -316,3 +342,10 @@ davon ohne diese Nachteile.
 
 **pi:** Lokal kostet ein Token nichts, aber ein kleiner Kontext macht das Modell schneller und
 genauer. Starte zwischen den Schritten mit `/new` neu – `/next` liest alles Nötige aus `.agent/plan.md`.
+
+## 8. Herkunft & Lizenz
+
+Die Skills `grill`, `tdd`, `diagnose`, `retro` und `writing-for-agents` sind angepasste Übernahmen aus
+[mattpocock/skills](https://github.com/mattpocock/skills) (Commit 6f7f783, MIT-Lizenz, Copyright (c) 2026 Matt Pocock);
+der jeweilige Lizenztext steht in `skills/<name>/NOTICE.md`. `inspect`, `refine`, `fix` und `flow` sind eigene
+Umsetzungen nach Ideen aus mattpocock/skills, ohne übernommenen Text, daher ohne `NOTICE.md`.
