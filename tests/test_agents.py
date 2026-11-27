@@ -120,6 +120,21 @@ class AgentsTests(unittest.TestCase):
         self.assertNotIn('context:', (self.pi / 'skills/fix/SKILL.md').read_text())
         self.assertTrue((self.pi / 'prompts/fix.md').is_file())
 
+    def test_diagnose_skill_rendered_for_both_tools(self):
+        self.run_agents()
+        text = (SRC / 'skills/diagnose/SKILL.md').read_text()
+        self.assertLessEqual(len(text.splitlines()), 80)
+        for phrase in ('.agent/notes.md', 'failing test', 'regression test', 'git commit', '`tdd` skill'):
+            self.assertIn(phrase, text)
+        for root in (self.claude, self.pi):
+            self.assertTrue((root / 'skills/diagnose/SKILL.md').is_file())
+            self.assertTrue((root / 'skills/diagnose/NOTICE.md').is_file())
+        claude_skill = (self.claude / 'skills/diagnose/SKILL.md').read_text()
+        self.assertIn('context: fork', claude_skill)
+        self.assertIn('effort: high', claude_skill)
+        self.assertNotIn('context:', (self.pi / 'skills/diagnose/SKILL.md').read_text())
+        self.assertTrue((self.pi / 'prompts/diagnose.md').is_file())
+
     def test_next_and_fix_follow_tdd_guideline(self):
         self.run_agents()
         for name in ('next', 'fix'):
