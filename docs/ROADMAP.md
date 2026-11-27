@@ -165,7 +165,7 @@ alles wird in der neuesten Version installiert und mit `dot update` aktualisiert
 - **Depends on:** M1, M2, M3, M4, M5, M6, M7, M8, M9, M10
 - **Size:** S, ~3 commits
 
-### M12 [ ] Lokale `.agent/`-Ablage + Git-Sperre
+### M12 [~] Lokale `.agent/`-Ablage + Git-Sperre
 - **Goal:** Alle KI-Dateien liegen lokal unter `.agent/`, und Agents können nichts committen, pushen oder Tickets anlegen.
 - **Includes:** Referenz-Skill `agent-workspace` (Layout, Exclude-Helfer, Format `notes.md`, Git-Regel, Kontextbudget), `plan-roadmap`/`plan-commits`/`next` auf `.agent/` umstellen (Fallback alter Pfad), `deny`-Regeln in `claude/settings.json`, Regel in `pi/AGENTS.md` und `CLAUDE.md`, `next-all` in `LEGACY` von `scripts/agents.py`, `dot doctor` meldet fremde Skills, Tests/Container-Check anpassen
 - **Done when:** in einem Testprojekt schreibt `/plan-commits` nach `.agent/plan.md` und `.agent/` steht in `info/exclude`; `git commit` durch Claude wird abgelehnt; `bash scripts/check.sh` grün

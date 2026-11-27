@@ -55,6 +55,16 @@ class AgentsTests(unittest.TestCase):
         self.assertEqual((self.claude / 'skills/next/SKILL.md').read_text(), source[0] + '\n' + extra + source[1])
         self.assertEqual((self.pi / 'skills/next/SKILL.md').read_text(), '\n'.join(source))
 
+    def test_agent_workspace_skill_rendered_for_both_tools(self):
+        self.run_agents()
+        source = (SRC / 'skills/agent-workspace/SKILL.md').read_text()
+        self.assertIn('.agent/', source)
+        self.assertEqual((self.pi / 'skills/agent-workspace/SKILL.md').read_text(), source)
+        claude = (self.claude / 'skills/agent-workspace/SKILL.md').read_text()
+        self.assertIn('user-invocable: false', claude)
+        self.assertNotIn('user-invocable', (self.pi / 'skills/agent-workspace/SKILL.md').read_text())
+        self.assertEqual(list(self.pi.rglob('claude-frontmatter.txt')), [])
+
     def test_env_overrides_targets(self):
         env = dict(self.env, CLAUDE_CONFIG_DIR=str(self.home / 'c'), PI_CODING_AGENT_DIR=str(self.home / 'p'))
         self.assertEqual(self.run_agents(env=env).returncode, 0)
