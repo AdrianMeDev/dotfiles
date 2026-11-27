@@ -143,6 +143,35 @@ class AgentsTests(unittest.TestCase):
         self.assertIn('retrospective reports', (SRC / 'skills/agent-workspace/SKILL.md').read_text())
         self.assertNotIn('reserved', (SRC / 'skills/agent-workspace/SKILL.md').read_text())
 
+    def test_statusline_renders_context_usage(self):
+        self.run_agents()
+        script = self.claude / 'statusline.sh'
+        self.assertTrue(script.is_file())
+        self.assertFalse(list(self.pi.rglob('statusline.sh')))
+        settings = json.loads((self.claude / 'settings.json').read_text())
+        self.assertEqual(settings['statusLine'], {'type': 'command', 'command': 'bash ~/.claude/statusline.sh'})
+
+        def run(pct, usage):
+            payload = ('{"model":{"display_name":"Opus"},"context_window":{"used_percentage":%s,"current_usage":%s}}'
+                       % (pct, usage))
+            result = subprocess.run(['bash', str(script)], input=payload, capture_output=True, text=True, check=False)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            return result.stdout
+
+        normal = run('25', '{"input_tokens":10,"cache_creation_input_tokens":5000,"cache_read_input_tokens":30000}')
+        self.assertIn('Opus', normal)
+        self.assertIn('25%', normal)
+        self.assertIn('35k/150k', normal)
+        self.assertNotIn('\033[31m', normal)
+        empty = run('null', 'null')
+        self.assertIn('\u2013', empty)
+        self.assertNotIn('%', empty)
+        over = run('80.4', '{"input_tokens":1,"cache_creation_input_tokens":0,"cache_read_input_tokens":160000}')
+        self.assertIn('\033[31m', over)
+        self.assertIn('160k!', over)
+        broken = subprocess.run(['bash', str(script)], input='not json', capture_output=True, text=True, check=False)
+        self.assertEqual(broken.returncode, 0)
+
     def test_fix_skill_rendered_for_both_tools(self):
         self.run_agents()
         text = (SRC / 'skills/fix/SKILL.md').read_text()

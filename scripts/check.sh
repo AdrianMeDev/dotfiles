@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.."
-for script in bootstrap.sh install.sh scripts/*.sh windows/*.sh dot/.local/bin/dot; do bash -n "$script"; done
+for script in bootstrap.sh install.sh scripts/*.sh windows/*.sh agent-config/claude/*.sh dot/.local/bin/dot; do bash -n "$script"; done
 if command -v shellcheck >/dev/null 2>&1; then
-    shellcheck -x bootstrap.sh install.sh scripts/*.sh windows/*.sh dot/.local/bin/dot
+    shellcheck -x bootstrap.sh install.sh scripts/*.sh windows/*.sh agent-config/claude/*.sh dot/.local/bin/dot
 else
     printf 'SKIP: ShellCheck fehlt.\n'
 fi
