@@ -485,7 +485,8 @@ class ParityTests(unittest.TestCase):
         self.assertEqual(config['height'], 32)
         self.assertEqual(config['modules-left'], ['hyprland/workspaces'])
         self.assertEqual(config['modules-center'], ['clock'])
-        self.assertEqual(config['hyprland/workspaces']['persistent-workspaces'], {'*': 9})
+        self.assertNotIn('persistent-workspaces', config['hyprland/workspaces'])
+        self.assertIn('persistent = true', read('hypr/.config/hypr/hyprland.lua'))
         # Zebar's #status is an error slot without Waybar counterpart.
         zebar = re.search(r'<aside>(.*)</aside>', read('windows/zebar/index.html')).group(1)
         zebar_modules = [m for m in re.findall(r'id="(\w+)"', zebar) if m != 'status']

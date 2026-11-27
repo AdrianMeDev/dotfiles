@@ -51,6 +51,10 @@
   {
     "context": "(VimControl && !menu) || EmptyPane || SharedScreen || (ProjectPanel && not_editing) || (OutlinePanel && not_editing)",
     "bindings": {
+      // Zeds Vim-Standard belegt `space` allein (Cursor nach rechts). Dadurch ist das Präfix
+      // mehrdeutig und läuft nach ~1 s ab. `null` entfernt die Belegung → Which-Key bleibt offen.
+      "space": null,
+
       // f – Finden
       "space space": "file_finder::Toggle",
       "space f f": "file_finder::Toggle",
@@ -66,8 +70,6 @@
       // p – Projekte, Remote/WSL, Konfiguration
       "space p r": ["projects::OpenRecent", { "create_new_window": false }],
       "space p o": "projects::OpenRemote",
-      "space p w": "projects::OpenWsl",
-      "space p shift-w": "projects::OpenFolderInWsl",
       "space p s": "zed::OpenSettings",
       "space p k": "zed::OpenKeymap",
       "space p t": "zed::OpenTasks",
@@ -225,6 +227,11 @@
       "ctrl-alt-l": "workspace::ActivatePaneRight",
       "ctrl-alt-k": "workspace::ActivatePaneUp",
       "ctrl-alt-j": "workspace::ActivatePaneDown",
+      // Fallback für Windows, wo Ctrl+Alt (= AltGr) von Zed teils nicht ankommt
+      "ctrl-shift-h": "workspace::ActivatePaneLeft",
+      "ctrl-shift-l": "workspace::ActivatePaneRight",
+      "ctrl-shift-k": "workspace::ActivatePaneUp",
+      "ctrl-shift-j": "workspace::ActivatePaneDown",
       "alt-z": "workspace::ToggleZoom"
     }
   },

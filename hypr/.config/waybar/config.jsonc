@@ -10,7 +10,6 @@
   "modules-right": ["wireplumber", "network", "bluetooth", "battery"],
   "hyprland/workspaces": {
     "format": "{name}",
-    "persistent-workspaces": { "*": 9 },
     "all-outputs": false,
     "on-click": "activate"
   },

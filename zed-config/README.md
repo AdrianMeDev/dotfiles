@@ -26,7 +26,7 @@ zed-config/
 Tokyo-Night- + Ioskeley-Theme (`theme/tokens.toml`) an.
 
 **Windows + WSL:** Zed läuft unter Windows, WSL-Ordner werden als Remote-Projekt geöffnet
-(`<space> p w` = *projects: open wsl*). Deshalb gehören die globalen Dateien nach
+(`<space> p o` = *projects: open remote*, dort die WSL-Distribution wählen). Deshalb gehören die globalen Dateien nach
 `%APPDATA%\Zed`. Die Projektvorlagen (`.zed/`) kopierst du **unter Linux/WSL** mit `dot zed-template`
 ins Projekt (optional mit `--dry-run` und `--backup`):
 
@@ -98,7 +98,7 @@ Nach `<space>` kurz warten → Which-Key zeigt alle Optionen.
 | `<space> w v` / `w s` | Split rechts / unten |
 | `<space> w z` | Zoom (Pane maximieren) |
 | `<space> w x` | alle Docks schließen |
-| `<space> p r` / `p w` | letzte Projekte / WSL-Projekt öffnen |
+| `<space> p r` / `p o` | letzte Projekte / Remote-Projekt (WSL) öffnen |
 
 Vim-Standards bleiben: `gd` Definition, `gy` Typ, `gI` Implementierung, `gA` Referenzen,
 `K` Hover, `]d`/`[d` Diagnose, `]c`/`[c` Git-Hunks, `gcc` Kommentar, `ys`/`cs`/`ds` Surround.

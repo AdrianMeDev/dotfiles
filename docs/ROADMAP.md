@@ -1,4 +1,4 @@
-# Roadmap: Dotfiles – eine Dev-Umgebung für Linux und Windows 11
+ Roadmap: Dotfiles – eine Dev-Umgebung für Linux und Windows 11
 Updated: 2026-11-21
 
 ## Vision

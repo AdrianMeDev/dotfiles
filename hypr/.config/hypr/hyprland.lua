@@ -18,9 +18,10 @@ hl.monitor({ output = "", mode = "preferred", position = "auto", scale = 1 })
 
 -- Workspaces 1-5 on the first monitor, 6-9 on the second (same split as GlazeWM's
 -- bind_to_monitor). "0"/"1" are Hyprland monitor IDs (connection order; `hyprctl monitors`).
+-- persistent: Waybar lists exactly these per monitor (no per-output persistent-workspaces there).
 -- With a single monitor the rule cannot resolve and all workspaces stay on it.
 for ws = 1, 9 do
-  hl.workspace_rule({ workspace = tostring(ws), monitor = ws <= 5 and "0" or "1" })
+  hl.workspace_rule({ workspace = tostring(ws), monitor = ws <= 5 and "0" or "1", persistent = true })
 end
 
 hl.config({
