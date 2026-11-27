@@ -17,7 +17,7 @@ alles wird in der neuesten Version installiert und mit `dot update` aktualisiert
   - Einheitliches Theme (Tokyo Night, Ioskeley, Deckkraft/Blur) für alle Tools, testgesichert
   - Vial + udev für den Corne, Layout an den Vertrag angepasst; README und CHEATSHEET aktualisiert
 - **Agent-Workflow v2 (M12–M18):** Ideen aus mattpocock/skills (MIT) angepasst übernehmen – `/grill` + Glossar/ADR,
-    `/refine` (Prompt-Refiner), `/fix`, `/review` (Standards + Spec), `/debug`, `/retro`; alle KI-Dateien lokal unter `.agent/`,
+    `/refine` (Prompt-Refiner), `/fix`, `/inspect` (Standards + Spec), `/debug`, `/retro`; alle KI-Dateien lokal unter `.agent/`,
     Git-Schreibaktionen nur durch den Menschen, ≤ ~150k Token pro Agent durch Dateien als Gedächtnis
 - **Later:** Secrets/SSH-Keys über einen Passwortmanager, Visual Studio/Rider-Settings, macOS, Fedora Atomic
 - **Not planned:** Desktop auf Debian, KDE-/Treiber-/Monitor-Einstellungen verwalten, bitidentische Builds
@@ -46,7 +46,7 @@ alles wird in der neuesten Version installiert und mit `dot update` aktualisiert
   /refine ─► .agent/prompts/<slug>.md ─┬► /plan-roadmap ─► .agent/ROADMAP.md (oder docs/ROADMAP.md)
   /grill  ─► .agent/GLOSSARY.md, adr/  ├► /plan-commits ─► .agent/plan.md ─► /next (fork) ─► Mensch committet
                                        └► /fix (1 Commit)            ▲ /debug (fork)
-  /review (2 Subagents) ─► .agent/reviews/   /retro ─► .agent/retro/ ─► Vorschläge für agent-config/
+  /inspect (2 Subagents) ─► .agent/reviews/   /retro ─► .agent/retro/ ─► Vorschläge für agent-config/
   Gemeinsame Regeln: Referenz-Skill agent-workspace · Gedächtnis: .agent/notes.md + Plan-Log
   ```
 - **Integrations:** GitHub Releases/API, mise-Registry, AUR, Flathub, winget, WSL, Ollama, Claude Code, pi
@@ -69,6 +69,7 @@ alles wird in der neuesten Version installiert und mit `dot update` aktualisiert
 | 13 | Matt-Skills als eigene, angepasste Kopien in `agent-config/skills/` (MIT-Hinweis), kein Plugin | Plugin setzt auf GitHub-Tracker und ändert sich per Auto-Update | `claude plugin install` |
 | 14 | Gemeinsame Konventionen in einem Referenz-Skill `agent-workspace`, Skills verweisen darauf | Regeln einmal pflegen, nur bei Bedarf im Kontext | alles in CLAUDE.md (immer geladen) |
 | 15 | Kontextbudget ≤ ~150k über Struktur: `next`/`debug` im Fork, Review-Achsen als frische Subagents, Erkenntnisse in Dateien, `/clear` zwischen Schritten | Leistung bleibt hoch, jeder Schritt startet ohne Altlast | Auto-Compact, lange Sitzungen |
+| 16 | `/inspect` (statt `/review`) läuft in der Hauptsession ohne `context: fork` und startet die zwei Achsen per Agent-Tool als frische Subagents (parallel, Typ `general-purpose`, Modell sonnet; Haupt-Skill sonnet/medium, er orchestriert nur und schreibt den Bericht); pi: Achsen nacheinander mit frischem Lesen. Name `inspect`, weil `/review` in Claude Code eingebaut ist | Subagents starten keine weiteren Subagents (Claude-Code-Doku zu Subagents), ein Fork von `next` kann also nicht prüfen; Hauptsession-Skills können mehrere Agent-Aufrufe in einer Nachricht parallel starten; kein Namenskonflikt mit `/review` und Skill `code-review` | `/review` als Name, Prüfung im Fork |
 
 ## Risks & unknowns
 | Risk | Impact | Mitigation |
@@ -80,7 +81,7 @@ alles wird in der neuesten Version installiert und mit `dot update` aktualisiert
 | Neueste Versionen statt Pins | weniger reproduzierbar | Neovim-Lockfile bleibt, `dot update` listet Versionsänderungen, mise-Lockfile optional |
 | GUI, Windows und Hardware (Corne) nicht im Container testbar | Fehler erst am Zielsystem | Container-Matrix für Linux-CLI, Pester + Windows-Runner für DryRun, manuelle Abnahmeliste |
 | Bestehende Fedora-only-Tests (`tests/test_install.py`) | Umbau bricht Tests | Tests in M1 auf Distro-Matrix umstellen, bevor Module wachsen |
-| Ein geforkter Skill (`next`) kann keine weiteren Subagents starten | `/review` mit zwei Achsen nicht aus `next` heraus möglich | `/review` läuft in der Hauptsession, `next` schlägt es am Meilensteinende nur vor; Spike als erster Schritt in M15 |
+| Ein geforkter Skill (`next`) kann keine weiteren Subagents starten (bestätigt, Entscheidung #16) | `/inspect` mit zwei Achsen nicht aus `next` heraus möglich | `/inspect` läuft in der Hauptsession, `next` schlägt es am Meilensteinende nur vor |
 | pi: 32k Kontext, keine Subagents, keine `deny`-Regeln | neue Skills sprengen den Kontext oder umgehen die Git-Sperre | Skills kurz halten, Fallback „Achsen nacheinander“, Regel in `pi/AGENTS.md`; Container-Test prüft Skill-Größe |
 | `next-all`/`handoff` kommen evtl. zusätzlich per claude.ai-Sync (`anthropic-skills:`) | alter Commit-Workflow bleibt aufrufbar | `deny` greift trotzdem; `dot doctor` meldet fremde Skills, Entfernen in claude.ai manuell |
 | Retro auf Session-Logs (`~/.claude/projects/*.jsonl`) ist sehr groß | Retro sprengt selbst das Budget | Retro liest primär `.agent/notes.md`, Plan-Log, Reviews; Logs nur gefiltert (Fehler, teure Tool-Calls) |
@@ -186,10 +187,10 @@ alles wird in der neuesten Version installiert und mit `dot update` aktualisiert
 - **Depends on:** M13
 - **Size:** M, ~5 commits
 
-### M15 [ ] `/review` auf zwei Achsen
+### M15 [~] `/inspect` auf zwei Achsen
 - **Goal:** Änderungen werden getrennt gegen Standards und gegen Spec (Planschritt/Meilenstein/Prompt) geprüft.
-- **Includes:** Spike Subagents aus Skill/Fork, Skill `review` (Fixpunkt, Standards-Quellen + Fowler-Smell-Liste, Spec aus `.agent/plan.md`/Roadmap/Prompt, zwei frische Subagents, Bericht nach `.agent/reviews/<datum>-<slug>.md`, nicht zusammenmischen), pi-Fallback nacheinander, `pi/prompts/review.md` ersetzen, `next` schlägt `/review` nach dem letzten Schritt vor
-- **Done when:** `/review main` auf einem Branch liefert getrennte Abschnitte „Standards“ und „Spec“ und eine Datei unter `.agent/reviews/`
+- **Includes:** Spike Subagents aus Skill/Fork, Skill `inspect` (Fixpunkt, Standards-Quellen + Fowler-Smell-Liste, Spec aus `.agent/plan.md`/Roadmap/Prompt, zwei frische Subagents, Bericht nach `.agent/reviews/<datum>-<slug>.md`, nicht zusammenmischen), pi-Fallback nacheinander, `pi/prompts/review.md` durch `inspect.md` ersetzen, `next` schlägt `/inspect` nach dem letzten Schritt vor
+- **Done when:** `/inspect main` auf einem Branch liefert getrennte Abschnitte „Standards“ und „Spec“ und eine Datei unter `.agent/reviews/`
 - **Depends on:** M12
 - **Size:** M, ~4 commits
 
