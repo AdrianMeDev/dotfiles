@@ -143,6 +143,32 @@ class AgentsTests(unittest.TestCase):
         self.assertIn('retrospective reports', (SRC / 'skills/agent-workspace/SKILL.md').read_text())
         self.assertNotIn('reserved', (SRC / 'skills/agent-workspace/SKILL.md').read_text())
 
+    def test_flow_skill_rendered_for_both_tools(self):
+        self.run_agents()
+        text = (SRC / 'skills/flow/SKILL.md').read_text()
+        self.assertLessEqual(len(text.splitlines()), 60)
+        commands = []
+        for skill in sorted((SRC / 'skills').iterdir()):
+            frontmatter = skill / 'claude-frontmatter.txt'
+            if 'user-invocable: false' not in (frontmatter.read_text() if frontmatter.is_file() else ''):
+                commands.append(skill.name)
+        self.assertIn('flow', commands)
+        for name in commands:
+            self.assertIn('`/' + name, text, name)
+        self.assertIn('`/refine fix` -> `/fix`', text)
+        self.assertIn('small bug', text)
+        for root in (self.claude, self.pi):
+            self.assertTrue((root / 'skills/flow/SKILL.md').is_file())
+        claude = (self.claude / 'skills/flow/SKILL.md').read_text()
+        for line in ('model: sonnet', 'effort: low'):
+            self.assertIn(line, claude)
+        for key in ('context:', 'disable-model-invocation'):
+            self.assertNotIn(key, claude)
+        pi = (self.pi / 'skills/flow/SKILL.md').read_text()
+        for key in ('context:', 'model:', 'effort:'):
+            self.assertNotIn(key, pi)
+        self.assertIn('`flow` skill', (self.pi / 'prompts/flow.md').read_text())
+
     def test_statusline_renders_context_usage(self):
         self.run_agents()
         script = self.claude / 'statusline.sh'

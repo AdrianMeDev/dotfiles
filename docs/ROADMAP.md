@@ -210,7 +210,7 @@ alles wird in der neuesten Version installiert und mit `dot update` aktualisiert
 - **Depends on:** M15
 - **Size:** M, ~4 commits
 
-### M18 [ ] Workflow-Doku + Router
+### M18 [~] Workflow-Doku + Router
 - **Goal:** Der neue Ablauf ist auf einen Blick verständlich und der passende Skill schnell gefunden.
 - **Includes:** `agent-config/README.md` (Ablauf, `.agent/`-Layout, Git-Regel, Kontextstrategie), Skill `flow` (welcher Skill passt wann, kurz), CHEATSHEET-Abschnitt Agents, MIT-Hinweis für übernommene Inhalte
 - **Done when:** README und CHEATSHEET nennen jeden Skill; `/flow "kleiner Bug im Login"` empfiehlt `/refine fix` → `/fix`
