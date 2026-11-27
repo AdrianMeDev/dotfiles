@@ -210,7 +210,7 @@ alles wird in der neuesten Version installiert und mit `dot update` aktualisiert
 - **Depends on:** M15
 - **Size:** M, ~4 commits
 
-### M18 [~] Workflow-Doku + Router
+### M18 [x] Workflow-Doku + Router
 - **Goal:** Der neue Ablauf ist auf einen Blick verständlich und der passende Skill schnell gefunden.
 - **Includes:** `agent-config/README.md` (Ablauf, `.agent/`-Layout, Git-Regel, Kontextstrategie), Skill `flow` (welcher Skill passt wann, kurz), CHEATSHEET-Abschnitt Agents, MIT-Hinweis für übernommene Inhalte
 - **Done when:** README und CHEATSHEET nennen jeden Skill; `/flow "kleiner Bug im Login"` empfiehlt `/refine fix` → `/fix`
@@ -249,3 +249,4 @@ alles wird in der neuesten Version installiert und mit `dot update` aktualisiert
 - 2026-11-27: M15 `/inspect` auf zwei Achsen abgeschlossen (Skill `inspect` mit getrennten Achsen Standards/Spec, zwei frische Subagents in Claude Code, pi nacheinander, Bericht unter `.agent/reviews/`, `next` schlägt `/inspect` vor, `/review` in `/inspect` umbenannt; manuelle Abnahme `/inspect main` offen)
 - 2026-11-27: M16 `/diagnose` + TDD-Leitlinie abgeschlossen (Skills `diagnose` im Fork und `tdd` als Referenz, `next`/`fix` arbeiten rot-grün-refactor, pi-Prompt, Doku; `/debug` in `/diagnose` umbenannt, Entscheidung #17; manuelle Abnahme `/diagnose` an eingebautem Fehler offen)
 - 2026-11-27: M17 `/retro` + Kontextbudget sichtbar abgeschlossen (Skills `retro` im Fork und `writing-for-agents` als Referenz, Statusline mit Kontext %, Budget-Hinweise in `next`/`plan-commits`, Entscheidung #18; manuelle Abnahme offen: `/retro` nach M17 liefert Vorschläge mit Zielpfad, Statusline zeigt Kontext in %, pi-Footer-Kontext ungeprüft)
+- 2026-11-27: M18 Workflow-Doku + Router abgeschlossen (Skill `flow`, README mit Überblick/`.agent/`-Layout/Lizenz, CHEATSHEET-Befehlstabelle, Tests leiten Skill-Liste aus `skills/` ab; manuelle Abnahme offen: `/flow "kleiner Bug im Login"` empfiehlt `/refine fix` -> `/fix` in Claude und pi)

@@ -139,8 +139,25 @@ Die `dev: …`-Tasks kommen aus den Projektvorlagen (`dot zed-template angular|d
 | `Alt-w`                    | Nächstes Wort der Prediction annehmen            |
 | Visual: `S`, dann Zeichen  | Auswahl umschließen                              |
 
-In Claude Code und pi gelten `/plan-commits`, `/next`, `/explain`,
-`/explain-project` aus `agent-config/`; Anmeldung bei Claude einmalig mit `claude`.
+Anmeldung bei Claude einmalig mit `claude`. Die Befehle aus `agent-config/` gelten in Claude Code und pi:
+
+| Befehl            | Wann                                        | Ergebnis / Datei                         |
+| ----------------- | ------------------------------------------- | ---------------------------------------- |
+| `/flow <anliegen>` | Unsicher, welcher Befehl passt              | Empfehlung der Befehlskette, ändert nichts |
+| `/grill`          | Idee oder Begriffe unklar                   | Fragerunden, `.agent/GLOSSARY.md`, `.agent/adr/` |
+| `/plan-roadmap`   | Großes Vorhaben                             | `.agent/ROADMAP.md`                      |
+| `/plan-commits`   | Aufgabe mit mehreren Commits                | `.agent/plan.md` (ein Schritt = ein Commit) |
+| `/next`           | Nächsten Plan-Schritt umsetzen              | Änderung plus Commit-Vorschlag, dann Stopp |
+| `/refine`         | Grobe Aufgabe präzisieren (z. B. `fix`)     | Wiederverwendbarer Prompt               |
+| `/fix`            | Kleine, klare Korrektur                     | Test zuerst, dann Fix                    |
+| `/diagnose`       | Schwerer oder unklarer Fehler               | Ursache und Reproduktion                 |
+| `/inspect`        | Änderungen prüfen (Standards / Spec)        | Bericht unter `.agent/reviews/`          |
+| `/retro`          | Nach Meilenstein oder Sitzung               | Verbesserungen unter `.agent/retro/`     |
+| `/explain`        | Code oder letzte Änderung verstehen         | Erklärung im Chat                        |
+| `/explain-project`| In ein Projekt einsteigen                   | Projektüberblick im Chat                 |
+
+Ablauf: `/grill` -> `/plan-roadmap` -> `/plan-commits` -> `/next` (prüfen, selbst committen) -> `/inspect` -> `/retro`.
+Referenz-Skills ohne Befehl: `agent-workspace`, `tdd`, `writing-for-agents`.
 
 
 ## Vim-Grundlagen für Zed und Neovim

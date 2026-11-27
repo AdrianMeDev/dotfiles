@@ -182,6 +182,15 @@ class AgentsTests(unittest.TestCase):
                 self.assertIn('/' + prompt.stem, tree, prompt.stem)
         self.assertIn('`/flow`', (REPO / 'README.md').read_text())
 
+    def test_cheatsheet_lists_every_skill(self):
+        cheatsheet = (REPO / 'CHEATSHEET.md').read_text()
+        for skill in sorted((SRC / 'skills').iterdir()):
+            frontmatter = skill / 'claude-frontmatter.txt'
+            if 'user-invocable: false' in (frontmatter.read_text() if frontmatter.is_file() else ''):
+                self.assertIn('`' + skill.name + '`', cheatsheet, skill.name)
+            else:
+                self.assertIn('`/' + skill.name, cheatsheet, skill.name)
+
     def test_statusline_renders_context_usage(self):
         self.run_agents()
         script = self.claude / 'statusline.sh'
