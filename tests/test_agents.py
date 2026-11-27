@@ -79,6 +79,12 @@ class AgentsTests(unittest.TestCase):
         self.assertNotIn('model:', (self.pi / 'skills/grill/SKILL.md').read_text())
         self.assertTrue((self.pi / 'prompts/grill.md').is_file())
 
+    def test_plan_roadmap_asks_in_grill_rounds(self):
+        text = (SRC / 'skills/plan-roadmap/SKILL.md').read_text()
+        self.assertIn('`grill`', text)
+        self.assertNotIn('at most 6', text)
+        self.assertLessEqual(len(text.splitlines()), 110)
+
     def test_plan_path_is_agent_dir_except_documented_fallback(self):
         self.run_agents()
         markers = ('legacy', 'fallback', 'else', 'old ')

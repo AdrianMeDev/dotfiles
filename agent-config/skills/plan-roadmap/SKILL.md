@@ -20,17 +20,13 @@ Three planning levels work together:
 **Roadmap already exists?** Then update it instead of starting over: show the milestone status, ask what should change (new milestones, new order, revised decisions, a milestone to split), keep done milestones untouched, and add a Changelog line.
 
 1. Read what exists: README, `docs/`, `CLAUDE.md`/`AGENTS.md`, manifests, folder structure, `git log --oneline -15`. For an empty repo, note that it is a greenfield project.
-2. Ask the open questions **in one batch** (at most 6, short, with a suggested default for each), for example:
-   - Who uses it, and what is the single most important thing they must be able to do?
-   - What belongs in the first usable version (MVP), and what can wait?
-   - Fixed constraints: stack, existing systems, hosting/deployment, auth, data protection, deadline?
-   - Scale and quality expectations (users, data volume, offline, accessibility)?
-3. Wait for the answers. If the user says "decide yourself", take the defaults and list them as decisions.
+2. Clarify the open questions in rounds by following the `grill` skill (numbered questions, each with a recommended answer). The first frontier covers: who uses it and the one thing they must be able to do, what belongs in the MVP, fixed constraints (stack, existing systems, hosting, auth, data protection, deadline), scale and quality expectations.
+3. Continue until the frontier is empty. If the user says "decide yourself", take the recommended answers and list them as decisions. Resolved terms go to `.agent/GLOSSARY.md`; decisions that are hard to reverse, surprising and a real trade-off get an ADR in `.agent/adr/` (see `grill`).
 
 ## 2. Design
 
 - **Architecture:** stack, main components and how they talk (small diagram), core data model (entities and relations, no full schema), integrations. For a feature in an existing app: which areas it touches and how it fits the existing patterns.
-- **Decisions:** the few choices that are expensive to change later, each with the reason and one alternative.
+- **Decisions:** the few choices that are expensive to change later, each with the reason and one alternative; link the ADR in `.agent/adr/` where one exists.
 - **Risks and unknowns:** what could break the plan; plan a short spike milestone for anything that is genuinely unknown.
 
 ## 3. Cut milestones
