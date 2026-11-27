@@ -107,6 +107,13 @@ if settings['theme'] != theme.get('name'):
     sys.exit(f"pi-Themeaktivierung passt nicht: settings={settings['theme']} theme={theme.get('name')}")
 if theme.get('appearance') != 'dark' or not theme.get('vars') or not theme.get('colors'):
     sys.exit('pi-Theme ist unvollständig (appearance/vars/colors).')
+with open(os.path.join(home, '.claude/settings.json'), encoding='utf-8') as fh:
+    deny = json.load(fh)['permissions']['deny']
+for rule in ('Bash(git commit *)', 'Bash(git push *)', 'Bash(git merge *)', 'Bash(git rebase *)',
+             'Bash(git -C * commit *)', 'Bash(gh pr create *)', 'Bash(gh pr merge *)',
+             'Bash(gh issue create *)', 'Bash(glab *)'):
+    if rule not in deny:
+        sys.exit(f'Claude settings.json: deny-Regel fehlt: {rule}')
 PY
     grep -qx 'context: fork' "$HOME/.claude/skills/next/SKILL.md" || {
         printf 'Claude-Frontmatter nicht gerendert.\n' >&2

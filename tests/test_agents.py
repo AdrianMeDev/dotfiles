@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Tests for the agent-config renderer and sync."""
+import json
 import os
 from pathlib import Path
 import subprocess
@@ -78,6 +79,18 @@ class AgentsTests(unittest.TestCase):
         for tool in (self.claude, self.pi):
             self.assertIn('.agent/plan.md', (tool / 'skills/plan-commits/SKILL.md').read_text())
             self.assertIn('.agent/plan.md', (tool / 'skills/next/SKILL.md').read_text())
+
+    def test_git_write_and_tracker_commands_are_denied(self):
+        perms = json.loads((SRC / 'claude/settings.json').read_text())['permissions']
+        guarded = ['Bash(git %s%s)' % (verb, tail)
+                   for verb in ('commit', 'push', 'merge', 'rebase') for tail in ('', ' *')]
+        guarded += ['Bash(git -C * %s%s)' % (verb, tail)
+                    for verb in ('commit', 'push', 'merge', 'rebase') for tail in ('', ' *')]
+        guarded += ['Bash(gh pr create *)', 'Bash(gh pr merge *)', 'Bash(gh issue create *)', 'Bash(glab *)']
+        for rule in guarded:
+            self.assertIn(rule, perms['deny'])
+            self.assertNotIn(rule, perms['allow'])
+            self.assertNotIn(rule, perms['ask'])
 
     def test_env_overrides_targets(self):
         env = dict(self.env, CLAUDE_CONFIG_DIR=str(self.home / 'c'), PI_CODING_AGENT_DIR=str(self.home / 'p'))
