@@ -362,7 +362,7 @@ sie starten nie automatisch. Details: [`zed-config/README.md`](zed-config/README
 
 **Agents (`agent-config/`):** das `agents`-Modul rendert die Konfiguration nach `~/.claude` (Claude Code,
 Arbeit) und `~/.pi/agent` (pi, privat, lokal über Ollama). Beide teilen die Befehle `/grill`, `/refine`, `/plan-roadmap`,
-`/plan-commits`, `/next`, `/fix`, `/inspect`, `/explain`, `/explain-project`. `dot update` aktualisiert Claude Code, pi und die
+`/plan-commits`, `/next`, `/fix`, `/diagnose`, `/inspect`, `/explain`, `/explain-project`. `dot update` aktualisiert Claude Code, pi und die
 Config, `dot doctor` meldet lokale Abweichungen. Anmeldung bei Claude einmalig mit `claude`.
 Details: [`agent-config/README.md`](agent-config/README.md).
 

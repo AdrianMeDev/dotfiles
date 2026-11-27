@@ -5,7 +5,7 @@
 | Einsatz | private Projekte | Arbeit |
 | Modell | lokal über Ollama (nichts verlässt den Rechner) | Claude (`sonnet`, bei Bedarf `/model opus`) |
 | Sicherheit | **fragt nicht vor Befehlen** – Regeln stehen nur als Anweisung in `AGENTS.md` | Berechtigungsregeln: erlauben / nachfragen / verbieten |
-| Befehle (gleich in beiden) | `/grill` `/refine` `/plan-roadmap` `/plan-commits` `/next` `/fix` `/inspect` `/explain` `/explain-project` | `/grill` `/refine` `/plan-roadmap` `/plan-commits` `/next` `/fix` `/inspect` `/explain` `/explain-project` |
+| Befehle (gleich in beiden) | `/grill` `/refine` `/plan-roadmap` `/plan-commits` `/next` `/fix` `/diagnose` `/inspect` `/explain` `/explain-project` | `/grill` `/refine` `/plan-roadmap` `/plan-commits` `/next` `/fix` `/diagnose` `/inspect` `/explain` `/explain-project` |
 | In Zed | `<space> a p` | `<space> a c` |
 
 ```
@@ -15,7 +15,7 @@ agent-config/
 │   ├── models.json         Ollama-Modelle (Kontext, Tokens)
 │   ├── AGENTS.md           globale Anweisungen (privat)
 │   ├── themes/             tokyo-night.json (Tokyo Night)
-│   └── prompts/            /grill /refine /plan-roadmap /plan-commits /next /fix /inspect /explain /explain-project /commit
+│   └── prompts/            /grill /refine /plan-roadmap /plan-commits /next /fix /diagnose /inspect /explain /explain-project /commit
 ├── claude/                 → ~/.claude/
 │   ├── settings.json       Modell, Theme (dark-ansi), Vim, Erklär-Stil, Berechtigungen
 │   └── CLAUDE.md           globale Anweisungen (Arbeit)
@@ -27,6 +27,8 @@ agent-config/
 │   ├── plan-commits/       Aufgabe oder nächsten Meilenstein in Commit-große Schritte planen
 │   ├── next/               genau einen Schritt umsetzen, dann für Commit stoppen
 │   ├── fix/                kleine Korrektur: Test zuerst, ein Commit-Vorschlag, Stopp
+│   ├── diagnose/           schwerer Fehler: rote Feedback-Schleife → Hypothesen → Fix + Regressionstest, Befund in notes.md
+│   ├── tdd/                Referenz: rot-grün-refactor, gute/schlechte Tests (kein Befehl; MIT-Hinweis in NOTICE.md)
 │   ├── inspect/            Review auf zwei Achsen (Standards, Spec) → .agent/reviews/ (+ STANDARDS.md, REPORT-FORMAT.md)
 │   ├── explain/            Implementiertes verständlich erklären
 │   └── explain-project/    ganzes Projekt erklären (Onboarding)
@@ -98,6 +100,7 @@ Drei Ebenen, jede mit eigener Datei:
 | Umsetzen | `/next` | Code + dein Commit | genau ein Schritt, dann Stopp |
 | Prompt schärfen (optional) | `/refine <roadmap\|commits\|fix> <text>` | `.agent/prompts/<slug>.md` | Ziel, Kontext, Akzeptanzkriterien, Grenzen, Glossarbegriffe |
 | Kleine Korrektur | `/fix <prompt-pfad\|text>` | Code + dein Commit | Test zuerst, minimaler Fix, ein Commit, Stopp |
+| Schwerer Fehler | `/diagnose <prompt-pfad\|text>` | Code + dein Commit, Befund in `.agent/notes.md` | rote Feedback-Schleife, Hypothesen, Fix + Regressionstest, Stopp |
 | Prüfen | `/inspect [base] [prompt-pfad]` | `.agent/reviews/<datum>-<slug>.md` | getrennt: Standards und Spec, keine Codeänderung |
 
 ```
@@ -146,6 +149,18 @@ Drei Ebenen, jede mit eigener Datei:
 - **`/fix`** stoppt bei dreckigem Arbeitsbaum oder einem `[~]`-Schritt und fasst `.agent/plan.md` nie an.
   Ist die Korrektur größer als ein Commit, empfiehlt er `/plan-commits <prompt-pfad>`.
 
+### `/diagnose`
+
+```
+/diagnose "Export bricht ab, wenn der Name ein Komma enthält"   → Schleife → Hypothesen → Fix → STOPP (Commit-Vorschlag)
+```
+
+- Phasen: rote Feedback-Schleife (schneller, deterministischer Test oder Befehl) → minimieren → Hypothesen ranken →
+  instrumentieren (temporäre Logs markiert, am Ende entfernt) → Fix nach Skill `tdd` → Regressionstest.
+- Ursache und verworfene Hypothesen landen in `.agent/notes.md`. Ohne Treffer nach einer festen Zahl Hypothesen bricht er mit Bericht ab.
+- Gates wie `/fix` (sauberer Baum, kein `[~]`-Schritt), fasst `.agent/plan.md` nie an. Ist der Fix größer als ein Commit: Befund in `notes.md`, Vorschlag `/plan-commits`.
+- `next` und `fix` arbeiten ebenfalls rot-grün-refactor nach dem Referenz-Skill `tdd`. Der Name `diagnose` vermeidet den Konflikt mit dem eingebauten `/debug`.
+
 ### `/inspect`
 
 ```
@@ -192,7 +207,7 @@ Drei Ebenen, jede mit eigener Datei:
 ### `.agent/`-Ablage und Git-Regel
 
 Alles, was Agents erzeugen, liegt lokal unter `.agent/` im Projekt (nie im Repo):
-`plan.md`, `ROADMAP.md`, `notes.md` (Befunde aus `/next` und `/fix`), `GLOSSARY.md` und `adr/` (aus `/grill`),
+`plan.md`, `ROADMAP.md`, `notes.md` (Befunde aus `/next`, `/fix` und `/diagnose`), `GLOSSARY.md` und `adr/` (aus `/grill`),
 `prompts/` (aus `/refine`), `reviews/` (aus `/inspect`) und reserviert `retro/`. Die Konventionen stehen einmal im Skill `agent-workspace`.
 
 - **Git gehört dir:** Agents committen, pushen, mergen oder legen PRs/Tickets nie selbst an – sie
@@ -249,6 +264,7 @@ nur ein kleiner Teil. Deshalb setzt diese Konfiguration am Kontext an:
 |---|---|
 | `/next` läuft in einem **frischen Subagenten** (`context: fork`, Sonnet, Effort `medium`) | Wie ein automatisches `/clear` pro Schritt: Dateien, Testausgaben und Fehlversuche bleiben im Subagenten, deine Session behält nur den kurzen Bericht |
 | `/fix` läuft wie `/next` im **frischen Subagenten** (`context: fork`, Sonnet, Effort `medium`) | Reproduktion und Testläufe belasten deine Session nicht |
+| `/diagnose` läuft im **frischen Subagenten** (`context: fork`, Sonnet, Effort `high`) | Logs und Fehlversuche der Fehlersuche belasten deine Session nicht |
 | `/explain-project` läuft im **read-only Explore-Subagenten** | Die ganze Projekt-Erkundung belastet deine Session nicht |
 | Plan in `.agent/plan.md` | Nach der Freigabe des Plans ist `/clear` jederzeit gefahrlos |
 | Kein `Explanatory`-Stil, Knapp-Regel in `CLAUDE.md` | Weniger Text pro Antwort, ohne die Lesbarkeit zu verlieren |

@@ -25,8 +25,8 @@ Never touch `.agent/plan.md`.
 ## 3. Fix, test first
 
 1. Search the cause (`rg`, symbols), read only the relevant parts. Understand the cause before changing code; no symptom workarounds.
-2. Write a failing test that reproduces the problem and run it to see it fail. No test setup possible → say so and name the manual check instead.
-3. Apply the minimal fix. No refactoring, no formatting changes elsewhere, no new dependencies.
+2. Follow the `tdd` skill: write a failing regression test that reproduces the problem and see it fail. No test setup possible → say so and name the manual check instead.
+3. Apply the minimal fix, then refactor only within the fix's scope while green. No formatting changes elsewhere, no new dependencies.
 4. Run the test again, then the related tests and lint.
 5. Still failing after two attempts → stop and report error, diagnosis and options.
 

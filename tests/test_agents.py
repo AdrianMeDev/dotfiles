@@ -96,6 +96,18 @@ class AgentsTests(unittest.TestCase):
         self.assertNotIn('model:', (self.pi / 'skills/refine/SKILL.md').read_text())
         self.assertTrue((self.pi / 'prompts/refine.md').is_file())
 
+    def test_tdd_skill_rendered_for_both_tools(self):
+        self.run_agents()
+        text = (SRC / 'skills/tdd/SKILL.md').read_text()
+        self.assertLessEqual(len(text.splitlines()), 80)
+        for phrase in ('red', 'green', 'refactor', 'public interface', 'manual check'):
+            self.assertIn(phrase, text)
+        for root in (self.claude, self.pi):
+            self.assertTrue((root / 'skills/tdd/SKILL.md').is_file())
+            self.assertTrue((root / 'skills/tdd/NOTICE.md').is_file())
+        self.assertIn('user-invocable: false', (self.claude / 'skills/tdd/SKILL.md').read_text())
+        self.assertNotIn('user-invocable', (self.pi / 'skills/tdd/SKILL.md').read_text())
+
     def test_fix_skill_rendered_for_both_tools(self):
         self.run_agents()
         text = (SRC / 'skills/fix/SKILL.md').read_text()
@@ -107,6 +119,29 @@ class AgentsTests(unittest.TestCase):
         self.assertIn('context: fork', (self.claude / 'skills/fix/SKILL.md').read_text())
         self.assertNotIn('context:', (self.pi / 'skills/fix/SKILL.md').read_text())
         self.assertTrue((self.pi / 'prompts/fix.md').is_file())
+
+    def test_diagnose_skill_rendered_for_both_tools(self):
+        self.run_agents()
+        text = (SRC / 'skills/diagnose/SKILL.md').read_text()
+        self.assertLessEqual(len(text.splitlines()), 80)
+        for phrase in ('.agent/notes.md', 'failing test', 'regression test', 'git commit', '`tdd` skill'):
+            self.assertIn(phrase, text)
+        for root in (self.claude, self.pi):
+            self.assertTrue((root / 'skills/diagnose/SKILL.md').is_file())
+            self.assertTrue((root / 'skills/diagnose/NOTICE.md').is_file())
+        claude_skill = (self.claude / 'skills/diagnose/SKILL.md').read_text()
+        self.assertIn('context: fork', claude_skill)
+        self.assertIn('effort: high', claude_skill)
+        self.assertNotIn('context:', (self.pi / 'skills/diagnose/SKILL.md').read_text())
+        self.assertTrue((self.pi / 'prompts/diagnose.md').is_file())
+
+    def test_next_and_fix_follow_tdd_guideline(self):
+        self.run_agents()
+        for name in ('next', 'fix'):
+            text = (SRC / 'skills' / name / 'SKILL.md').read_text()
+            self.assertLessEqual(len(text.splitlines()), 80)
+            for root in (self.claude, self.pi):
+                self.assertIn('`tdd` skill', (root / 'skills' / name / 'SKILL.md').read_text())
 
     def test_inspect_skill_rendered_for_both_tools(self):
         self.run_agents()

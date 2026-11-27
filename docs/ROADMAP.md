@@ -17,7 +17,7 @@ alles wird in der neuesten Version installiert und mit `dot update` aktualisiert
   - Einheitliches Theme (Tokyo Night, Ioskeley, Deckkraft/Blur) für alle Tools, testgesichert
   - Vial + udev für den Corne, Layout an den Vertrag angepasst; README und CHEATSHEET aktualisiert
 - **Agent-Workflow v2 (M12–M18):** Ideen aus mattpocock/skills (MIT) angepasst übernehmen – `/grill` + Glossar/ADR,
-    `/refine` (Prompt-Refiner), `/fix`, `/inspect` (Standards + Spec), `/debug`, `/retro`; alle KI-Dateien lokal unter `.agent/`,
+    `/refine` (Prompt-Refiner), `/fix`, `/inspect` (Standards + Spec), `/diagnose`, `/retro`; alle KI-Dateien lokal unter `.agent/`,
     Git-Schreibaktionen nur durch den Menschen, ≤ ~150k Token pro Agent durch Dateien als Gedächtnis
 - **Later:** Secrets/SSH-Keys über einen Passwortmanager, Visual Studio/Rider-Settings, macOS, Fedora Atomic
 - **Not planned:** Desktop auf Debian, KDE-/Treiber-/Monitor-Einstellungen verwalten, bitidentische Builds
@@ -45,7 +45,7 @@ alles wird in der neuesten Version installiert und mit `dot update` aktualisiert
   ```
   /refine ─► .agent/prompts/<slug>.md ─┬► /plan-roadmap ─► .agent/ROADMAP.md (oder docs/ROADMAP.md)
   /grill  ─► .agent/GLOSSARY.md, adr/  ├► /plan-commits ─► .agent/plan.md ─► /next (fork) ─► Mensch committet
-                                       └► /fix (1 Commit)            ▲ /debug (fork)
+                                       └► /fix (1 Commit)            ▲ /diagnose (fork)
   /inspect (2 Subagents) ─► .agent/reviews/   /retro ─► .agent/retro/ ─► Vorschläge für agent-config/
   Gemeinsame Regeln: Referenz-Skill agent-workspace · Gedächtnis: .agent/notes.md + Plan-Log
   ```
@@ -68,8 +68,9 @@ alles wird in der neuesten Version installiert und mit `dot update` aktualisiert
 | 12 | Git-/Tracker-Schreibaktionen (`git commit/push/merge/rebase`, `gh pr\|issue create`, `glab`) in Claude per `deny`, in pi als Regel; `next-all` wird nicht ausgeliefert, eine lokale Kopie wird toleriert | Git bleibt allein beim Menschen, hart erzwungen statt nur erbeten | `ask` wie bisher |
 | 13 | Matt-Skills als eigene, angepasste Kopien in `agent-config/skills/` (MIT-Hinweis), kein Plugin | Plugin setzt auf GitHub-Tracker und ändert sich per Auto-Update | `claude plugin install` |
 | 14 | Gemeinsame Konventionen in einem Referenz-Skill `agent-workspace`, Skills verweisen darauf | Regeln einmal pflegen, nur bei Bedarf im Kontext | alles in CLAUDE.md (immer geladen) |
-| 15 | Kontextbudget ≤ ~150k über Struktur: `next`/`debug` im Fork, Review-Achsen als frische Subagents, Erkenntnisse in Dateien, `/clear` zwischen Schritten | Leistung bleibt hoch, jeder Schritt startet ohne Altlast | Auto-Compact, lange Sitzungen |
+| 15 | Kontextbudget ≤ ~150k über Struktur: `next`/`diagnose` im Fork, Review-Achsen als frische Subagents, Erkenntnisse in Dateien, `/clear` zwischen Schritten | Leistung bleibt hoch, jeder Schritt startet ohne Altlast | Auto-Compact, lange Sitzungen |
 | 16 | `/inspect` (statt `/review`) läuft in der Hauptsession ohne `context: fork` und startet die zwei Achsen per Agent-Tool als frische Subagents (parallel, Typ `general-purpose`, Modell sonnet; Haupt-Skill sonnet/medium, er orchestriert nur und schreibt den Bericht); pi: Achsen nacheinander mit frischem Lesen. Name `inspect`, weil `/review` in Claude Code eingebaut ist | Subagents starten keine weiteren Subagents (Claude-Code-Doku zu Subagents), ein Fork von `next` kann also nicht prüfen; Hauptsession-Skills können mehrere Agent-Aufrufe in einer Nachricht parallel starten; kein Namenskonflikt mit `/review` und Skill `code-review` | `/review` als Name, Prüfung im Fork |
+| 17 | Der Fehlersuche-Skill heißt `diagnose` statt `debug`; die TDD-Leitlinie ist der Referenz-Skill `tdd` (`user-invocable: false`), auf den `next`, `fix` und `diagnose` verweisen | `/debug` ist in Claude Code eingebaut (wie `/review`); eine Quelle für die Test-Regeln statt Kopien in drei Skills | Name `debug`, TDD-Regeln in jedem Skill wiederholt |
 
 ## Risks & unknowns
 | Risk | Impact | Mitigation |
@@ -194,10 +195,10 @@ alles wird in der neuesten Version installiert und mit `dot update` aktualisiert
 - **Depends on:** M12
 - **Size:** M, ~4 commits
 
-### M16 [ ] `/debug` + TDD-Leitlinie
+### M16 [x] `/diagnose` + TDD-Leitlinie
 - **Goal:** Schwere Fehler werden diszipliniert eingegrenzt; `next` und `fix` arbeiten rot-grün-refactor.
-- **Includes:** Skill `debug` nach diagnosing-bugs (rote Feedback-Schleife → minimieren → Hypothesen → instrumentieren → fix → Regressionstest), läuft im Fork, Befunde in `.agent/notes.md`; TDD-Leitlinie (gute/schlechte Tests) als Referenz für `next`/`fix`
-- **Done when:** `/debug` an einem eingebauten Fehler: reproduzierender Test zuerst, Ursache in `notes.md`, Fix + Regressionstest
+- **Includes:** Skill `diagnose` nach diagnosing-bugs (rote Feedback-Schleife → minimieren → Hypothesen → instrumentieren → fix → Regressionstest), läuft im Fork, Befunde in `.agent/notes.md`; TDD-Leitlinie (gute/schlechte Tests) als Referenz-Skill `tdd` für `next`/`fix`
+- **Done when:** `/diagnose` an einem eingebauten Fehler: reproduzierender Test zuerst, Ursache in `notes.md`, Fix + Regressionstest
 - **Depends on:** M12
 - **Size:** S, ~3 commits
 
@@ -245,3 +246,4 @@ alles wird in der neuesten Version installiert und mit `dot update` aktualisiert
 - 2026-11-27: M13 `/grill` mit Glossar und ADRs abgeschlossen (Skill `grill`, `plan-roadmap` fragt in Runden, `plan-commits`/`next` lesen das Glossar)
 - 2026-11-27: M14 `/refine` + `/fix` abgeschlossen (Skills `refine` und `fix`, Prompt-Pfad als Eingabe für `plan-roadmap`/`plan-commits`, pi-Prompts, Doku)
 - 2026-11-27: M15 `/inspect` auf zwei Achsen abgeschlossen (Skill `inspect` mit getrennten Achsen Standards/Spec, zwei frische Subagents in Claude Code, pi nacheinander, Bericht unter `.agent/reviews/`, `next` schlägt `/inspect` vor, `/review` in `/inspect` umbenannt; manuelle Abnahme `/inspect main` offen)
+- 2026-11-27: M16 `/diagnose` + TDD-Leitlinie abgeschlossen (Skills `diagnose` im Fork und `tdd` als Referenz, `next`/`fix` arbeiten rot-grün-refactor, pi-Prompt, Doku; `/debug` in `/diagnose` umbenannt, Entscheidung #17; manuelle Abnahme `/diagnose` an eingebautem Fehler offen)
