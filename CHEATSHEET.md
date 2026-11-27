@@ -139,7 +139,7 @@ Die `dev: …`-Tasks kommen aus den Projektvorlagen (`dot zed-template angular|d
 | `Alt-w`                    | Nächstes Wort der Prediction annehmen            |
 | Visual: `S`, dann Zeichen  | Auswahl umschließen                              |
 
-In Claude Code und pi gelten `/plan-commits`, `/next`, `/next-all`, `/explain`,
+In Claude Code und pi gelten `/plan-commits`, `/next`, `/explain`,
 `/explain-project` aus `agent-config/`; Anmeldung bei Claude einmalig mit `claude`.
 
 

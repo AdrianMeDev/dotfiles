@@ -157,9 +157,9 @@ Alles, was Agents erzeugen, liegt lokal unter `.agent/` im Projekt (nie im Repo)
   oder Skripte, die git aufrufen, sind nicht abgedeckt.
 - **Alte Pfade:** `.agent-plan.md` und `docs/ROADMAP.md` werden weiter gelesen; geschrieben wird nur
   unter `.agent/`. Migration eines laufenden Plans: `mv .agent-plan.md .agent/plan.md`.
-- **`next-all` ist entfernt** (es committete selbst). `dot install --only agents --backup` sichert
-  den alten Skill und entfernt ihn; `dot doctor` meldet Skills, die nicht aus dem Repo stammen
-  (`synced/` ausgenommen), nur als Hinweis. Native Windows: `next-all` manuell löschen.
+- **`next-all` wird nicht mehr ausgeliefert** (es committete selbst). Eine lokal installierte Kopie
+  bleibt unangetastet und wird nicht gemeldet; `dot doctor` meldet andere Skills, die nicht aus dem
+  Repo stammen (`synced/` ausgenommen), nur als Hinweis.
 
 ## 5. Verstehen: `/explain` und `/explain-project`
 
