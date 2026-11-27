@@ -11,9 +11,11 @@ import tempfile
 FRONTMATTER = 'claude-frontmatter.txt'
 # Superseded paths (relative to the pi / Claude root) that are retired into the backup.
 LEGACY = {
-    'pi': ('skills/erklaeren', 'skills/projekt-erklaeren', 'prompts/plan.md'),
-    'claude': ('skills/erklaeren', 'skills/projekt-erklaeren'),
+    'pi': ('skills/erklaeren', 'skills/projekt-erklaeren', 'skills/next-all', 'prompts/plan.md'),
+    'claude': ('skills/erklaeren', 'skills/projekt-erklaeren', 'skills/next-all'),
 }
+# Skill directories managed by the tool itself, never reported as foreign.
+MANAGED_SKILLS = ('synced',)
 
 
 def source_files(base):
@@ -102,11 +104,27 @@ def analyse(rendered, root_map):
     return entries, legacy
 
 
-def status(entries, legacy, root_map):
+def foreign_skills(rendered, root_map):
+    """Return [(tool, name)] for skill dirs that are neither rendered from the repo nor legacy."""
+    found = []
+    for tool, files in rendered.items():
+        skills = root_map[tool] / 'skills'
+        if skills.is_symlink() or not skills.is_dir():
+            continue
+        known = {rel.split('/')[1] for rel in files if rel.startswith('skills/')}
+        known |= {Path(rel).name for rel in LEGACY[tool] if rel.startswith('skills/')}
+        known |= set(MANAGED_SKILLS)
+        found += [(tool, p.name) for p in sorted(skills.iterdir()) if p.is_dir() and not p.name.startswith('.') and p.name not in known]
+    return found
+
+
+def status(entries, legacy, root_map, foreign=()):
     for tool, rel, state, _ in entries:
         print(f'[{state}] {tool}: {rel}')
     for tool, path in legacy:
         print(f'[legacy] {tool}: {path.relative_to(root_map[tool])}')
+    for tool, name in foreign:
+        print(f'[foreign] {tool}: skills/{name}')
     print(f'{sum(e[2] == "ok" for e in entries)} ok, {sum(e[2] == "missing" for e in entries)} fehlen, '
           f'{sum(e[2] == "modified" for e in entries)} abweichend, {len(legacy)} veraltet.')
 
@@ -143,7 +161,7 @@ def main():
     files = render(repo)
     entries, legacy = analyse(files, root_map)
     if args.status:
-        status(entries, legacy, root_map)
+        status(entries, legacy, root_map, foreign_skills(files, root_map))
         return
     state_dir = Path.home() / '.local/state/dotfiles/backups'
     if state_dir.resolve().is_relative_to(repo):
