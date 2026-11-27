@@ -14,6 +14,7 @@ Conventions (layout, exclude helper, legacy paths, git rule) are in the `agent-w
 
 Look for a roadmap: `.agent/ROADMAP.md`, then `docs/ROADMAP.md`, then `ROADMAP.md` in the repository root.
 
+- **User passes a prompt file** (an existing file, typically `.agent/prompts/<slug>.md` from `refine`) → read it as the task: Goal and Context are the task, Acceptance criteria become **Done when**, Boundaries become out of scope. `Target:` is not `commits` → hint and continue only after confirmation.
 - **User passes a task** (free text) → plan that task. If a roadmap exists and the task clearly belongs to one of its milestones, say so and link it.
 - **User passes a milestone id** (e.g. `M2`) → plan that milestone.
 - **No argument and a roadmap exists** → take the first milestone marked `[ ]` whose dependencies are `[x]`. Name it and confirm in one line ("Planning M2 – <name>. OK?") unless the user already said which one.

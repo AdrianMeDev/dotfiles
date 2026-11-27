@@ -102,6 +102,15 @@ class AgentsTests(unittest.TestCase):
         self.assertNotIn('at most 6', text)
         self.assertLessEqual(len(text.splitlines()), 110)
 
+    def test_planners_accept_refined_prompt_files(self):
+        self.run_agents()
+        for name in ('plan-commits', 'plan-roadmap'):
+            for root in (self.claude, self.pi):
+                text = (root / 'skills' / name / 'SKILL.md').read_text()
+                self.assertIn('.agent/prompts/', text, name)
+                self.assertIn('`Target:`', text, name)
+        self.assertLessEqual(len((SRC / 'skills/plan-roadmap/SKILL.md').read_text().splitlines()), 110)
+
     def test_plan_commits_and_next_read_glossary(self):
         for name in ('plan-commits', 'next'):
             for root in (self.claude, self.pi):
