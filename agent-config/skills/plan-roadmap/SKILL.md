@@ -1,6 +1,6 @@
 ---
 name: plan-roadmap
-description: Plans something big - a large feature, an epic or a complete new app - as a roadmap of milestones in docs/ROADMAP.md (vision, scope, architecture, decisions, risks, ordered milestones), without writing code. Use when the user runs /plan-roadmap or wants to plan a whole app, a large feature or a multi-week piece of work. Each milestone is later broken into commits with `plan-commits` and built with `next`.
+description: Plans something big - a large feature, an epic or a complete new app - as a roadmap of milestones in .agent/ROADMAP.md (vision, scope, architecture, decisions, risks, ordered milestones), without writing code. Use when the user runs /plan-roadmap or wants to plan a whole app, a large feature or a multi-week piece of work. Each milestone is later broken into commits with `plan-commits` and built with `next`.
 ---
 
 # Plan big work as a roadmap of milestones
@@ -10,8 +10,8 @@ Respond in the user's language.
 
 Three planning levels work together:
 ```
-/plan-roadmap   docs/ROADMAP.md     big picture → milestones        (this skill)
-/plan-commits   .agent-plan.md      next milestone → commit steps
+/plan-roadmap   .agent/ROADMAP.md   big picture → milestones        (this skill)
+/plan-commits   .agent/plan.md      next milestone → commit steps
 /next           code + commit       one step = one commit
 ```
 
@@ -42,11 +42,11 @@ Rules for every milestone:
 - **Greenfield app:** start with **M0 – walking skeleton**: project scaffold, lint, format, tests, a trivial end-to-end path (e.g. one page that calls one endpoint), CI, and dev tooling (Zed tasks/debug configs if used). Nothing else.
 - **Large feature in an existing app:** consider a feature flag or a non-wired first slice, and data migrations as their own early milestone.
 - Each milestone has a checkable **Done when** that a person can demo or test.
-- Plan milestones only to the level the next `/plan-commits` needs. Detailed steps belong in `.agent-plan.md`, not here.
+- Plan milestones only to the level the next `/plan-commits` needs. Detailed steps belong in `.agent/plan.md`, not here.
 
 ## 4. Write the roadmap
 
-Default path: `docs/ROADMAP.md` (if the project already has a roadmap or planning file, ask whether to use it instead).
+Default path: `.agent/ROADMAP.md` (local, excluded from git – exclude helper in the `agent-workspace` skill). If the project already has a roadmap such as `docs/ROADMAP.md`, ask whether to use it instead.
 Keep it short – **under ~150 lines** – because it is read again for every milestone. Use exactly this structure:
 
 ```markdown
@@ -95,15 +95,13 @@ Updated: <YYYY-MM-DD>
 - <YYYY-MM-DD>: roadmap created
 ```
 
-Status markers: `[ ]` open · `[~]` in progress (has an `.agent-plan.md`) · `[x]` done · `[-]` dropped.
+Status markers: `[ ]` open · `[~]` in progress (has an `.agent/plan.md`) · `[x]` done · `[-]` dropped.
 
 ## 5. Present and stop
 
 Show: vision in one sentence, the milestone list (one line each: id, name, size, done-when), key decisions and the top risks.
 
-Then ask:
-1. whether to change anything;
-2. whether `docs/ROADMAP.md` should be **committed** (recommended – it documents the project for others and your future self; suggest `docs: add roadmap`) or **kept local** (then add it to `.git/info/exclude`).
+Then ask whether to change anything. (The roadmap is local; if the user wants it in the repository, they can move it to `docs/` and commit it themselves.)
 
 End with: **"When the roadmap fits, run `/plan-commits` – it takes the next open milestone automatically."**
 

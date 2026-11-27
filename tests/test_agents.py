@@ -65,6 +65,20 @@ class AgentsTests(unittest.TestCase):
         self.assertNotIn('user-invocable', (self.pi / 'skills/agent-workspace/SKILL.md').read_text())
         self.assertEqual(list(self.pi.rglob('claude-frontmatter.txt')), [])
 
+    def test_plan_path_is_agent_dir_except_documented_fallback(self):
+        self.run_agents()
+        markers = ('legacy', 'fallback', 'else', 'old ')
+        files = [f for root in (self.claude, self.pi) for sub in ('skills', 'prompts')
+                 for f in (root / sub).rglob('*.md')]
+        self.assertTrue(files)
+        for f in files:
+            for n, line in enumerate(f.read_text().splitlines(), 1):
+                if 'agent-plan' in line:
+                    self.assertTrue(any(m in line for m in markers), f'{f}:{n}: {line}')
+        for tool in (self.claude, self.pi):
+            self.assertIn('.agent/plan.md', (tool / 'skills/plan-commits/SKILL.md').read_text())
+            self.assertIn('.agent/plan.md', (tool / 'skills/next/SKILL.md').read_text())
+
     def test_env_overrides_targets(self):
         env = dict(self.env, CLAUDE_CONFIG_DIR=str(self.home / 'c'), PI_CODING_AGENT_DIR=str(self.home / 'p'))
         self.assertEqual(self.run_agents(env=env).returncode, 0)
