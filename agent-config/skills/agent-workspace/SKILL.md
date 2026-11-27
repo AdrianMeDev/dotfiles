@@ -19,7 +19,7 @@ All agent-generated files live under `.agent/` in the project root and stay loca
   GLOSSARY.md    domain terms (grill)
   adr/           architecture decision records, NNNN-<slug>.md (grill)
   prompts/       refined prompts, <slug>.md (refine)
-  reviews/       reserved - review reports
+  reviews/       review reports, <YYYY-MM-DD>-<slug>.md (inspect)
   retro/         reserved - retrospectives
 ```
 

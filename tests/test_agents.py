@@ -108,6 +108,25 @@ class AgentsTests(unittest.TestCase):
         self.assertNotIn('context:', (self.pi / 'skills/fix/SKILL.md').read_text())
         self.assertTrue((self.pi / 'prompts/fix.md').is_file())
 
+    def test_inspect_skill_rendered_for_both_tools(self):
+        self.run_agents()
+        source = SRC / 'skills/inspect'
+        text = (source / 'SKILL.md').read_text()
+        self.assertLessEqual(len(text.splitlines()), 80)
+        for phrase in ('.agent/reviews/', 'Standards', 'Spec', '.agent/plan.md', '.agent/prompts/',
+                       'one after another', 'one message', 'git commit'):
+            self.assertIn(phrase, text)
+        for name in ('SKILL.md', 'STANDARDS.md', 'REPORT-FORMAT.md'):
+            for root in (self.claude, self.pi):
+                self.assertTrue((root / 'skills/inspect' / name).is_file(), name)
+        claude = (self.claude / 'skills/inspect/SKILL.md').read_text()
+        self.assertIn('model: sonnet', claude)
+        self.assertNotIn('context:', claude)
+        self.assertNotIn('model:', (self.pi / 'skills/inspect/SKILL.md').read_text())
+        prompt = (self.pi / 'prompts/inspect.md').read_text()
+        self.assertIn('`inspect` skill', prompt)
+        self.assertFalse((self.pi / 'prompts/review.md').exists())
+
     def test_plan_roadmap_asks_in_grill_rounds(self):
         text = (SRC / 'skills/plan-roadmap/SKILL.md').read_text()
         self.assertIn('`grill`', text)
@@ -128,6 +147,13 @@ class AgentsTests(unittest.TestCase):
             for root in (self.claude, self.pi):
                 self.run_agents()
                 self.assertIn('.agent/GLOSSARY.md', (root / 'skills' / name / 'SKILL.md').read_text())
+
+    def test_next_suggests_inspect_after_last_step(self):
+        self.run_agents()
+        self.assertLessEqual(len((SRC / 'skills/next/SKILL.md').read_text().splitlines()), 80)
+        for root in (self.claude, self.pi):
+            text = (root / 'skills/next/SKILL.md').read_text()
+            self.assertIn('/inspect <base>', text)
 
     def test_plan_path_is_agent_dir_except_documented_fallback(self):
         self.run_agents()
@@ -243,14 +269,17 @@ class AgentsTests(unittest.TestCase):
         (legacy / 'SKILL.md').write_text('old\n')
         (self.pi / 'prompts').mkdir()
         (self.pi / 'prompts/plan.md').write_text('old\n')
+        (self.pi / 'prompts/review.md').write_text('old\n')
         self.assertEqual(self.run_agents().returncode, 1)
         self.assertTrue(legacy.exists())
         result = self.run_agents('--backup')
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertFalse(legacy.exists())
         self.assertFalse((self.pi / 'prompts/plan.md').exists())
+        self.assertFalse((self.pi / 'prompts/review.md').exists())
         self.assertTrue(list(self.backups.glob('*/pi/skills/erklaeren/SKILL.md')))
         self.assertTrue(list(self.backups.glob('*/pi/prompts/plan.md')))
+        self.assertTrue(list(self.backups.glob('*/pi/prompts/review.md')))
         self.assertEqual(self.run_agents('--backup').returncode, 0)
         self.assertEqual(self.backup_count(), 1)
 

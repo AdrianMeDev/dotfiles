@@ -5,7 +5,7 @@
 | Einsatz | private Projekte | Arbeit |
 | Modell | lokal über Ollama (nichts verlässt den Rechner) | Claude (`sonnet`, bei Bedarf `/model opus`) |
 | Sicherheit | **fragt nicht vor Befehlen** – Regeln stehen nur als Anweisung in `AGENTS.md` | Berechtigungsregeln: erlauben / nachfragen / verbieten |
-| Befehle (gleich in beiden) | `/grill` `/refine` `/plan-roadmap` `/plan-commits` `/next` `/fix` `/explain` `/explain-project` | `/grill` `/refine` `/plan-roadmap` `/plan-commits` `/next` `/fix` `/explain` `/explain-project` |
+| Befehle (gleich in beiden) | `/grill` `/refine` `/plan-roadmap` `/plan-commits` `/next` `/fix` `/inspect` `/explain` `/explain-project` | `/grill` `/refine` `/plan-roadmap` `/plan-commits` `/next` `/fix` `/inspect` `/explain` `/explain-project` |
 | In Zed | `<space> a p` | `<space> a c` |
 
 ```
@@ -15,7 +15,7 @@ agent-config/
 │   ├── models.json         Ollama-Modelle (Kontext, Tokens)
 │   ├── AGENTS.md           globale Anweisungen (privat)
 │   ├── themes/             tokyo-night.json (Tokyo Night)
-│   └── prompts/            /grill /refine /plan-roadmap /plan-commits /next /fix /explain /explain-project /review /commit
+│   └── prompts/            /grill /refine /plan-roadmap /plan-commits /next /fix /inspect /explain /explain-project /commit
 ├── claude/                 → ~/.claude/
 │   ├── settings.json       Modell, Theme (dark-ansi), Vim, Erklär-Stil, Berechtigungen
 │   └── CLAUDE.md           globale Anweisungen (Arbeit)
@@ -27,6 +27,7 @@ agent-config/
 │   ├── plan-commits/       Aufgabe oder nächsten Meilenstein in Commit-große Schritte planen
 │   ├── next/               genau einen Schritt umsetzen, dann für Commit stoppen
 │   ├── fix/                kleine Korrektur: Test zuerst, ein Commit-Vorschlag, Stopp
+│   ├── inspect/            Review auf zwei Achsen (Standards, Spec) → .agent/reviews/ (+ STANDARDS.md, REPORT-FORMAT.md)
 │   ├── explain/            Implementiertes verständlich erklären
 │   └── explain-project/    ganzes Projekt erklären (Onboarding)
 ├── templates/PROJEKT-ANWEISUNGEN.md   Vorlage für CLAUDE.md / AGENTS.md im Projekt
@@ -97,6 +98,7 @@ Drei Ebenen, jede mit eigener Datei:
 | Umsetzen | `/next` | Code + dein Commit | genau ein Schritt, dann Stopp |
 | Prompt schärfen (optional) | `/refine <roadmap\|commits\|fix> <text>` | `.agent/prompts/<slug>.md` | Ziel, Kontext, Akzeptanzkriterien, Grenzen, Glossarbegriffe |
 | Kleine Korrektur | `/fix <prompt-pfad\|text>` | Code + dein Commit | Test zuerst, minimaler Fix, ein Commit, Stopp |
+| Prüfen | `/inspect [base] [prompt-pfad]` | `.agent/reviews/<datum>-<slug>.md` | getrennt: Standards und Spec, keine Codeänderung |
 
 ```
 /plan-roadmap Vereins-App: Mitglieder, Termine, Beiträge   → Fragen beantworten → Roadmap M0…M5
@@ -106,6 +108,7 @@ Drei Ebenen, jede mit eigener Datei:
 /clear
 /next → committen → /next → committen → …
    letzter Schritt: Meilenstein wird in der Roadmap auf [x] gesetzt (im selben Commit)
+/inspect <base>      → Review gegen Standards und Spec (Base-Hash steht im Plan)
 /clear
 /plan-commits        → M1 …
 ```
@@ -143,6 +146,24 @@ Drei Ebenen, jede mit eigener Datei:
 - **`/fix`** stoppt bei dreckigem Arbeitsbaum oder einem `[~]`-Schritt und fasst `.agent/plan.md` nie an.
   Ist die Korrektur größer als ein Commit, empfiehlt er `/plan-commits <prompt-pfad>`.
 
+### `/inspect`
+
+```
+/inspect main                          → Änderungen seit main prüfen
+/inspect .agent/prompts/<slug>.md      → Spec = diese Prompt-Datei, Fixpunkt aus dem Plan (sonst main)
+```
+
+- Fixpunkt: `git merge-base <base> HEAD`; ohne Argument der `Base:`-Hash aus `.agent/plan.md`, sonst `main`.
+  Ungecommittete Änderungen werden einbezogen und als solche gekennzeichnet.
+- **Zwei Achsen, getrennt:** *Standards* (`CLAUDE.md`/`AGENTS.md`, `.editorconfig`, Linter, Code-Stil, Glossar,
+  Smell-Liste in `skills/inspect/STANDARDS.md`) und *Spec* (Prompt-Datei, sonst Plan-Schritte + Meilenstein, sonst
+  Roadmap; ohne Quelle steht „no spec found“). Claude Code startet pro Achse einen frischen Subagenten (parallel,
+  läuft im Hauptgespräch, nicht im Fork); pi prüft die Achsen nacheinander.
+- Der Bericht liegt unter `.agent/reviews/<datum>-<slug>.md` (Format: `skills/inspect/REPORT-FORMAT.md`), die
+  Abschnitte werden nicht vermischt. `/inspect` ändert keinen Code und führt keine Git-Schreibaktion aus.
+- `/next` schlägt `/inspect` nach dem letzten Schritt vor. Der Name `inspect` vermeidet den Konflikt mit dem
+  eingebauten `/review` von Claude Code.
+
 ### Details zu `/plan-commits` und `/next`
 
 ```
@@ -172,7 +193,7 @@ Drei Ebenen, jede mit eigener Datei:
 
 Alles, was Agents erzeugen, liegt lokal unter `.agent/` im Projekt (nie im Repo):
 `plan.md`, `ROADMAP.md`, `notes.md` (Befunde aus `/next` und `/fix`), `GLOSSARY.md` und `adr/` (aus `/grill`),
-`prompts/` (aus `/refine`) und reserviert `reviews/`, `retro/`. Die Konventionen stehen einmal im Skill `agent-workspace`.
+`prompts/` (aus `/refine`), `reviews/` (aus `/inspect`) und reserviert `retro/`. Die Konventionen stehen einmal im Skill `agent-workspace`.
 
 - **Git gehört dir:** Agents committen, pushen, mergen oder legen PRs/Tickets nie selbst an – sie
   zeigen nur die Befehle. Claude Code erzwingt das mit `deny`-Regeln (`claude/settings.json`);
@@ -212,8 +233,8 @@ in die Historie geht.
 
 ## 6. Weitere Befehle (nur pi)
 
-`/review [pfad|fokus]` Code-Review · `/commit` Commit-Message vorschlagen (committet nicht selbst).
-In Claude Code gibt es dafür die eingebauten `/review` bzw. „schreib mir eine Commit-Message“.
+`/commit` Commit-Message vorschlagen (committet nicht selbst).
+In Claude Code gibt es dafür „schreib mir eine Commit-Message“. Das Code-Review übernimmt `/inspect` (beide Tools).
 
 In pi sind die Workflow-Befehle kleine Prompt-Vorlagen, die den gleichnamigen Skill laden;
 `/skill:next` usw. funktioniert dort ebenfalls.
