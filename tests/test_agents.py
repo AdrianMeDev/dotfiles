@@ -66,6 +66,19 @@ class AgentsTests(unittest.TestCase):
         self.assertNotIn('user-invocable', (self.pi / 'skills/agent-workspace/SKILL.md').read_text())
         self.assertEqual(list(self.pi.rglob('claude-frontmatter.txt')), [])
 
+    def test_grill_skill_rendered_for_both_tools(self):
+        self.run_agents()
+        source = SRC / 'skills/grill'
+        self.assertLessEqual(len((source / 'SKILL.md').read_text().splitlines()), 80)
+        self.assertIn('_Avoid_', (source / 'GLOSSARY-FORMAT.md').read_text())
+        self.assertIn('MIT', (source / 'NOTICE.md').read_text())
+        for root in (self.claude, self.pi):
+            for name in ('SKILL.md', 'GLOSSARY-FORMAT.md', 'ADR-FORMAT.md', 'NOTICE.md'):
+                self.assertTrue((root / 'skills/grill' / name).is_file(), name)
+        self.assertIn('model: opus', (self.claude / 'skills/grill/SKILL.md').read_text())
+        self.assertNotIn('model:', (self.pi / 'skills/grill/SKILL.md').read_text())
+        self.assertTrue((self.pi / 'prompts/grill.md').is_file())
+
     def test_plan_path_is_agent_dir_except_documented_fallback(self):
         self.run_agents()
         markers = ('legacy', 'fallback', 'else', 'old ')

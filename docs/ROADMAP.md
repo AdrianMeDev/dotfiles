@@ -172,7 +172,7 @@ alles wird in der neuesten Version installiert und mit `dot update` aktualisiert
 - **Depends on:** M4
 - **Size:** M, ~6 commits
 
-### M13 [ ] `/grill` mit Glossar und ADRs
+### M13 [~] `/grill` mit Glossar und ADRs
 - **Goal:** Ein Interview in Runden schärft Pläne und baut nebenbei Glossar und ADRs auf.
 - **Includes:** Skill `grill` (grilling + domain-modeling: Frontier-Runden mit Empfehlung, Fakten selbst nachschlagen, `.agent/GLOSSARY.md` + `.agent/adr/` inline, ADR nur bei schwer umkehrbar + überraschend + echter Abwägung), `plan-roadmap` nutzt Grill-Runden statt fester Fragenliste, `plan-commits`/`next` lesen das Glossar
 - **Done when:** `/grill` an einer Beispielidee: nummerierte Runden mit Empfehlung, Glossareintrag im Format mit `_Avoid_`; `/plan-roadmap` fragt in Runden

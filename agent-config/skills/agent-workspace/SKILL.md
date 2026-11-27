@@ -16,8 +16,8 @@ All agent-generated files live under `.agent/` in the project root and stay loca
   plan.md        commit plan (plan-commits), executed by next
   ROADMAP.md     roadmap (plan-roadmap)
   notes.md       findings that must survive /clear
-  GLOSSARY.md    reserved - domain terms
-  adr/           reserved - architecture decision records
+  GLOSSARY.md    domain terms (grill)
+  adr/           architecture decision records, NNNN-<slug>.md (grill)
   prompts/       reserved - refined prompts
   reviews/       reserved - review reports
   retro/         reserved - retrospectives
