@@ -40,7 +40,7 @@ Arguments:
 ## 3. Implement exactly one step
 
 1. Take the first `[ ]` step (or the requested one) and announce it: **"Step n/N: <commit message>"**.
-2. Re-read the files involved – the user may have changed code since planning.
+2. Re-read the files involved – the user may have changed code since planning. If `.agent/GLOSSARY.md` exists, read it and use its terms in code and names; term conflicts go to `.agent/notes.md`.
 3. Implement **only** what this step describes, following the project's conventions. Include the planned tests.
 4. If the plan turns out to be wrong or the step is too big: **stop**, explain why, and propose an updated plan (split the step, reorder, add a step). Change the plan only after the user agrees. Never silently expand the scope. Findings that must survive `/clear` (open points, decisions, surprises) go to `.agent/notes.md` in the format from `agent-workspace`.
 

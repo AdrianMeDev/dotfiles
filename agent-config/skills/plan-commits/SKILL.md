@@ -25,7 +25,8 @@ When planning a milestone, read only the roadmap parts you need: its milestone s
 
 1. Restate the task in 2–3 sentences in your own words.
 2. Explore read-only: the affected code, existing patterns and conventions, tests, and the project's commands (README, `package.json`, `pyproject.toml`, `*.csproj`, `.zed/tasks.json`, `CLAUDE.md`/`AGENTS.md`).
-3. If something essential is ambiguous, ask at most 3 short questions **before** writing the plan. Otherwise state your assumptions in the plan.
+3. If `.agent/GLOSSARY.md` exists, read it (and relevant `.agent/adr/*.md`): use its terms in steps and commit messages, and list conflicts with the task wording as assumptions.
+4. If something essential is ambiguous, ask at most 3 short questions **before** writing the plan. Otherwise state your assumptions in the plan.
 
 ## 3. Check the starting point
 

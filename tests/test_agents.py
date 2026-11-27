@@ -85,6 +85,12 @@ class AgentsTests(unittest.TestCase):
         self.assertNotIn('at most 6', text)
         self.assertLessEqual(len(text.splitlines()), 110)
 
+    def test_plan_commits_and_next_read_glossary(self):
+        for name in ('plan-commits', 'next'):
+            for root in (self.claude, self.pi):
+                self.run_agents()
+                self.assertIn('.agent/GLOSSARY.md', (root / 'skills' / name / 'SKILL.md').read_text())
+
     def test_plan_path_is_agent_dir_except_documented_fallback(self):
         self.run_agents()
         markers = ('legacy', 'fallback', 'else', 'old ')
