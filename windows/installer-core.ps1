@@ -662,11 +662,27 @@ function Install-WindowsDesktop {
     }
 }
 
+# UPGRADE_DIFFERENT_INSTALL_TECHNOLOGY (observed on Windows as 0x8A15008E; matched by exit code only, winget output is localized).
+$script:WingetTechnologyMismatchCode = -1978335090
+
+# Returns the package ID when winget refuses the upgrade because the install technology differs, otherwise nothing.
 function Update-WingetPackage {
     param([string]$Package)
     if (-not (Test-WingetPackage $Package)) { Write-Host "Skip: $Package (nicht installiert)"; return }
+    $result = Invoke-NativeResult 'winget.exe' @('upgrade', '--exact', '--id', $Package, '--source', 'winget', '--accept-package-agreements', '--accept-source-agreements', '--disable-interactivity')
+    $result.Output | Out-Host
     # UPDATE_NOT_APPLICABLE also means the installed version is current.
-    Invoke-Native 'winget.exe' @('upgrade', '--exact', '--id', $Package, '--source', 'winget', '--accept-package-agreements', '--accept-source-agreements', '--disable-interactivity') @(0, -1978335189) | Out-Host
+    if ($result.Code -in @(0, -1978335189)) { return }
+    if ($result.Code -eq $script:WingetTechnologyMismatchCode) {
+        Write-Host (Get-WingetReinstallHint $Package)
+        return $Package
+    }
+    throw "winget.exe (Exit $($result.Code)): $($result.Output -join "`n")"
+}
+
+function Get-WingetReinstallHint {
+    param([string]$Package)
+    return "Warnung: $Package uebersprungen, Installationstechnologie unterscheidet sich. Manuell neu installieren: winget uninstall --id $Package --exact; winget install --id $Package --exact --source winget"
 }
 
 # Runs the Linux `dot` as the distro's default user (created by wsl-bootstrap.sh).
@@ -687,7 +703,11 @@ function Update-WindowsDesktop {
     }
     Assert-WindowsPrerequisites
     $selected = if ($NoWsl) { $null } else { Select-WslDistro $Distro }
-    foreach ($package in $packages) { Update-WingetPackage $package }
+    $mismatched = @(foreach ($package in $packages) { Update-WingetPackage $package })
+    if ($mismatched.Count -gt 0) {
+        Write-Host 'Nicht aktualisiert (Installationstechnologie unterscheidet sich):'
+        foreach ($package in $mismatched) { Write-Host (Get-WingetReinstallHint $package) }
+    }
     if ((Get-VialState -Backup:$Backup).Version) {
         $temp = Join-Path ([IO.Path]::GetTempPath()) ('dotfiles-' + [guid]::NewGuid().ToString('N'))
         try {

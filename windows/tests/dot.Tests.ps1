@@ -55,7 +55,7 @@ Describe 'Windows dot commands' {
             } else {
                 $Arguments[0] | Should -Be 'upgrade'
                 $script:upgraded += $id
-                $code = -1978335189
+                $code = if ($id -eq $script:mismatchId) { -1978335090 } else { $script:upgradeCode }
             }
             return [pscustomobject]@{ Code = $code; Output = @() }
         }
@@ -66,6 +66,8 @@ Describe 'Windows dot commands' {
         foreach ($name in 'USERPROFILE', 'APPDATA', 'LOCALAPPDATA', 'CLAUDE_CONFIG_DIR', 'PI_CODING_AGENT_DIR') {
             [Environment]::SetEnvironmentVariable($name, (Join-Path $TestDrive "$script:run/$name"))
         }
+        $script:mismatchId = $null
+        $script:upgradeCode = -1978335189
         $script:listed = @()
         $script:upgraded = @()
         $script:wslDistro = $null
@@ -93,6 +95,20 @@ Describe 'Windows dot commands' {
         $script:upgraded | Should -Be @($script:ids | Where-Object { $_ -ne 'Git.Git' })
         Test-Path "$env:APPDATA/Zed/settings.json" | Should -BeTrue
         Test-Path "$env:CLAUDE_CONFIG_DIR/CLAUDE.md" | Should -BeTrue
+    }
+    It 'skips a package with an install technology mismatch, names the fix and continues' {
+        $script:mismatchId = $script:ids[1]
+        $output = Update-WindowsDesktop $script:source -NoWsl 6>&1
+        $text = ($output | Out-String)
+        $script:upgraded | Should -Be @($script:ids | Where-Object { $_ -ne 'Git.Git' })
+        $text | Should -Match "winget uninstall --id $([regex]::Escape($script:mismatchId)) --exact"
+        $text | Should -Match "winget install --id $([regex]::Escape($script:mismatchId)) --exact --source winget"
+        ([regex]::Matches($text, "Warnung: $([regex]::Escape($script:mismatchId)) ")).Count | Should -Be 2
+        Test-Path "$env:APPDATA/Zed/settings.json" | Should -BeTrue
+    }
+    It 'still fails on other upgrade exit codes' {
+        $script:upgradeCode = 5
+        { Update-WindowsDesktop $script:source -NoWsl 6>$null } | Should -Throw '*Exit 5*'
     }
     It 'reports altered config and agent files, package status and registry drift without repairs' {
         $entries = @(Get-ConfigEntries $script:source '')
