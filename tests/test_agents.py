@@ -79,6 +79,23 @@ class AgentsTests(unittest.TestCase):
         self.assertNotIn('model:', (self.pi / 'skills/grill/SKILL.md').read_text())
         self.assertTrue((self.pi / 'prompts/grill.md').is_file())
 
+    def test_refine_skill_rendered_for_both_tools(self):
+        self.run_agents()
+        source = SRC / 'skills/refine'
+        skill = (source / 'SKILL.md').read_text()
+        self.assertLessEqual(len(skill.splitlines()), 80)
+        self.assertIn('`grill`', skill)
+        self.assertIn('.agent/prompts/', skill)
+        fmt = (source / 'PROMPT-FORMAT.md').read_text()
+        for phrase in ('Target:', 'Acceptance criteria', 'Boundaries'):
+            self.assertIn(phrase, fmt)
+        for root in (self.claude, self.pi):
+            for name in ('SKILL.md', 'PROMPT-FORMAT.md'):
+                self.assertTrue((root / 'skills/refine' / name).is_file(), name)
+        self.assertIn('model: opus', (self.claude / 'skills/refine/SKILL.md').read_text())
+        self.assertNotIn('model:', (self.pi / 'skills/refine/SKILL.md').read_text())
+        self.assertTrue((self.pi / 'prompts/refine.md').is_file())
+
     def test_plan_roadmap_asks_in_grill_rounds(self):
         text = (SRC / 'skills/plan-roadmap/SKILL.md').read_text()
         self.assertIn('`grill`', text)
