@@ -187,7 +187,7 @@ alles wird in der neuesten Version installiert und mit `dot update` aktualisiert
 - **Depends on:** M13
 - **Size:** M, ~5 commits
 
-### M15 [~] `/inspect` auf zwei Achsen
+### M15 [x] `/inspect` auf zwei Achsen
 - **Goal:** Änderungen werden getrennt gegen Standards und gegen Spec (Planschritt/Meilenstein/Prompt) geprüft.
 - **Includes:** Spike Subagents aus Skill/Fork, Skill `inspect` (Fixpunkt, Standards-Quellen + Fowler-Smell-Liste, Spec aus `.agent/plan.md`/Roadmap/Prompt, zwei frische Subagents, Bericht nach `.agent/reviews/<datum>-<slug>.md`, nicht zusammenmischen), pi-Fallback nacheinander, `pi/prompts/review.md` durch `inspect.md` ersetzen, `next` schlägt `/inspect` nach dem letzten Schritt vor
 - **Done when:** `/inspect main` auf einem Branch liefert getrennte Abschnitte „Standards“ und „Spec“ und eine Datei unter `.agent/reviews/`
@@ -244,3 +244,4 @@ alles wird in der neuesten Version installiert und mit `dot update` aktualisiert
 - 2026-11-27: `next-all` nicht mehr ausgeliefert, lokale Kopie bleibt bei `dot install` erhalten
 - 2026-11-27: M13 `/grill` mit Glossar und ADRs abgeschlossen (Skill `grill`, `plan-roadmap` fragt in Runden, `plan-commits`/`next` lesen das Glossar)
 - 2026-11-27: M14 `/refine` + `/fix` abgeschlossen (Skills `refine` und `fix`, Prompt-Pfad als Eingabe für `plan-roadmap`/`plan-commits`, pi-Prompts, Doku)
+- 2026-11-27: M15 `/inspect` auf zwei Achsen abgeschlossen (Skill `inspect` mit getrennten Achsen Standards/Spec, zwei frische Subagents in Claude Code, pi nacheinander, Bericht unter `.agent/reviews/`, `next` schlägt `/inspect` vor, `/review` in `/inspect` umbenannt; manuelle Abnahme `/inspect main` offen)
