@@ -66,6 +66,31 @@ class AgentsTests(unittest.TestCase):
         self.assertNotIn('user-invocable', (self.pi / 'skills/agent-workspace/SKILL.md').read_text())
         self.assertEqual(list(self.pi.rglob('claude-frontmatter.txt')), [])
 
+    def test_grill_skill_rendered_for_both_tools(self):
+        self.run_agents()
+        source = SRC / 'skills/grill'
+        self.assertLessEqual(len((source / 'SKILL.md').read_text().splitlines()), 80)
+        self.assertIn('_Avoid_', (source / 'GLOSSARY-FORMAT.md').read_text())
+        self.assertIn('MIT', (source / 'NOTICE.md').read_text())
+        for root in (self.claude, self.pi):
+            for name in ('SKILL.md', 'GLOSSARY-FORMAT.md', 'ADR-FORMAT.md', 'NOTICE.md'):
+                self.assertTrue((root / 'skills/grill' / name).is_file(), name)
+        self.assertIn('model: opus', (self.claude / 'skills/grill/SKILL.md').read_text())
+        self.assertNotIn('model:', (self.pi / 'skills/grill/SKILL.md').read_text())
+        self.assertTrue((self.pi / 'prompts/grill.md').is_file())
+
+    def test_plan_roadmap_asks_in_grill_rounds(self):
+        text = (SRC / 'skills/plan-roadmap/SKILL.md').read_text()
+        self.assertIn('`grill`', text)
+        self.assertNotIn('at most 6', text)
+        self.assertLessEqual(len(text.splitlines()), 110)
+
+    def test_plan_commits_and_next_read_glossary(self):
+        for name in ('plan-commits', 'next'):
+            for root in (self.claude, self.pi):
+                self.run_agents()
+                self.assertIn('.agent/GLOSSARY.md', (root / 'skills' / name / 'SKILL.md').read_text())
+
     def test_plan_path_is_agent_dir_except_documented_fallback(self):
         self.run_agents()
         markers = ('legacy', 'fallback', 'else', 'old ')
@@ -191,17 +216,16 @@ class AgentsTests(unittest.TestCase):
         self.assertEqual(self.run_agents('--backup').returncode, 0)
         self.assertEqual(self.backup_count(), 1)
 
-    def test_next_all_is_retired_with_backup(self):
+    def test_local_next_all_is_kept_and_not_reported(self):
         for root in (self.claude, self.pi):
             (root / 'skills/next-all').mkdir(parents=True)
-            (root / 'skills/next-all/SKILL.md').write_text('old\n')
-        self.assertEqual(self.run_agents().returncode, 1)
+            (root / 'skills/next-all/SKILL.md').write_text('local\n')
         result = self.run_agents('--backup')
         self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertFalse((self.claude / 'skills/next-all').exists())
-        self.assertFalse((self.pi / 'skills/next-all').exists())
-        self.assertTrue(list(self.backups.glob('*/claude/skills/next-all/SKILL.md')))
-        self.assertTrue(list(self.backups.glob('*/pi/skills/next-all/SKILL.md')))
+        self.assertNotIn('next-all', result.stdout + result.stderr)
+        for root in (self.claude, self.pi):
+            self.assertEqual((root / 'skills/next-all/SKILL.md').read_text(), 'local\n')
+        self.assertEqual(self.backup_count(), 0)
 
     def test_status_reports_foreign_skills_but_not_synced(self):
         self.run_agents()

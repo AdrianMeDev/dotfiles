@@ -11,11 +11,11 @@ import tempfile
 FRONTMATTER = 'claude-frontmatter.txt'
 # Superseded paths (relative to the pi / Claude root) that are retired into the backup.
 LEGACY = {
-    'pi': ('skills/erklaeren', 'skills/projekt-erklaeren', 'skills/next-all', 'prompts/plan.md'),
-    'claude': ('skills/erklaeren', 'skills/projekt-erklaeren', 'skills/next-all'),
+    'pi': ('skills/erklaeren', 'skills/projekt-erklaeren', 'prompts/plan.md'),
+    'claude': ('skills/erklaeren', 'skills/projekt-erklaeren'),
 }
-# Skill directories managed by the tool itself, never reported as foreign.
-MANAGED_SKILLS = ('synced',)
+# Skill directories tolerated as foreign (tool-managed or a kept local copy), never reported.
+MANAGED_SKILLS = ('synced', 'next-all')
 
 
 def source_files(base):

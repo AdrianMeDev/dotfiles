@@ -5,7 +5,7 @@
 | Einsatz | private Projekte | Arbeit |
 | Modell | lokal über Ollama (nichts verlässt den Rechner) | Claude (`sonnet`, bei Bedarf `/model opus`) |
 | Sicherheit | **fragt nicht vor Befehlen** – Regeln stehen nur als Anweisung in `AGENTS.md` | Berechtigungsregeln: erlauben / nachfragen / verbieten |
-| Befehle (gleich in beiden) | `/plan-roadmap` `/plan-commits` `/next` `/explain` `/explain-project` | `/plan-roadmap` `/plan-commits` `/next` `/explain` `/explain-project` |
+| Befehle (gleich in beiden) | `/grill` `/plan-roadmap` `/plan-commits` `/next` `/explain` `/explain-project` | `/grill` `/plan-roadmap` `/plan-commits` `/next` `/explain` `/explain-project` |
 | In Zed | `<space> a p` | `<space> a c` |
 
 ```
@@ -15,12 +15,13 @@ agent-config/
 │   ├── models.json         Ollama-Modelle (Kontext, Tokens)
 │   ├── AGENTS.md           globale Anweisungen (privat)
 │   ├── themes/             tokyo-night.json (Tokyo Night)
-│   └── prompts/            /plan-roadmap /plan-commits /next /explain /explain-project /review /commit
+│   └── prompts/            /grill /plan-roadmap /plan-commits /next /explain /explain-project /review /commit
 ├── claude/                 → ~/.claude/
 │   ├── settings.json       Modell, Theme (dark-ansi), Vim, Erklär-Stil, Berechtigungen
 │   └── CLAUDE.md           globale Anweisungen (Arbeit)
 ├── skills/                 → in beide Tools (Englisch, antworten in deiner Sprache)
 │   ├── agent-workspace/    Referenz: `.agent/`-Layout, Git-Regel, Kontextbudget (kein Befehl)
+│   ├── grill/              Interview in Runden → Glossar und ADRs (MIT-Hinweis in NOTICE.md)
 │   ├── plan-roadmap/       großes Feature / ganze App → Meilensteine (.agent/ROADMAP.md)
 │   ├── plan-commits/       Aufgabe oder nächsten Meilenstein in Commit-große Schritte planen
 │   ├── next/               genau einen Schritt umsetzen, dann für Commit stoppen
@@ -105,8 +106,10 @@ Drei Ebenen, jede mit eigener Datei:
 /plan-commits        → M1 …
 ```
 
-- **`/plan-roadmap`** stellt zuerst bis zu 6 Fragen (Nutzer, MVP, Vorgaben, Stack, Hosting …), jeweils
-  mit Vorschlag – „entscheide du“ geht auch. Meilensteine sind **vertikale Scheiben**: Jeder liefert
+- **`/plan-roadmap`** fragt in `/grill`-Runden (Nutzer, MVP, Vorgaben, Stack, Hosting …): nummerierte
+  Fragen mit Empfehlung, „ja“ übernimmt sie, „entscheide du“ geht auch. `/grill <Idee>` allein schärft
+  eine Idee vorab, löst Begriffe in `.agent/GLOSSARY.md` auf und legt schwer umkehrbare Entscheidungen
+  als ADR in `.agent/adr/` ab; `/plan-commits` und `/next` nutzen das Glossar. Meilensteine sind **vertikale Scheiben**: Jeder liefert
   etwas Benutzbares von der Datenbank bis zur Oberfläche, nicht „erst alle Models“. Bei einer neuen App
   ist **M0 das Gerüst**: Projekt anlegen, Lint, Tests, ein Durchstich, CI, Zed-Tasks.
 - **Roadmap ändern:** `/plan-roadmap` erneut aufrufen – er aktualisiert statt neu anzufangen, erledigte
@@ -148,8 +151,8 @@ Drei Ebenen, jede mit eigener Datei:
 ### `.agent/`-Ablage und Git-Regel
 
 Alles, was Agents erzeugen, liegt lokal unter `.agent/` im Projekt (nie im Repo):
-`plan.md`, `ROADMAP.md`, `notes.md` (Befunde aus `/next`) und reserviert `GLOSSARY.md`, `adr/`,
-`prompts/`, `reviews/`, `retro/`. Die Konventionen stehen einmal im Skill `agent-workspace`.
+`plan.md`, `ROADMAP.md`, `notes.md` (Befunde aus `/next`), `GLOSSARY.md` und `adr/` (aus `/grill`) und
+reserviert `prompts/`, `reviews/`, `retro/`. Die Konventionen stehen einmal im Skill `agent-workspace`.
 
 - **Git gehört dir:** Agents committen, pushen, mergen oder legen PRs/Tickets nie selbst an – sie
   zeigen nur die Befehle. Claude Code erzwingt das mit `deny`-Regeln (`claude/settings.json`);
@@ -157,9 +160,9 @@ Alles, was Agents erzeugen, liegt lokal unter `.agent/` im Projekt (nie im Repo)
   oder Skripte, die git aufrufen, sind nicht abgedeckt.
 - **Alte Pfade:** `.agent-plan.md` und `docs/ROADMAP.md` werden weiter gelesen; geschrieben wird nur
   unter `.agent/`. Migration eines laufenden Plans: `mv .agent-plan.md .agent/plan.md`.
-- **`next-all` ist entfernt** (es committete selbst). `dot install --only agents --backup` sichert
-  den alten Skill und entfernt ihn; `dot doctor` meldet Skills, die nicht aus dem Repo stammen
-  (`synced/` ausgenommen), nur als Hinweis. Native Windows: `next-all` manuell löschen.
+- **`next-all` wird nicht mehr ausgeliefert** (es committete selbst). Eine lokal installierte Kopie
+  bleibt unangetastet und wird nicht gemeldet; `dot doctor` meldet andere Skills, die nicht aus dem
+  Repo stammen (`synced/` ausgenommen), nur als Hinweis.
 
 ## 5. Verstehen: `/explain` und `/explain-project`
 
