@@ -1,5 +1,5 @@
  Roadmap: Dotfiles – eine Dev-Umgebung für Linux und Windows 11
-Updated: 2026-11-21
+Updated: 2026-11-27
 
 ## Vision
 Mit einem Befehl entsteht auf einem frischen CachyOS/Arch, Fedora, Debian/Ubuntu oder Windows 11 (+ WSL2 Arch)
@@ -16,6 +16,9 @@ alles wird in der neuesten Version installiert und mit `dot update` aktualisiert
   - Hyprland (Linux) und GlazeWM (Windows) mit identischem, testgesichertem Keybinding-Vertrag
   - Einheitliches Theme (Tokyo Night, Ioskeley, Deckkraft/Blur) für alle Tools, testgesichert
   - Vial + udev für den Corne, Layout an den Vertrag angepasst; README und CHEATSHEET aktualisiert
+- **Agent-Workflow v2 (M12–M18):** Ideen aus mattpocock/skills (MIT) angepasst übernehmen – `/grill` + Glossar/ADR,
+    `/refine` (Prompt-Refiner), `/fix`, `/review` (Standards + Spec), `/debug`, `/retro`; alle KI-Dateien lokal unter `.agent/`,
+    Git-Schreibaktionen nur durch den Menschen, ≤ ~150k Token pro Agent durch Dateien als Gedächtnis
 - **Later:** Secrets/SSH-Keys über einen Passwortmanager, Visual Studio/Rider-Settings, macOS, Fedora Atomic
 - **Not planned:** Desktop auf Debian, KDE-/Treiber-/Monitor-Einstellungen verwalten, bitidentische Builds
 
@@ -38,6 +41,14 @@ alles wird in der neuesten Version installiert und mit `dot update` aktualisiert
 - **Core data:** `manifests/packages.tsv` (logischer Name → Paketname je Distro), `mise/config.toml` (Tools),
   `manifests/keybindings.tsv` (Aktion → Linux-/Windows-Binding), `theme/tokens.toml` (Palette, Fonts, Deckkraft, Blur, Rahmen),
   Stow-Pakete, `zed-config/`, `agent-config/`
+- **Agent-Workflow (M12+):**
+  ```
+  /refine ─► .agent/prompts/<slug>.md ─┬► /plan-roadmap ─► .agent/ROADMAP.md (oder docs/ROADMAP.md)
+  /grill  ─► .agent/GLOSSARY.md, adr/  ├► /plan-commits ─► .agent/plan.md ─► /next (fork) ─► Mensch committet
+                                       └► /fix (1 Commit)            ▲ /debug (fork)
+  /review (2 Subagents) ─► .agent/reviews/   /retro ─► .agent/retro/ ─► Vorschläge für agent-config/
+  Gemeinsame Regeln: Referenz-Skill agent-workspace · Gedächtnis: .agent/notes.md + Plan-Log
+  ```
 - **Integrations:** GitHub Releases/API, mise-Registry, AUR, Flathub, winget, WSL, Ollama, Claude Code, pi
 
 ## Decisions
@@ -53,6 +64,11 @@ alles wird in der neuesten Version installiert und mit `dot update` aktualisiert
 | 8 | WSL-Distro **Arch Linux** (offizielles Image), GUI-Apps nativ unter Windows (Zed Remote-WSL, WezTerm WSL-Domain) | identischer Pfad wie CachyOS | Fedora wie bisher |
 | 9 | Windows-C#: .NET SDK + Zed + Claude Code nativ; Visual Studio Community als Extra `vs` | schlanker Standard, VS nur bei Bedarf | VS immer installieren |
 | 10 | **Theme-Vertrag** `theme/tokens.toml`: Tokyo Night (Night), Ioskeley Mono / Term Nerd Font, ein Deckkraft- und Blur-Wert; Tools nutzen ihr natives Tokyo-Night-Theme, sonst die Token-Werte; Paritätstest prüft | einheitlicher Look ohne Generator, gleiches Muster wie #4 | tinted-theming/Base16-Generator |
+| 11 | KI-Artefakte lokal unter `.agent/` (Plan, Roadmap, Glossar, ADRs, Prompts, Reviews, Retro, Notizen), ausgeschlossen über `git rev-parse --git-path info/exclude`; `.agent-plan.md` → `.agent/plan.md` mit Lese-Fallback | nichts KI-Generiertes landet ungewollt im Repo; Pfad funktioniert auch in Worktrees | committen nach `docs/`, `.gitignore` |
+| 12 | Git-/Tracker-Schreibaktionen (`git commit/push/merge/rebase`, `gh pr\|issue create`, `glab`) in Claude per `deny`, in pi als Regel; `next-all` entfällt | Git bleibt allein beim Menschen, hart erzwungen statt nur erbeten | `ask` wie bisher |
+| 13 | Matt-Skills als eigene, angepasste Kopien in `agent-config/skills/` (MIT-Hinweis), kein Plugin | Plugin setzt auf GitHub-Tracker und ändert sich per Auto-Update | `claude plugin install` |
+| 14 | Gemeinsame Konventionen in einem Referenz-Skill `agent-workspace`, Skills verweisen darauf | Regeln einmal pflegen, nur bei Bedarf im Kontext | alles in CLAUDE.md (immer geladen) |
+| 15 | Kontextbudget ≤ ~150k über Struktur: `next`/`debug` im Fork, Review-Achsen als frische Subagents, Erkenntnisse in Dateien, `/clear` zwischen Schritten | Leistung bleibt hoch, jeder Schritt startet ohne Altlast | Auto-Compact, lange Sitzungen |
 
 ## Risks & unknowns
 | Risk | Impact | Mitigation |
@@ -64,6 +80,11 @@ alles wird in der neuesten Version installiert und mit `dot update` aktualisiert
 | Neueste Versionen statt Pins | weniger reproduzierbar | Neovim-Lockfile bleibt, `dot update` listet Versionsänderungen, mise-Lockfile optional |
 | GUI, Windows und Hardware (Corne) nicht im Container testbar | Fehler erst am Zielsystem | Container-Matrix für Linux-CLI, Pester + Windows-Runner für DryRun, manuelle Abnahmeliste |
 | Bestehende Fedora-only-Tests (`tests/test_install.py`) | Umbau bricht Tests | Tests in M1 auf Distro-Matrix umstellen, bevor Module wachsen |
+| Ein geforkter Skill (`next`) kann keine weiteren Subagents starten | `/review` mit zwei Achsen nicht aus `next` heraus möglich | `/review` läuft in der Hauptsession, `next` schlägt es am Meilensteinende nur vor; Spike als erster Schritt in M15 |
+| pi: 32k Kontext, keine Subagents, keine `deny`-Regeln | neue Skills sprengen den Kontext oder umgehen die Git-Sperre | Skills kurz halten, Fallback „Achsen nacheinander“, Regel in `pi/AGENTS.md`; Container-Test prüft Skill-Größe |
+| `next-all`/`handoff` kommen evtl. zusätzlich per claude.ai-Sync (`anthropic-skills:`) | alter Commit-Workflow bleibt aufrufbar | `deny` greift trotzdem; `dot doctor` meldet fremde Skills, Entfernen in claude.ai manuell |
+| Retro auf Session-Logs (`~/.claude/projects/*.jsonl`) ist sehr groß | Retro sprengt selbst das Budget | Retro liest primär `.agent/notes.md`, Plan-Log, Reviews; Logs nur gefiltert (Fehler, teure Tool-Calls) |
+| Umzug `.agent-plan.md` → `.agent/plan.md` | laufende Pläne in Projekten werden nicht gefunden | Lese-Fallback auf den alten Pfad, Hinweis zum Verschieben |
 
 ## Milestones
 
@@ -144,12 +165,62 @@ alles wird in der neuesten Version installiert und mit `dot update` aktualisiert
 - **Depends on:** M1, M2, M3, M4, M5, M6, M7, M8, M9, M10
 - **Size:** S, ~3 commits
 
+### M12 [ ] Lokale `.agent/`-Ablage + Git-Sperre
+- **Goal:** Alle KI-Dateien liegen lokal unter `.agent/`, und Agents können nichts committen, pushen oder Tickets anlegen.
+- **Includes:** Referenz-Skill `agent-workspace` (Layout, Exclude-Helfer, Format `notes.md`, Git-Regel, Kontextbudget), `plan-roadmap`/`plan-commits`/`next` auf `.agent/` umstellen (Fallback alter Pfad), `deny`-Regeln in `claude/settings.json`, Regel in `pi/AGENTS.md` und `CLAUDE.md`, `next-all` in `LEGACY` von `scripts/agents.py`, `dot doctor` meldet fremde Skills, Tests/Container-Check anpassen
+- **Done when:** in einem Testprojekt schreibt `/plan-commits` nach `.agent/plan.md` und `.agent/` steht in `info/exclude`; `git commit` durch Claude wird abgelehnt; `bash scripts/check.sh` grün
+- **Depends on:** M4
+- **Size:** M, ~6 commits
+
+### M13 [ ] `/grill` mit Glossar und ADRs
+- **Goal:** Ein Interview in Runden schärft Pläne und baut nebenbei Glossar und ADRs auf.
+- **Includes:** Skill `grill` (grilling + domain-modeling: Frontier-Runden mit Empfehlung, Fakten selbst nachschlagen, `.agent/GLOSSARY.md` + `.agent/adr/` inline, ADR nur bei schwer umkehrbar + überraschend + echter Abwägung), `plan-roadmap` nutzt Grill-Runden statt fester Fragenliste, `plan-commits`/`next` lesen das Glossar
+- **Done when:** `/grill` an einer Beispielidee: nummerierte Runden mit Empfehlung, Glossareintrag im Format mit `_Avoid_`; `/plan-roadmap` fragt in Runden
+- **Depends on:** M12
+- **Size:** M, ~4 commits
+
+### M14 [ ] Prompt-Refiner `/refine` + `/fix`
+- **Goal:** Aus eigenem Prompt + Kontext (Ticket, Pfade) entsteht im Dialog ein optimaler Prompt für Roadmap, Plan oder Fix.
+- **Includes:** Skill `refine` (Ziel `roadmap|commits|fix`, Grill-Runden, Vorlage je Ziel: Ziel, Kontext, Akzeptanzkriterien, Grenzen, Glossarbegriffe; Ausgabe `.agent/prompts/<slug>.md`), `plan-roadmap`/`plan-commits`/`fix` nehmen einen Prompt-Pfad an, Skill `fix` (kleine Korrektur, Test zuerst, ein Commit-Vorschlag, stoppt), pi-Prompts
+- **Done when:** `/refine fix "<Ticket-Text>"` stellt Fragen und schreibt eine Prompt-Datei; `/fix .agent/prompts/<slug>.md` setzt um, prüft und stoppt mit Commit-Vorschlag
+- **Depends on:** M13
+- **Size:** M, ~5 commits
+
+### M15 [ ] `/review` auf zwei Achsen
+- **Goal:** Änderungen werden getrennt gegen Standards und gegen Spec (Planschritt/Meilenstein/Prompt) geprüft.
+- **Includes:** Spike Subagents aus Skill/Fork, Skill `review` (Fixpunkt, Standards-Quellen + Fowler-Smell-Liste, Spec aus `.agent/plan.md`/Roadmap/Prompt, zwei frische Subagents, Bericht nach `.agent/reviews/<datum>-<slug>.md`, nicht zusammenmischen), pi-Fallback nacheinander, `pi/prompts/review.md` ersetzen, `next` schlägt `/review` nach dem letzten Schritt vor
+- **Done when:** `/review main` auf einem Branch liefert getrennte Abschnitte „Standards“ und „Spec“ und eine Datei unter `.agent/reviews/`
+- **Depends on:** M12
+- **Size:** M, ~4 commits
+
+### M16 [ ] `/debug` + TDD-Leitlinie
+- **Goal:** Schwere Fehler werden diszipliniert eingegrenzt; `next` und `fix` arbeiten rot-grün-refactor.
+- **Includes:** Skill `debug` nach diagnosing-bugs (rote Feedback-Schleife → minimieren → Hypothesen → instrumentieren → fix → Regressionstest), läuft im Fork, Befunde in `.agent/notes.md`; TDD-Leitlinie (gute/schlechte Tests) als Referenz für `next`/`fix`
+- **Done when:** `/debug` an einem eingebauten Fehler: reproduzierender Test zuerst, Ursache in `notes.md`, Fix + Regressionstest
+- **Depends on:** M12
+- **Size:** S, ~3 commits
+
+### M17 [ ] `/retro` + Kontextbudget sichtbar
+- **Goal:** Nach Meilenstein oder Sitzung kommen konkrete Verbesserungen für Skills, Checks und Steuerdateien – sortiert nach Schwere.
+- **Includes:** Skill `retro` (Kategorien Navigation, automatische Checks, Standards, CLAUDE.md-Größe, Tool-Ökonomie, No-Ops, Informationszugang; Quellen `notes.md`, Plan-Log, Reviews, gefilterte Logs; Ausgabe `.agent/retro/`, ändert nichts selbst), Referenz writing-for-agents, Statusline mit Kontextverbrauch, Budget-Hinweis in `next`/`plan-commits`
+- **Done when:** `/retro` nach einem Meilenstein liefert priorisierte Vorschläge mit Zielpfad in `agent-config/`; Statusline zeigt Kontext in %
+- **Depends on:** M15
+- **Size:** M, ~4 commits
+
+### M18 [ ] Workflow-Doku + Router
+- **Goal:** Der neue Ablauf ist auf einen Blick verständlich und der passende Skill schnell gefunden.
+- **Includes:** `agent-config/README.md` (Ablauf, `.agent/`-Layout, Git-Regel, Kontextstrategie), Skill `flow` (welcher Skill passt wann, kurz), CHEATSHEET-Abschnitt Agents, MIT-Hinweis für übernommene Inhalte
+- **Done when:** README und CHEATSHEET nennen jeden Skill; `/flow "kleiner Bug im Login"` empfiehlt `/refine fix` → `/fix`
+- **Depends on:** M13, M14, M15, M16, M17
+- **Size:** S, ~3 commits
+
 ## Definition of done (every milestone)
 - `bash scripts/check.sh` grün (ShellCheck, Syntax, Secret-Scan, Python-Tests; Pester, falls pwsh vorhanden)
 - Container-Matrix grün für betroffene Distros; `--dry-run` schreibt nichts
 - Wiederholter Lauf ist idempotent, bestehende Dateien nur mit `--backup` ersetzt
 - Neue/geänderte Configs halten Keybinding- und Theme-Vertrag ein (sobald vorhanden)
 - Keine Secrets oder privaten Daten im Repo; betroffene README-Abschnitte aktualisiert
+- Agent-Skills (ab M12): laufen in Claude Code und pi, keine Git-Schreibaktion, schreiben nur unter `.agent/`, `dot install --only agents` idempotent
 
 ## Changelog
 - 2026-11-21: roadmap created
@@ -167,3 +238,4 @@ alles wird in der neuesten Version installiert und mit `dot update` aktualisiert
 - 2026-11-21: M10 Corne abgeschlossen (`corne`-Modul mit Vial + udev-Regel, Windows-Vial-Release in `%LOCALAPPDATA%\Vial` + `dot.ps1 update`/`doctor`, `corne_v4.vil` mit 6 Layern und Vertragsparität in `tests/test_corne_layout.py`, Doku in `docs/CORNE.md`, `README.md` und `windows/README.md`).
 - 2026-11-21: M11 Doku + Cheatsheet abgeschlossen (README/`windows/README.md`/Config-READMEs aktualisiert, CHEATSHEET mit Hyprland = GlazeWM, `dot`, Zed + Agents, mise/CLI-Tools und Corne-Layern; `tests/test_keybindings.py` prüft alle WM-Bindings im CHEATSHEET gegen `manifests/keybindings.tsv`; frische-VM-Abnahme laut README-Checkliste manuell offen)
 - 2026-11-21: Review-Nachbesserungen (gsettings-Fallback im theme-Modul, `-NoWsl` ohne WSL-Abfrage, konsolenbreiten-unabhängiger Pester-Test, manuelle Abnahme-Checkliste `docs/ACCEPTANCE.md`)
+- 2026-11-27: Agent-Workflow v2 geplant (M12–M18, Entscheidungen #11–#15) nach Recherche von mattpocock/skills
