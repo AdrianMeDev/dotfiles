@@ -19,6 +19,7 @@ Three planning levels work together:
 
 **Roadmap already exists?** Then update it instead of starting over: show the milestone status, ask what should change (new milestones, new order, revised decisions, a milestone to split), keep done milestones untouched, and add a Changelog line.
 
+0. **Prompt file as input?** An argument that is an existing file (typically `.agent/prompts/<slug>.md` from `refine`) is the vision and scope: Goal is the vision, Acceptance criteria the outcomes, Boundaries the non-goals. `Target:` is not `roadmap` → hint and continue only after confirmation. Ask only what the file leaves open.
 1. Read what exists: README, `docs/`, `CLAUDE.md`/`AGENTS.md`, manifests, folder structure, `git log --oneline -15`. For an empty repo, note that it is a greenfield project.
 2. Clarify the open questions in rounds by following the `grill` skill (numbered questions, each with a recommended answer). The first frontier covers: who uses it and the one thing they must be able to do, what belongs in the MVP, fixed constraints (stack, existing systems, hosting, auth, data protection, deadline), scale and quality expectations.
 3. Continue until the frontier is empty. If the user says "decide yourself", take the recommended answers and list them as decisions. Resolved terms go to `.agent/GLOSSARY.md`; decisions that are hard to reverse, surprising and a real trade-off get an ADR in `.agent/adr/` (see `grill`).

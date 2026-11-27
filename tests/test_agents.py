@@ -79,11 +79,49 @@ class AgentsTests(unittest.TestCase):
         self.assertNotIn('model:', (self.pi / 'skills/grill/SKILL.md').read_text())
         self.assertTrue((self.pi / 'prompts/grill.md').is_file())
 
+    def test_refine_skill_rendered_for_both_tools(self):
+        self.run_agents()
+        source = SRC / 'skills/refine'
+        skill = (source / 'SKILL.md').read_text()
+        self.assertLessEqual(len(skill.splitlines()), 80)
+        self.assertIn('`grill`', skill)
+        self.assertIn('.agent/prompts/', skill)
+        fmt = (source / 'PROMPT-FORMAT.md').read_text()
+        for phrase in ('Target:', 'Acceptance criteria', 'Boundaries'):
+            self.assertIn(phrase, fmt)
+        for root in (self.claude, self.pi):
+            for name in ('SKILL.md', 'PROMPT-FORMAT.md'):
+                self.assertTrue((root / 'skills/refine' / name).is_file(), name)
+        self.assertIn('model: opus', (self.claude / 'skills/refine/SKILL.md').read_text())
+        self.assertNotIn('model:', (self.pi / 'skills/refine/SKILL.md').read_text())
+        self.assertTrue((self.pi / 'prompts/refine.md').is_file())
+
+    def test_fix_skill_rendered_for_both_tools(self):
+        self.run_agents()
+        text = (SRC / 'skills/fix/SKILL.md').read_text()
+        self.assertLessEqual(len(text.splitlines()), 80)
+        for phrase in ('.agent/prompts/', 'failing test', '/plan-commits', 'git commit'):
+            self.assertIn(phrase, text)
+        for root in (self.claude, self.pi):
+            self.assertTrue((root / 'skills/fix/SKILL.md').is_file())
+        self.assertIn('context: fork', (self.claude / 'skills/fix/SKILL.md').read_text())
+        self.assertNotIn('context:', (self.pi / 'skills/fix/SKILL.md').read_text())
+        self.assertTrue((self.pi / 'prompts/fix.md').is_file())
+
     def test_plan_roadmap_asks_in_grill_rounds(self):
         text = (SRC / 'skills/plan-roadmap/SKILL.md').read_text()
         self.assertIn('`grill`', text)
         self.assertNotIn('at most 6', text)
         self.assertLessEqual(len(text.splitlines()), 110)
+
+    def test_planners_accept_refined_prompt_files(self):
+        self.run_agents()
+        for name in ('plan-commits', 'plan-roadmap'):
+            for root in (self.claude, self.pi):
+                text = (root / 'skills' / name / 'SKILL.md').read_text()
+                self.assertIn('.agent/prompts/', text, name)
+                self.assertIn('`Target:`', text, name)
+        self.assertLessEqual(len((SRC / 'skills/plan-roadmap/SKILL.md').read_text().splitlines()), 110)
 
     def test_plan_commits_and_next_read_glossary(self):
         for name in ('plan-commits', 'next'):

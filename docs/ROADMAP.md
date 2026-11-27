@@ -179,7 +179,7 @@ alles wird in der neuesten Version installiert und mit `dot update` aktualisiert
 - **Depends on:** M12
 - **Size:** M, ~4 commits
 
-### M14 [ ] Prompt-Refiner `/refine` + `/fix`
+### M14 [x] Prompt-Refiner `/refine` + `/fix`
 - **Goal:** Aus eigenem Prompt + Kontext (Ticket, Pfade) entsteht im Dialog ein optimaler Prompt für Roadmap, Plan oder Fix.
 - **Includes:** Skill `refine` (Ziel `roadmap|commits|fix`, Grill-Runden, Vorlage je Ziel: Ziel, Kontext, Akzeptanzkriterien, Grenzen, Glossarbegriffe; Ausgabe `.agent/prompts/<slug>.md`), `plan-roadmap`/`plan-commits`/`fix` nehmen einen Prompt-Pfad an, Skill `fix` (kleine Korrektur, Test zuerst, ein Commit-Vorschlag, stoppt), pi-Prompts
 - **Done when:** `/refine fix "<Ticket-Text>"` stellt Fragen und schreibt eine Prompt-Datei; `/fix .agent/prompts/<slug>.md` setzt um, prüft und stoppt mit Commit-Vorschlag
@@ -242,3 +242,4 @@ alles wird in der neuesten Version installiert und mit `dot update` aktualisiert
 - 2026-11-27: M12 Lokale `.agent/`-Ablage + Git-Sperre abgeschlossen (Skill `agent-workspace`, Pläne unter `.agent/`, `deny`-Regeln für git/gh/glab, `next-all` entfernt, `dot doctor` meldet fremde Skills)
 - 2026-11-27: `next-all` nicht mehr ausgeliefert, lokale Kopie bleibt bei `dot install` erhalten
 - 2026-11-27: M13 `/grill` mit Glossar und ADRs abgeschlossen (Skill `grill`, `plan-roadmap` fragt in Runden, `plan-commits`/`next` lesen das Glossar)
+- 2026-11-27: M14 `/refine` + `/fix` abgeschlossen (Skills `refine` und `fix`, Prompt-Pfad als Eingabe für `plan-roadmap`/`plan-commits`, pi-Prompts, Doku)

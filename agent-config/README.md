@@ -5,7 +5,7 @@
 | Einsatz | private Projekte | Arbeit |
 | Modell | lokal über Ollama (nichts verlässt den Rechner) | Claude (`sonnet`, bei Bedarf `/model opus`) |
 | Sicherheit | **fragt nicht vor Befehlen** – Regeln stehen nur als Anweisung in `AGENTS.md` | Berechtigungsregeln: erlauben / nachfragen / verbieten |
-| Befehle (gleich in beiden) | `/grill` `/plan-roadmap` `/plan-commits` `/next` `/explain` `/explain-project` | `/grill` `/plan-roadmap` `/plan-commits` `/next` `/explain` `/explain-project` |
+| Befehle (gleich in beiden) | `/grill` `/refine` `/plan-roadmap` `/plan-commits` `/next` `/fix` `/explain` `/explain-project` | `/grill` `/refine` `/plan-roadmap` `/plan-commits` `/next` `/fix` `/explain` `/explain-project` |
 | In Zed | `<space> a p` | `<space> a c` |
 
 ```
@@ -15,16 +15,18 @@ agent-config/
 │   ├── models.json         Ollama-Modelle (Kontext, Tokens)
 │   ├── AGENTS.md           globale Anweisungen (privat)
 │   ├── themes/             tokyo-night.json (Tokyo Night)
-│   └── prompts/            /grill /plan-roadmap /plan-commits /next /explain /explain-project /review /commit
+│   └── prompts/            /grill /refine /plan-roadmap /plan-commits /next /fix /explain /explain-project /review /commit
 ├── claude/                 → ~/.claude/
 │   ├── settings.json       Modell, Theme (dark-ansi), Vim, Erklär-Stil, Berechtigungen
 │   └── CLAUDE.md           globale Anweisungen (Arbeit)
 ├── skills/                 → in beide Tools (Englisch, antworten in deiner Sprache)
 │   ├── agent-workspace/    Referenz: `.agent/`-Layout, Git-Regel, Kontextbudget (kein Befehl)
 │   ├── grill/              Interview in Runden → Glossar und ADRs (MIT-Hinweis in NOTICE.md)
+│   ├── refine/             rohen Prompt in Runden schärfen → .agent/prompts/<slug>.md (+ PROMPT-FORMAT.md)
 │   ├── plan-roadmap/       großes Feature / ganze App → Meilensteine (.agent/ROADMAP.md)
 │   ├── plan-commits/       Aufgabe oder nächsten Meilenstein in Commit-große Schritte planen
 │   ├── next/               genau einen Schritt umsetzen, dann für Commit stoppen
+│   ├── fix/                kleine Korrektur: Test zuerst, ein Commit-Vorschlag, Stopp
 │   ├── explain/            Implementiertes verständlich erklären
 │   └── explain-project/    ganzes Projekt erklären (Onboarding)
 ├── templates/PROJEKT-ANWEISUNGEN.md   Vorlage für CLAUDE.md / AGENTS.md im Projekt
@@ -93,6 +95,8 @@ Drei Ebenen, jede mit eigener Datei:
 | Großes Ganzes | `/plan-roadmap <was>` | `.agent/ROADMAP.md` | Vision, Umfang, Architektur, Entscheidungen, Risiken, **Meilensteine** |
 | Nächster Meilenstein | `/plan-commits` | `.agent/plan.md` | 3–8 Schritte, **ein Schritt = ein Commit** |
 | Umsetzen | `/next` | Code + dein Commit | genau ein Schritt, dann Stopp |
+| Prompt schärfen (optional) | `/refine <roadmap\|commits\|fix> <text>` | `.agent/prompts/<slug>.md` | Ziel, Kontext, Akzeptanzkriterien, Grenzen, Glossarbegriffe |
+| Kleine Korrektur | `/fix <prompt-pfad\|text>` | Code + dein Commit | Test zuerst, minimaler Fix, ein Commit, Stopp |
 
 ```
 /plan-roadmap Vereins-App: Mitglieder, Termine, Beiträge   → Fragen beantworten → Roadmap M0…M5
@@ -123,6 +127,22 @@ Drei Ebenen, jede mit eigener Datei:
 - Die Roadmap bleibt bewusst kurz (unter ~150 Zeilen), weil sie bei jedem Meilenstein wieder gelesen
   wird. Details gehören in `.agent/plan.md`.
 
+### `/refine` und `/fix`
+
+```
+/refine fix "Ticket-Text …"        → Runden mit Empfehlung → .agent/prompts/<slug>.md
+/fix .agent/prompts/<slug>.md      → fehlschlagender Test → minimaler Fix → prüfen → STOPP (Commit-Vorschlag)
+
+/refine roadmap "…"  → /plan-roadmap .agent/prompts/<slug>.md
+/refine commits "…"  → /plan-commits .agent/prompts/<slug>.md
+```
+
+- **`/refine`** nutzt die `/grill`-Runden, schlägt ohne Ziel eines vor und schreibt nur die Prompt-Datei
+  (Vorlage: `skills/refine/PROMPT-FORMAT.md`), keinen Code. Existiert die Datei, fragt er vor dem Überschreiben.
+- **`/plan-roadmap` und `/plan-commits`** lesen eine existierende Datei als Aufgabe; passt `Target:` nicht, gibt es einen Hinweis.
+- **`/fix`** stoppt bei dreckigem Arbeitsbaum oder einem `[~]`-Schritt und fasst `.agent/plan.md` nie an.
+  Ist die Korrektur größer als ein Commit, empfiehlt er `/plan-commits <prompt-pfad>`.
+
 ### Details zu `/plan-commits` und `/next`
 
 ```
@@ -151,8 +171,8 @@ Drei Ebenen, jede mit eigener Datei:
 ### `.agent/`-Ablage und Git-Regel
 
 Alles, was Agents erzeugen, liegt lokal unter `.agent/` im Projekt (nie im Repo):
-`plan.md`, `ROADMAP.md`, `notes.md` (Befunde aus `/next`), `GLOSSARY.md` und `adr/` (aus `/grill`) und
-reserviert `prompts/`, `reviews/`, `retro/`. Die Konventionen stehen einmal im Skill `agent-workspace`.
+`plan.md`, `ROADMAP.md`, `notes.md` (Befunde aus `/next` und `/fix`), `GLOSSARY.md` und `adr/` (aus `/grill`),
+`prompts/` (aus `/refine`) und reserviert `reviews/`, `retro/`. Die Konventionen stehen einmal im Skill `agent-workspace`.
 
 - **Git gehört dir:** Agents committen, pushen, mergen oder legen PRs/Tickets nie selbst an – sie
   zeigen nur die Befehle. Claude Code erzwingt das mit `deny`-Regeln (`claude/settings.json`);
@@ -195,7 +215,7 @@ in die Historie geht.
 `/review [pfad|fokus]` Code-Review · `/commit` Commit-Message vorschlagen (committet nicht selbst).
 In Claude Code gibt es dafür die eingebauten `/review` bzw. „schreib mir eine Commit-Message“.
 
-In pi sind die fünf Workflow-Befehle kleine Prompt-Vorlagen, die den gleichnamigen Skill laden;
+In pi sind die Workflow-Befehle kleine Prompt-Vorlagen, die den gleichnamigen Skill laden;
 `/skill:next` usw. funktioniert dort ebenfalls.
 
 ## 7. Tokens sparen (mehr aus dem Abo holen)
@@ -207,6 +227,7 @@ nur ein kleiner Teil. Deshalb setzt diese Konfiguration am Kontext an:
 | Maßnahme | Wirkung |
 |---|---|
 | `/next` läuft in einem **frischen Subagenten** (`context: fork`, Sonnet, Effort `medium`) | Wie ein automatisches `/clear` pro Schritt: Dateien, Testausgaben und Fehlversuche bleiben im Subagenten, deine Session behält nur den kurzen Bericht |
+| `/fix` läuft wie `/next` im **frischen Subagenten** (`context: fork`, Sonnet, Effort `medium`) | Reproduktion und Testläufe belasten deine Session nicht |
 | `/explain-project` läuft im **read-only Explore-Subagenten** | Die ganze Projekt-Erkundung belastet deine Session nicht |
 | Plan in `.agent/plan.md` | Nach der Freigabe des Plans ist `/clear` jederzeit gefahrlos |
 | Kein `Explanatory`-Stil, Knapp-Regel in `CLAUDE.md` | Weniger Text pro Antwort, ohne die Lesbarkeit zu verlieren |
