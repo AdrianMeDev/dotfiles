@@ -148,6 +148,13 @@ class AgentsTests(unittest.TestCase):
                 self.run_agents()
                 self.assertIn('.agent/GLOSSARY.md', (root / 'skills' / name / 'SKILL.md').read_text())
 
+    def test_next_suggests_inspect_after_last_step(self):
+        self.run_agents()
+        self.assertLessEqual(len((SRC / 'skills/next/SKILL.md').read_text().splitlines()), 80)
+        for root in (self.claude, self.pi):
+            text = (root / 'skills/next/SKILL.md').read_text()
+            self.assertIn('/inspect <base>', text)
+
     def test_plan_path_is_agent_dir_except_documented_fallback(self):
         self.run_agents()
         markers = ('legacy', 'fallback', 'else', 'old ')

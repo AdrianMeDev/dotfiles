@@ -71,6 +71,7 @@ Fix failures that belong to this step. If it still fails after two attempts: sto
 
 When `/next` finds the last step committed:
 - mark it `[x]`, show all commits of the plan: `git log --oneline <base>..HEAD`;
+- suggest `/inspect <base>` (plan's `Base:` hash) in the main session to check standards and spec before the PR;
 - if the plan has a **Milestone** that is `local` (not tracked): set it to `[x]` in the roadmap and add a Changelog line (for `tracked` roadmaps the last commit already did this – check it);
 - offer a short pull-request description (title, summary, testing notes);
 - ask whether to delete the plan file;
